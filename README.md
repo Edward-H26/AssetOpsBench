@@ -85,10 +85,14 @@ AssetOpsBench is a **unified framework for developing, orchestrating, and evalua
 | **TSFM** | Tasks/evidence: `list_tasks`, `profile_series`, `characterize_series`, `data_quality`; model catalog: `list_models`, `search_models`, `find_models`, `resolve_model`, `model_template`, `register_model`, `register_finetuned`, `hf_stats`; feature catalog: `list_features`, `search_features`, `extract_features`, `select_features`; run/eval ledger: `recipe_template`, `run_recipe`, `run_tabular_recipe`, `run_plan`, `evaluate`, `list_runs`, `list_results` |
 | **WO** | Read: `list_workorders`, `get_workorder`, `get_workorder_tasks`, `get_workorder_costs`, `get_workorder_actuals_vs_planned`, `get_workorder_kpis`, `get_schedule_calendar`, `get_my_assigned_workorders`, `get_failure_codes`; write: `generate_work_order`, `update_workorder`, `approve_workorder`, `assign_technician`, `close_workorder`, `cancel_workorder` |
 | **Vibration** | `get_vibration_data`, `list_vibration_sensors`, `compute_fft_spectrum`, `compute_envelope_spectrum`, `assess_vibration_severity`, `calculate_bearing_frequencies`, `diagnose_vibration` |
+| **Hydraulic rig** | `measure`, `submit`, `submit_insufficient_evidence`, `replace`, `finish` |
+| **Causal diagnosis** | `get_asset_context`, `query_fmea_paths`, `get_symptom_report`, `get_episode_evidence`, `rank_root_causes`, `estimate_intervention_effect`, `verify_outcome` |
 | *Shared utility server* | |
 | **Utilities** | `json_reader`, `get_sensor_catalog`, `get_asset_catalog`, `get_failure_mode_catalog`, `current_date_time`, `current_time_english` |
 
 Five domain servers (IoT, FMSR, TSFM, WO, Vibration) plus one shared utility server, documented in full — arguments, categories, and backing services — in **[docs/mcp-servers.md](./docs/mcp-servers.md)**.
+
+The hydraulic rig replay environment and its two servers are documented in **[docs/hydraulic_rig/README.md](./docs/hydraulic_rig/README.md)**.
 
 The full TSFM MCP surface currently contains 41 tools covering model cards, feature cards, recipe execution, evaluation, and result/run lookup. See [docs/mcp-servers.md](./docs/mcp-servers.md#tsfm--time-series-model-and-feature-catalogs) for the complete reference.
 

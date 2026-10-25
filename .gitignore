@@ -204,3 +204,10 @@ src/tmp/
 
 # Observability artifacts (OTLP-JSON traces + per-run trajectory JSON).
 traces/
+
+# hydraulic rig environment: downloaded data, local runs and result tables
+src/envs/hydraulic_rig/data/*
+!src/envs/hydraulic_rig/data/CHECKSUMS.txt
+benchmarks/hydraulic_rig/runs/
+benchmarks/hydraulic_rig/results/
+src/servers/causal_diagnosis/models.json

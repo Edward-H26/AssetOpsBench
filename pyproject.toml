@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agent", "src/evaluation", "src/llm", "src/observability", "src/servers", "src/mcphub"]
+packages = ["src/agent", "src/evaluation", "src/llm", "src/observability", "src/servers", "src/mcphub", "src/envs"]
 
 [project]
 name = "assetopsbench-mcp"
@@ -46,6 +46,7 @@ fmsr-mcp-server = "servers.fmsr.main:main"
 tsfm-mcp-server = "servers.tsfm.main:main"
 wo-mcp-server = "servers.wo.main:main"
 vibration-mcp-server = "servers.vibration.main:main"
+causal-diagnosis-mcp-server = "servers.causal_diagnosis.main:main"
 openai-agent = "agent.openai_agent.cli:main"
 deep-agent = "agent.deep_agent.cli:main"
 stirrup-agent = "agent.stirrup_agent.cli:main"
