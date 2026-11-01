@@ -6,10 +6,8 @@ recovery against the combination after the agent's repairs. cost_before_submit i
 steps counts every step call (measure, replace, submit, refused, finish) and equals the environment's own counter;
 steps_before_submit counts up to and including the submit event.
 
-With the clock (a "clock" entry in the reset event), a scheduled degradation can change the combination before the
-submission, so the diagnosis is scored against the combination at the submission (diagnosis_target), which is the
-initial one when nothing degraded first. The clock adds the elapsed cycles, the fault cycles (running cycles with a
-component off its healthy level), the downtime cycles (rig stopped for repairs) and the number of degradations.
+With the clock, a hidden wear event can change the combination before the submission, so the diagnosis is scored
+against the combination at the submission (the initial one when nothing wore first); cycles and degradations are added.
 """
 from .data import COMPONENTS, HEALTHY
 
@@ -29,9 +27,7 @@ def score(log):
     steps_before_submit = None
     refusals = 0
     end_reason = None
-    target = None
-    clocked = reset.get("clock") is not None
-    cycles = fault_cycles = downtime_cycles = degradations = 0
+    target, degradations, cycles = None, 0, 0
     for e in log[1:]:
         cost += e.get("cost", 0)
         if e["event"] in ("measure", "replace", "submit", "refused", "finish", "advance_time"):
@@ -42,13 +38,9 @@ def score(log):
             replaced.append(e["component"])
             unnecessary += int(e["unnecessary"])
             combo[COMPONENTS.index(e["component"])] = HEALTHY[e["component"]]
-        elif e["event"] == "degrade" and e["component"] is not None:
+        elif e["event"] == "degrade":
             combo[COMPONENTS.index(e["component"])] = e["to"]
             degradations += 1
-        elif e["event"] == "time":
-            cycles = e["to"]
-            fault_cycles += e["fault_cycles"]
-            downtime_cycles += 0 if e["running"] else e["to"] - e["from"]
         elif e["event"] == "submit":
             submitted = e
             target = tuple(combo)
@@ -58,6 +50,7 @@ def score(log):
             refusals += 1
         elif e["event"] == "end":
             end_reason = e["reason"]
+            cycles = e.get("clock", 0)
     final = tuple(combo)
     insufficient = bool(submitted and submitted.get("insufficient_evidence"))
     # An insufficient-evidence outcome is its own outcome (logged, graded in a later version), never a Top-1 guess.
@@ -85,6 +78,6 @@ def score(log):
         "initial": initial,
         "final": final,
     }
-    if clocked:
-        out.update(diagnosis_target=target, cycles=cycles, fault_cycles=fault_cycles, downtime_cycles=downtime_cycles, degradations=degradations)
+    if reset.get("clock"):
+        out.update(diagnosis_target=target, cycles=cycles, degradations=degradations)
     return out

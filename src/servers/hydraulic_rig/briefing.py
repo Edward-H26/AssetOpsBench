@@ -38,14 +38,11 @@ def _clock_rules(obs):
     rules = obs.get("clock_rules")
     if not rules:
         return ""
-    durations = ", ".join(f"tier {t} {d}" for t, d in sorted(rules["durations"]["measure"].items()))
-    text = (f"Time: the rig runs in 60-second cycles and the clock starts at 0. A measurement takes cycles ({durations}). "
-            f"advance_time(cycles) lets the rig run for 1 to {rules['max_advance']} cycles. replace(component) is a work order: "
-            f"the rig keeps running for {rules['lead_time']} cycles until the part arrives, then stops for {rules['repair_cycles']} cycles for the repair.")
-    if rules["degradation"]:
-        text += " While the rig runs, a component can wear further to its next condition level without notice; submit the levels as they are when you submit."
-    if rules["fault_cost_per_cycle"]:
-        text += f" Every running cycle with a component off its healthy level costs {rules['fault_cost_per_cycle']}."
+    tiers = ", ".join(f"tier {t} {d}" for t, d in enumerate(rules["measure_cycles"], start=1))
+    text = (f"Time: the rig runs in 60-second cycles and the clock starts at 0. A measurement takes cycles ({tiers}), "
+            f"a replacement takes {rules['repair_cycles']}, and advance_time(cycles) lets the rig run for 1 to {rules['max_advance']} cycles.")
+    if rules["wear"]:
+        text += " While time passes, a component can wear to its next condition level without notice; submit the levels as they are when you submit."
     return text + "\n\n"
 
 

@@ -250,23 +250,21 @@ def test_briefing_states_the_fault_count_rule_of_the_episode(low, high, rule):
     assert f"condition levels, and {rule}. Find the level" in briefing(env.reset(0))
 
 
+
 def _clocked(tmp_path, **changes):
-    import copy
     from envs.hydraulic_rig.env import DEFAULT_CLOCK
-    clock = copy.deepcopy(DEFAULT_CLOCK)
-    clock.update(changes)
-    return _new_episode(tmp_path, clock=clock)
+    return _new_episode(tmp_path, clock={**DEFAULT_CLOCK, **changes})
 
 
-def test_a_clocked_episode_reports_the_clock_and_hides_the_schedule(tmp_path):
-    path = _clocked(tmp_path, degradation={"events": 1, "min_cycle": 3, "max_cycle": 3})
+def test_a_clocked_episode_reports_the_clock_and_hides_the_wear(tmp_path):
+    path = _clocked(tmp_path, degrade_at=[3, 3])
     first = _call(path, "measure", {"tier": 3}, {"type": "measure", "tier": 3})
     assert first["clock"] == 5 and first["event"]["clock"] == 0
     waited = _call(path, "advance_time", {"cycles": 4}, {"type": "advance_time", "cycles": 4})
     assert waited["event"] == {"event": "advance_time", "cycles": 4, "clock": 5} and waited["clock"] == 9
     released = json.loads(episode.released_path(path).read_text())
-    assert released["clock_rules"]["degradation"] is True and released["status"]["clock"] == 9
-    assert "schedule" not in json.dumps(released) and "degrade" not in json.dumps(released["events"])
+    assert released["clock_rules"]["wear"] is True and released["status"]["clock"] == 9
+    assert "wear_at" not in json.dumps(released) and "degrade" not in json.dumps(released["events"])
     env = episode.replay(episode.load_state(path))
     assert env.clock == 9 and any(e["event"] == "degrade" for e in env.log)
 
@@ -275,10 +273,10 @@ def test_the_briefing_explains_the_clock_only_when_there_is_one(tmp_path):
     (tmp_path / "plain").mkdir()
     (tmp_path / "timed").mkdir()
     plain = episode.replay(episode.load_state(_new_episode(tmp_path / "plain"))).observation()
-    timed = episode.replay(episode.load_state(_clocked(tmp_path / "timed", fault_cost_per_cycle=2))).observation()
+    timed = episode.replay(episode.load_state(_clocked(tmp_path / "timed"))).observation()
     assert "advance_time" not in briefing(plain)
     text = briefing(timed)
-    assert "advance_time(cycles)" in text and "work order" in text and "costs 2" in text and "wear further" in text
+    assert "advance_time(cycles)" in text and "a replacement takes 15" in text and "wear" in text
 
 
 def test_advance_time_has_one_tool_call():

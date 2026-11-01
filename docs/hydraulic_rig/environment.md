@@ -211,32 +211,22 @@ The diagnosis is scored against h0, the fault the agent was asked to find, and r
 
 ## The clock
 
-The clock is optional and off by default, so every episode without it is the v0 episode above. It is turned on with
+The clock is optional and off by default, so an episode without it is the v0 episode above. Turn it on with
 `TinyHydraulicEnv(..., clock=DEFAULT_CLOCK)`, or with `--clock` on `run_episodes.py`. Time is counted in 60-second rig cycles.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `durations.measure` | tier 1: 1, tier 2: 2, tier 3: 5 | cycles a measurement takes; the reading is taken when it starts |
-| `lead_time` | 10 | cycles between `replace` (a work order) and the repair; the rig keeps running |
-| `repair_cycles` | 5 | cycles the rig is stopped for the repair (downtime; nothing degrades) |
-| `max_advance` | 500 | the largest `advance_time` call |
-| `degradation` | 1 event between cycles 20 and 200 | hidden schedule; at each event one component falls to its next recorded level |
-| `fault_cost_per_cycle` | 0 | charged for every running cycle with a component off its healthy level |
+| `measure_cycles` | `[1, 2, 5]` | cycles a measurement takes at tier 1, 2, 3; the reading is taken when it starts |
+| `repair_cycles` | 15 | cycles a replacement takes |
+| `degrade_at` | `[20, 200]` | the hidden wear event happens at a cycle drawn from this range; `None` turns wear off |
 
-- **advance_time(cycles)** is a new action and tool. It only lets time pass. The server offers it only in clocked episodes.
-- **The degradation schedule** is drawn at reset from a generator of its own (`clock-<seed>`), so a seed starts from the same
-  combination and window with or without the clock. When an event is due, the component is drawn among those that can
-  still fall and whose new combination is in `allowed`; if none can, the event is logged and skipped. The agent is not told;
-  only the readings change, because the recordings of the new combination are served from then on.
-- **The diagnosis** is scored against the combination at the submission (`diagnosis_target`), which equals the initial one
-  when nothing degraded first. Recovery is still scored on the final combination.
-- **New score fields** (clocked episodes only): `diagnosis_target`, `cycles`, `fault_cycles`, `downtime_cycles`, `degradations`.
-- The agent sees the clock in the observation (`clock`, `clock_rules`), in the status of every tool answer, and in the briefing;
-  it never sees the schedule.
-- Within one combination the recordings are stable, so which cycle of the block is served does not depend on the time;
-  time changes the state only through degradation and repairs.
-- Not yet built: renamed tools (`read_sensors`, `create_work_order`), a technician's repair mid-episode, and degradation
-  awareness in the causal diagnosis server, whose ranking still assumes that all readings come from one combination.
+- **advance_time(cycles)** lets the rig run for 1 to `MAX_ADVANCE` (500) cycles. The server offers it only in clocked episodes.
+- **The wear event** is drawn at reset from a generator of its own (`clock-<seed>`), so a seed starts from the same combination
+  with or without the clock. When it is due, one component that can still wear (and stay inside `allowed`) falls to its next
+  level, and the recordings of the new combination are served from then on. The agent is not told; only the readings change.
+- **Scoring:** the diagnosis is scored against the combination at the submission (`diagnosis_target`), and clocked episodes
+  add `cycles` and `degradations`.
+- Two functions do the work: `_tick` moves the clock and triggers the wear event, and `_degrade` applies it.
 
 ## Scenario classes
 
