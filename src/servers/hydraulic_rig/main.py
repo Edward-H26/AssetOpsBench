@@ -64,11 +64,19 @@ def build_server(state_path):
         """End the episode after the diagnosis. Free."""
         return episode.call(state_path, "finish", {}, {"type": "finish"})
 
+    def advance_time(cycles: INTEGER = None) -> str:
+        """Let the rig run for a number of 60-second cycles without doing anything else. Only in episodes with a clock."""
+        return episode.call(state_path, "advance_time", {"cycles": cycles}, {"type": "advance_time", "cycles": cycles})
+
+    tools = [measure, submit, submit_insufficient_evidence, replace, finish]
+    if state_path.exists() and episode.has_clock(state_path):
+        tools.append(advance_time)
+
     return FastMCP(
         "hydraulic_rig",
         instructions="Diagnose and repair a hydraulic test rig: priced measurements, one diagnosis, then repairs.",
         log_level="WARNING",
-        tools=[_advertised_as_required(fn) for fn in (measure, submit, submit_insufficient_evidence, replace, finish)],
+        tools=[_advertised_as_required(fn) for fn in tools],
     )
 
 

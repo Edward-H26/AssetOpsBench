@@ -5,6 +5,11 @@ recovery against the combination after the agent's repairs. cost_before_submit i
 (None if the agent never submitted); "cost to the correct diagnosis" is this value on Top-1-correct episodes.
 steps counts every step call (measure, replace, submit, refused, finish) and equals the environment's own counter;
 steps_before_submit counts up to and including the submit event.
+
+With the clock (a "clock" entry in the reset event), a scheduled degradation can change the combination before the
+submission, so the diagnosis is scored against the combination at the submission (diagnosis_target), which is the
+initial one when nothing degraded first. The clock adds the elapsed cycles, the fault cycles (running cycles with a
+component off its healthy level), the downtime cycles (rig stopped for repairs) and the number of degradations.
 """
 from .data import COMPONENTS, HEALTHY
 
@@ -24,9 +29,12 @@ def score(log):
     steps_before_submit = None
     refusals = 0
     end_reason = None
+    target = None
+    clocked = reset.get("clock") is not None
+    cycles = fault_cycles = downtime_cycles = degradations = 0
     for e in log[1:]:
         cost += e.get("cost", 0)
-        if e["event"] in ("measure", "replace", "submit", "refused", "finish"):
+        if e["event"] in ("measure", "replace", "submit", "refused", "finish", "advance_time"):
             steps += 1  # every step call, refusals and the accepted finish included (the "number of tool calls" metric)
         if e["event"] == "measure":
             measures[e["tier"]] += 1
@@ -34,8 +42,16 @@ def score(log):
             replaced.append(e["component"])
             unnecessary += int(e["unnecessary"])
             combo[COMPONENTS.index(e["component"])] = HEALTHY[e["component"]]
+        elif e["event"] == "degrade" and e["component"] is not None:
+            combo[COMPONENTS.index(e["component"])] = e["to"]
+            degradations += 1
+        elif e["event"] == "time":
+            cycles = e["to"]
+            fault_cycles += e["fault_cycles"]
+            downtime_cycles += 0 if e["running"] else e["to"] - e["from"]
         elif e["event"] == "submit":
             submitted = e
+            target = tuple(combo)
             cost_before_submit = cost
             steps_before_submit = steps
         elif e["event"] == "refused":
@@ -46,10 +62,11 @@ def score(log):
     insufficient = bool(submitted and submitted.get("insufficient_evidence"))
     # An insufficient-evidence outcome is its own outcome (logged, graded in a later version), never a Top-1 guess.
     diagnosis = submitted.get("diagnosis") if submitted and not insufficient else None
-    per_component = {c: (diagnosis.get(c) == initial[i]) if diagnosis else None for i, c in enumerate(COMPONENTS)}
+    target = target or initial
+    per_component = {c: (diagnosis.get(c) == target[i]) if diagnosis else None for i, c in enumerate(COMPONENTS)}
     all_correct = bool(diagnosis) and all(per_component.values())
     diagnosed_faulty = {c for c in COMPONENTS if diagnosis and diagnosis.get(c) != HEALTHY[c]} if diagnosis else set()
-    return {
+    out = {
         "submitted": submitted is not None,
         "insufficient_evidence": insufficient,
         "diagnosis_per_component": per_component,
@@ -68,3 +85,6 @@ def score(log):
         "initial": initial,
         "final": final,
     }
+    if clocked:
+        out.update(diagnosis_target=target, cycles=cycles, fault_cycles=fault_cycles, downtime_cycles=downtime_cycles, degradations=degradations)
+    return out

@@ -248,3 +248,62 @@ def test_briefing_states_the_fault_count_rule_of_the_episode(low, high, rule):
     cycles, blocks = episode.load_world(str(default_facts_path()))
     env = TinyHydraulicEnv(cycles, blocks, **{**episode.default_env_kwargs(), "min_faulty": low, "max_faulty": high})
     assert f"condition levels, and {rule}. Find the level" in briefing(env.reset(0))
+
+
+def _clocked(tmp_path, **changes):
+    import copy
+    from envs.hydraulic_rig.env import DEFAULT_CLOCK
+    clock = copy.deepcopy(DEFAULT_CLOCK)
+    clock.update(changes)
+    return _new_episode(tmp_path, clock=clock)
+
+
+def test_a_clocked_episode_reports_the_clock_and_hides_the_schedule(tmp_path):
+    path = _clocked(tmp_path, degradation={"events": 1, "min_cycle": 3, "max_cycle": 3})
+    first = _call(path, "measure", {"tier": 3}, {"type": "measure", "tier": 3})
+    assert first["clock"] == 5 and first["event"]["clock"] == 0
+    waited = _call(path, "advance_time", {"cycles": 4}, {"type": "advance_time", "cycles": 4})
+    assert waited["event"] == {"event": "advance_time", "cycles": 4, "clock": 5} and waited["clock"] == 9
+    released = json.loads(episode.released_path(path).read_text())
+    assert released["clock_rules"]["degradation"] is True and released["status"]["clock"] == 9
+    assert "schedule" not in json.dumps(released) and "degrade" not in json.dumps(released["events"])
+    env = episode.replay(episode.load_state(path))
+    assert env.clock == 9 and any(e["event"] == "degrade" for e in env.log)
+
+
+def test_the_briefing_explains_the_clock_only_when_there_is_one(tmp_path):
+    (tmp_path / "plain").mkdir()
+    (tmp_path / "timed").mkdir()
+    plain = episode.replay(episode.load_state(_new_episode(tmp_path / "plain"))).observation()
+    timed = episode.replay(episode.load_state(_clocked(tmp_path / "timed", fault_cost_per_cycle=2))).observation()
+    assert "advance_time" not in briefing(plain)
+    text = briefing(timed)
+    assert "advance_time(cycles)" in text and "work order" in text and "costs 2" in text and "wear further" in text
+
+
+def test_advance_time_has_one_tool_call():
+    assert tool_call({"type": "advance_time", "cycles": 7}) == ("advance_time", {"cycles": 7})
+
+
+@needs_mcp
+def test_server_offers_advance_time_only_with_a_clock(tmp_path):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    src = str(Path(__file__).resolve().parents[3])
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(p for p in (src, os.environ.get("PYTHONPATH", "")) if p)}
+
+    async def tool_names(folder):
+        shutil.copy(Path(__file__).resolve().parents[1] / "launcher.py", folder / "rig_server.py")
+        params = StdioServerParameters(command=sys.executable, args=[str(folder / "rig_server.py")], env=env)
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                return {t.name for t in (await session.list_tools()).tools}
+
+    (tmp_path / "plain").mkdir()
+    (tmp_path / "timed").mkdir()
+    _new_episode(tmp_path / "plain")
+    _clocked(tmp_path / "timed")
+    assert asyncio.run(tool_names(tmp_path / "plain")) == TOOLS
+    assert asyncio.run(tool_names(tmp_path / "timed")) == TOOLS | {"advance_time"}

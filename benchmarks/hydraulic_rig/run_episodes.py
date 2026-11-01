@@ -23,6 +23,7 @@ stands.
 """
 import argparse
 import asyncio
+import copy
 import csv
 import hashlib
 import importlib.metadata
@@ -43,7 +44,7 @@ if str(HERE) not in sys.path:
 from common import (CAUSAL_SERVER, CAUSAL_TOOLS, RIG_SERVER, RIG_TOOLS, ROOT, SCENARIOS, SRC, answer_claims_recovery,  # noqa: E402
                     load_world, scenario_env_kwargs, scenario_episodes, scenario_task_text, start_episode, write_launchers)
 from envs.hydraulic_rig.classifiers import TierClassifiers  # noqa: E402
-from envs.hydraulic_rig.env import TinyHydraulicEnv  # noqa: E402
+from envs.hydraulic_rig.env import DEFAULT_CLOCK, TinyHydraulicEnv  # noqa: E402
 from envs.hydraulic_rig.policies import OraclePolicy, run_episode  # noqa: E402
 from envs.hydraulic_rig.scoring import score  # noqa: E402
 from report import episode_report, run_summary  # noqa: E402
@@ -196,10 +197,10 @@ def prepare_episode(ep_dir, seed, env_kwargs, facts_path, scenario, servers):
     return launchers, question, observation
 
 
-def check_servers(launchers):
+def check_servers(launchers, clock=False):
     """List the tools of every registered server once before the first episode: a server that fails to start would
     otherwise only show up as unavailable inside the planner prompt."""
-    expected = {RIG_SERVER: RIG_TOOLS, CAUSAL_SERVER: CAUSAL_TOOLS}
+    expected = {RIG_SERVER: RIG_TOOLS | ({"advance_time"} if clock else set()), CAUSAL_SERVER: CAUSAL_TOOLS}
     for server, path in launchers.items():
         names = {tool["name"] for tool in asyncio.run(_list_tools(path))}
         if names != expected[server]:
@@ -312,10 +313,13 @@ def main(argv):
     ap.add_argument("--base-url", default=ROUTER_BASE_URL, help="OpenAI-compatible endpoint of the model agents (default: TokenRouter)")
     ap.add_argument("--facts", default=None, help="the rig data file (default: HYD_FACTS_PATH or the package's data folder)")
     ap.add_argument("--out", default="benchmarks/hydraulic_rig/runs")
+    ap.add_argument("--clock", action="store_true", help="run with the clock: durations, work orders and degradation (env.DEFAULT_CLOCK)")
     a = ap.parse_args(argv)
 
     facts_path, cycles, blocks = load_world(a.facts)
     env_kwargs = scenario_env_kwargs(a.scenario)
+    if a.clock:
+        env_kwargs["clock"] = copy.deepcopy(DEFAULT_CLOCK)
     pairs = scenario_episodes(a.scenario, cycles, blocks, a.per_record, a.episodes, a.first_seed, a.max_records)
     servers = (RIG_SERVER,) if a.agent == "plan_execute_rig_only" else (RIG_SERVER, CAUSAL_SERVER)
     if CAUSAL_SERVER in servers:
@@ -355,7 +359,7 @@ def main(argv):
         else:
             launchers, question, observation = prepare_episode(ep_dir, seed, env_kwargs, facts_path, a.scenario, servers)
             if not rows:
-                check_servers(launchers)
+                check_servers(launchers, clock=a.clock)
             if make_policy:
                 error, wall = run_policy(make_policy(seed), launchers[RIG_SERVER], observation)
                 extra = {}

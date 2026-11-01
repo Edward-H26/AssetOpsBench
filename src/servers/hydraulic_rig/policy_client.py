@@ -28,6 +28,8 @@ def tool_call(action):
         return "replace", {"component": action["component"]}
     if kind == "finish":
         return "finish", {}
+    if kind == "advance_time":
+        return "advance_time", {"cycles": action["cycles"]}
     raise ValueError(f"no tool carries the action {action!r}")
 
 

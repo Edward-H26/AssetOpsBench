@@ -21,6 +21,29 @@ DEFAULT_PRICES = {
 }
 HEALTHY_COMBO = tuple(HEALTHY[c] for c in COMPONENTS)
 
+# The clock (off unless an environment is built with clock=...): time is counted in 60-second rig cycles.
+# durations: how many cycles a measurement at each tier takes. lead_time: cycles between a work order (replace) and
+# the start of the repair, while the rig keeps running. repair_cycles: cycles the rig is stopped for the repair
+# (downtime). max_advance: the largest advance_time call. degradation: a hidden schedule of `events` drops, each at a
+# cycle drawn from min_cycle to max_cycle, where one component falls to its next recorded level; None turns it off.
+# fault_cost_per_cycle: charged for every running cycle in which a component is off its healthy level.
+DEFAULT_CLOCK = {
+    "durations": {"measure": {"1": 1, "2": 2, "3": 5}},
+    "lead_time": 10,
+    "repair_cycles": 5,
+    "max_advance": 500,
+    "degradation": {"events": 1, "min_cycle": 20, "max_cycle": 200},
+    "fault_cost_per_cycle": 0,
+}
+
+
+def worse_level(component, level):
+    """The next recorded level of `component` away from its healthy level, or None at its worst level."""
+    levels = LEVELS[component]
+    step = -1 if HEALTHY[component] == levels[-1] else 1
+    j = levels.index(level) + step
+    return levels[j] if 0 <= j < len(levels) else None
+
 
 def n_faulty(combo):
     return sum(1 for i, c in enumerate(COMPONENTS) if combo[i] != HEALTHY[c])
@@ -52,12 +75,14 @@ def closed_under_repair(train, held_out):
 
 
 class TinyHydraulicEnv:
-    def __init__(self, cycles, blocks, prices=None, budget=150, max_repairs=2, min_faulty=1, max_faulty=2, max_steps=200, block_cap=10, allowed=None):
+    def __init__(self, cycles, blocks, prices=None, budget=150, max_repairs=2, min_faulty=1, max_faulty=2, max_steps=200, block_cap=10, allowed=None, clock=None):
         """min_faulty, max_faulty: the public fault-count rule; every episode starts with between min_faulty and
         max_faulty components off their healthy level, and the observation states both numbers.
         block_cap: every served block is a seeded window of exactly this many stable cycles, so block length
         carries no information about the combination, however long its stable block is.
-        allowed: optional set of combinations the episode may start from (a train or evaluation split)."""
+        allowed: optional set of combinations the episode may start from (a train or evaluation split); a scheduled
+        degradation never leaves it either.
+        clock: None (no time, the v0 environment) or a clock configuration like DEFAULT_CLOCK."""
         if not 1 <= min_faulty <= max_faulty:
             raise ValueError(f"the fault-count rule needs 1 <= min_faulty <= max_faulty, got min_faulty={min_faulty}, max_faulty={max_faulty}")
         self.cycles = {c.index: c for c in cycles}
@@ -69,6 +94,8 @@ class TinyHydraulicEnv:
         self.max_faulty = max_faulty
         self.max_steps = max_steps
         self.block_cap = block_cap
+        self.allowed = allowed
+        self.clock_cfg = None if clock is None else _checked_clock(copy.deepcopy(clock))
         self.candidates = sorted(k for k in blocks if min_faulty <= n_faulty(k) <= max_faulty and (allowed is None or k in allowed))
         self._rng = None
         self.done = True
@@ -85,7 +112,70 @@ class TinyHydraulicEnv:
         self.phase = "investigate"
         self.done = False
         self.log = [{"event": "reset", "seed": seed, "hidden": self.initial, "budget": self.budget, "max_repairs": self.max_repairs, "max_steps": self.max_steps, "prices": copy.deepcopy(self.prices)}]
+        self.clock = 0
+        self._schedule = []
+        if self.clock_cfg:
+            self._schedule = self._draw_schedule(seed)
+            self.log[0].update(clock=copy.deepcopy(self.clock_cfg), schedule=[list(s) for s in self._schedule])
         return self.observation()
+
+    # ----- the clock -----
+    def _draw_schedule(self, seed):
+        """The hidden degradation schedule: sorted (cycle, draw) pairs. The draw picks the component when the drop is
+        due, among those that can still drop. It comes from a generator of its own, so a seed starts from the same
+        combination and window with or without the clock."""
+        deg = self.clock_cfg["degradation"]
+        if not deg:
+            return []
+        rng = random.Random(f"clock-{seed}")
+        return sorted((rng.randint(deg["min_cycle"], deg["max_cycle"]), rng.random()) for _ in range(deg["events"]))
+
+    def _tick(self, cycles, running=True):
+        """Move the clock by `cycles`. While the rig runs, due degradations fire, and a cycle with a component off its
+        healthy level is a fault cycle, charged fault_cost_per_cycle. While it is stopped for a repair, the cycle is
+        downtime and nothing degrades. Returns the time cost, which is already added to the episode cost."""
+        if not cycles:
+            return 0
+        start, faults = self.clock, 0
+        for _ in range(cycles):
+            self.clock += 1
+            if not running:
+                continue
+            while self._schedule and self._schedule[0][0] <= self.clock:
+                self._degrade(self._schedule.pop(0)[1])
+            if tuple(self.hidden) != HEALTHY_COMBO:
+                faults += 1
+        cost = faults * self.clock_cfg["fault_cost_per_cycle"]
+        self.cost += cost
+        self.log.append({"event": "time", "cost": cost, "from": start, "to": self.clock, "running": running, "fault_cycles": faults})
+        return cost
+
+    def _degrade(self, draw):
+        """One scheduled drop: a component that can still fall (and stay inside `allowed`) falls to its next level, and
+        the recordings of the new combination are served from then on. The agent is not told; it can only see the
+        readings change."""
+        eligible = []
+        for i, c in enumerate(COMPONENTS):
+            level = worse_level(c, self.hidden[i])
+            if level is None:
+                continue
+            target = tuple(self.hidden[:i]) + (level,) + tuple(self.hidden[i + 1:])
+            if target in self.blocks and (self.allowed is None or target in self.allowed):
+                eligible.append((i, c, level))
+        if not eligible:
+            self.log.append({"event": "degrade", "cost": 0, "clock": self.clock, "component": None})
+            return
+        i, c, level = eligible[int(draw * len(eligible))]
+        before = self.hidden[i]
+        self.hidden[i] = level
+        self._enter_block()
+        self.log.append({"event": "degrade", "cost": 0, "clock": self.clock, "component": c, "from": before, "to": level, "combo_after": tuple(self.hidden)})
+
+    def _after_time(self, cost):
+        """The step result after an action that let time pass: a time cost can overrun the budget, which ends the episode."""
+        if self.clock_cfg and self.cost > self.budget:
+            return self._end("budget", cost)
+        return self.observation(), cost, False, {}
 
     def _enter_block(self):
         """Serve a seeded window of `block_cap` cycles of the current combination's stable block, entered at a seeded offset."""
@@ -97,7 +187,7 @@ class TinyHydraulicEnv:
         self._seen = 0
 
     def observation(self):
-        return {
+        obs = {
             "phase": self.phase,
             "components": list(COMPONENTS),
             "levels": {c: list(LEVELS[c]) for c in COMPONENTS},
@@ -109,17 +199,25 @@ class TinyHydraulicEnv:
             "min_faulty": self.min_faulty,  # the public fault-count rule: between min_faulty and max_faulty components
             "max_faulty": self.max_faulty,  # start off their healthy level
             "steps_left": self.max_steps - self.steps,
-            "history": copy.deepcopy([self._public(e) for e in self.log if e["event"] in ("measure", "replace", "submit", "refused")]),
+            "history": copy.deepcopy([self._public(e) for e in self.log if e["event"] in ("measure", "replace", "submit", "refused", "advance_time")]),
         }
+        if self.clock_cfg:  # the public part of the clock: the rules and the time, never the schedule
+            cfg = self.clock_cfg
+            obs["clock"] = self.clock
+            obs["clock_rules"] = {"durations": copy.deepcopy(cfg["durations"]), "lead_time": cfg["lead_time"], "repair_cycles": cfg["repair_cycles"],
+                                  "max_advance": cfg["max_advance"], "fault_cost_per_cycle": cfg["fault_cost_per_cycle"], "degradation": bool(cfg["degradation"])}
+        return obs
 
     @staticmethod
     def _public(e):
         """The agent-facing view of a log event: no cycle numbers (the UCI data is public and labelled),
         no combination after a repair, no unnecessary-replacement flag. The full event stays in the log for the scorer."""
         if e["event"] == "measure":
-            return {k: e[k] for k in ("event", "tier", "cost", "result", "repeated")}
+            return {k: e[k] for k in ("event", "tier", "cost", "result", "repeated", "clock") if k in e}
         if e["event"] == "replace":
-            return {k: e[k] for k in ("event", "component", "cost")}
+            return {k: e[k] for k in ("event", "component", "cost", "clock") if k in e}
+        if e["event"] == "advance_time":
+            return {k: e[k] for k in ("event", "cycles", "clock")}
         if e["event"] == "submit":
             return {k: e[k] for k in ("event", "diagnosis", "insufficient_evidence", "next_action")}
         return {"event": e["event"], "action": e.get("action"), "reason": e.get("reason")}
@@ -149,8 +247,21 @@ class TinyHydraulicEnv:
             repeated = self._seen >= len(self._block)
             self._seen += 1
             result = tier_features(self.cycles[idx], tier)
-            self.log.append({"event": "measure", "tier": tier, "cost": price, "cycle": idx, "repeated": repeated, "result": result})
+            event = {"event": "measure", "tier": tier, "cost": price, "cycle": idx, "repeated": repeated, "result": result}
+            if self.clock_cfg:  # the reading is taken when the measurement starts; the measurement then takes its duration
+                event["clock"] = self.clock
+                self.log.append(event)
+                return self._after_time(price + self._tick(self.clock_cfg["durations"]["measure"][str(tier)]))
+            self.log.append(event)
             return self.observation(), price, False, {}
+        if kind == "advance_time":
+            if not self.clock_cfg:
+                return self._refuse(action, "this episode has no clock")
+            cycles, most = action.get("cycles"), self.clock_cfg["max_advance"]
+            if not isinstance(cycles, int) or isinstance(cycles, bool) or not 1 <= cycles <= most:
+                return self._refuse(action, f"cycles must be an integer from 1 to {most}")
+            self.log.append({"event": "advance_time", "cost": 0, "cycles": cycles, "clock": self.clock})
+            return self._after_time(self._tick(cycles))
         if kind == "submit":
             if self.phase != "investigate":
                 return self._refuse(action, "already submitted")
@@ -171,18 +282,25 @@ class TinyHydraulicEnv:
             price = self.prices["parts"][comp] + self.prices["downtime"]
             if not self._charge(price, action):
                 return self._end("budget")
+            ordered_at = self.clock
+            if self.clock_cfg:  # a work order: the rig keeps running for the lead time, then stops for the repair
+                price += self._tick(self.clock_cfg["lead_time"])
+                price += self._tick(self.clock_cfg["repair_cycles"], running=False)
             i = COMPONENTS.index(comp)
             unnecessary = self.hidden[i] == HEALTHY[comp]
             self.hidden[i] = HEALTHY[comp]
             self.repairs += 1
             if not unnecessary:
                 self._enter_block()  # the combination changed, so the recordings of the new combination are served
-            self.log.append({"event": "replace", "component": comp, "cost": price, "unnecessary": unnecessary, "combo_after": tuple(self.hidden)})
+            event = {"event": "replace", "component": comp, "cost": self.prices["parts"][comp] + self.prices["downtime"], "unnecessary": unnecessary, "combo_after": tuple(self.hidden)}
+            if self.clock_cfg:
+                event["clock"] = ordered_at
+            self.log.append(event)
             if tuple(self.hidden) == HEALTHY_COMBO:
                 return self._end("recovered", price)
             if self.repairs >= self.max_repairs:
                 return self._end("repairs used up", price)
-            return self.observation(), price, False, {}
+            return self._after_time(price)
         if kind == "finish":
             if self.phase != "repair":
                 return self._refuse(action, "finish is allowed after the diagnosis")
@@ -222,6 +340,44 @@ class TinyHydraulicEnv:
         self.done = True
         self.log.append({"event": "end", "cost": 0, "reason": reason})
         return self.observation(), cost, True, {"log": self.log, "reason": reason}
+
+
+def _checked_clock(clock):
+    """The clock configuration, checked and with the measure tiers as string keys (so it survives JSON). Like a bad
+    price table, a bad clock is a configuration error and raises."""
+    def count(value, low=0):
+        return isinstance(value, int) and not isinstance(value, bool) and value >= low
+
+    problems = []
+    unknown = set(clock) - set(DEFAULT_CLOCK)
+    if unknown:
+        problems.append(f"unknown keys {sorted(unknown)}")
+    missing = set(DEFAULT_CLOCK) - set(clock)
+    if missing:
+        problems.append(f"missing keys {sorted(missing)}")
+    if problems:
+        raise ValueError("invalid clock: " + "; ".join(problems))
+    measure = {str(t): d for t, d in clock["durations"].get("measure", {}).items()}
+    if set(measure) != {str(t) for t in TIER_SENSORS} or not all(count(d) for d in measure.values()):
+        problems.append("durations.measure needs a whole number of cycles (0 or more) for every tier")
+    clock["durations"] = {"measure": measure}
+    for key in ("lead_time", "repair_cycles"):
+        if not count(clock[key]):
+            problems.append(f"{key} must be a whole number of cycles, 0 or more")
+    if not count(clock["max_advance"], 1):
+        problems.append("max_advance must be a whole number of cycles, 1 or more")
+    rate = clock["fault_cost_per_cycle"]
+    if isinstance(rate, bool) or not isinstance(rate, (int, float)) or not math.isfinite(rate) or rate < 0:
+        problems.append("fault_cost_per_cycle must be a finite number, 0 or more")
+    deg = clock["degradation"]
+    if deg is not None:
+        if not isinstance(deg, dict) or set(deg) != {"events", "min_cycle", "max_cycle"}:
+            problems.append("degradation must be None or have events, min_cycle and max_cycle")
+        elif not (count(deg["events"]) and count(deg["min_cycle"], 1) and count(deg["max_cycle"], 1) and deg["min_cycle"] <= deg["max_cycle"]):
+            problems.append("degradation needs events >= 0 and 1 <= min_cycle <= max_cycle")
+    if problems:
+        raise ValueError("invalid clock: " + "; ".join(problems))
+    return clock
 
 
 def _checked_prices(prices):

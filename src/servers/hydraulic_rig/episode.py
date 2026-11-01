@@ -25,6 +25,11 @@ RELEASED_NAME = "released.json"
 STATUS_KEYS = ("phase", "budget_left", "repairs_left", "steps_left")
 
 
+def has_clock(state_path):
+    """True when the episode of this state file runs with the clock, so the server offers advance_time."""
+    return load_state(state_path)["env_params"].get("clock") is not None
+
+
 def default_env_kwargs():
     """The environment's own defaults, so that a state file records every parameter explicitly."""
     params = inspect.signature(TinyHydraulicEnv.__init__).parameters
@@ -49,6 +54,7 @@ def decode_params(params):
     prices = params["prices"]
     out["prices"] = {"measure": {int(t): p for t, p in prices["measure"].items()}, "parts": dict(prices["parts"]), "downtime": prices["downtime"]}
     out["allowed"] = None if params["allowed"] is None else {tuple(c) for c in params["allowed"]}
+    out.setdefault("clock", None)  # state files written before the clock existed have no clock
     return out
 
 
@@ -101,6 +107,7 @@ def write_released(state_path, env, state):
             "healthy": obs["healthy"],
             "tiers": {str(t): tier_fields(t) for t in obs["tiers"]},
         },
+        **({"clock_rules": obs["clock_rules"]} if "clock_rules" in obs else {}),
         "status": _status(env),
         "events": [_agent_view(e) for e in obs["history"]],
     }
@@ -163,6 +170,8 @@ def call(state_path, tool, arguments, action):
 def _status(env):
     obs = env.observation()
     status = {key: obs[key] for key in STATUS_KEYS}
+    if "clock" in obs:
+        status["clock"] = obs["clock"]
     status["episode_over"] = env.done
     return status
 

@@ -30,7 +30,23 @@ Tools and prices:
 - replace(component) restores one component to its healthy level. It costs the part ({parts}) plus {obs['prices']['downtime']} for downtime.
 - finish() ends the episode after the diagnosis. It costs nothing.
 
-Rules: measure first, then submit exactly once, with either submit or submit_insufficient_evidence; a replacement before the submission is refused. After the submission you may measure again, replace up to {obs['repairs_left']} components and finish. The episode also ends when every component is healthy, when the replacements are used up, when an action would exceed the budget, or after {obs['steps_left']} steps; a refused call counts as a step, and a call with a missing argument or an argument of the wrong type is refused. Budget: {obs['budget_left']}."""
+{_clock_rules(obs)}Rules: measure first, then submit exactly once, with either submit or submit_insufficient_evidence; a replacement before the submission is refused. After the submission you may measure again, replace up to {obs['repairs_left']} components and finish. The episode also ends when every component is healthy, when the replacements are used up, when an action would exceed the budget, or after {obs['steps_left']} steps; a refused call counts as a step, and a call with a missing argument or an argument of the wrong type is refused. Budget: {obs['budget_left']}."""
+
+
+def _clock_rules(obs):
+    """The clock in words, only for an episode with a clock (the v0.3 question is unchanged without one)."""
+    rules = obs.get("clock_rules")
+    if not rules:
+        return ""
+    durations = ", ".join(f"tier {t} {d}" for t, d in sorted(rules["durations"]["measure"].items()))
+    text = (f"Time: the rig runs in 60-second cycles and the clock starts at 0. A measurement takes cycles ({durations}). "
+            f"advance_time(cycles) lets the rig run for 1 to {rules['max_advance']} cycles. replace(component) is a work order: "
+            f"the rig keeps running for {rules['lead_time']} cycles until the part arrives, then stops for {rules['repair_cycles']} cycles for the repair.")
+    if rules["degradation"]:
+        text += " While the rig runs, a component can wear further to its next condition level without notice; submit the levels as they are when you submit."
+    if rules["fault_cost_per_cycle"]:
+        text += f" Every running cycle with a component off its healthy level costs {rules['fault_cost_per_cycle']}."
+    return text + "\n\n"
 
 
 def _fault_count_rule(obs):
