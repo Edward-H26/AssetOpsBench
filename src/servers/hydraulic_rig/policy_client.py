@@ -1,60 +1,44 @@
-"""Run an observation-to-action policy, such as the greedy reference policy, through the tool interface, so that it
-plays on exactly what a language-model agent gets: the facts the question states at reset, then only tool answers.
+"""Run a policy of envs.hydraulic_rig.policies through the tool interface, so that it plays on exactly what a language
+model agent gets: the envelope that opens the episode, then only tool answers (docs/hydraulic_rig/action-server.md).
 
-An answer carries the newest history entry, with the measurement renamed and rounded (names.public_result), the cost,
-the counters and the done flag (episode.call); play() rebuilds the policy's observation from these. The greedy policy
-looks its held-out predictions up by the measured values, so PublicClassifiers keys that table the way the answers show
-a measurement. Renaming and rounding must keep every stable cycle distinct at every tier, so that the policy decides
-as it does in process; the constructor refuses a table in which two measurements would merge.
+tool_call maps an env.step action to the tool and arguments that carry it, the inverse of the tools in main.py; play
+runs one episode by sending each action and handing the answer back to the policy.
 """
 import json
 
-from envs.hydraulic_rig.classifiers import signature
-
-from .episode import STATUS_KEYS
-from .names import public_result
-
 
 def tool_call(action):
-    """The tool and arguments that carry an env.step action: the inverse of the tools in main.py."""
+    """The tool and arguments that carry an env.step action."""
     kind = action["type"]
-    if kind == "measure":
-        return "measure", {"tier": action["tier"]}
-    if kind == "submit" and action.get("insufficient_evidence"):
-        return "submit_insufficient_evidence", {"next_action": action["next_action"]}
-    if kind == "submit":
-        return "submit", dict(action["diagnosis"])
-    if kind == "replace":
-        return "replace", {"component": action["component"]}
+    if kind == "get_asset_profile":
+        return kind, {}
+    if kind == "read_sensors":
+        return kind, {"sensor_group": action["sensor_group"], "cycles": action["cycles"]}
+    if kind == "advance_time":
+        return kind, {"cycles": action["cycles"]}
+    if kind == "summarize_changes_since":
+        return kind, {"cycle": action["cycle"]}
+    if kind == "get_failure_modes":
+        return kind, {"component": action["component"]}
+    if kind == "submit_diagnosis":
+        return kind, {**action["diagnosis"], "evidence_ids": ",".join(action["evidence_ids"])}
+    if kind == "declare_insufficient_evidence":
+        test = action["separating_test"]
+        return kind, {"sensor_group": test["sensor_group"], "cycles": test["cycles"], "evidence_ids": ",".join(action["evidence_ids"])}
+    if kind == "create_work_order":
+        return kind, {"component": action["component"], "prediction_id": action["prediction_id"], "evidence_ids": ",".join(action["evidence_ids"])}
     if kind == "finish":
-        return "finish", {}
+        return kind, {"summary": action["summary"]}
     raise ValueError(f"no tool carries the action {action!r}")
 
 
-class PublicClassifiers:
-    """A TierClassifiers whose held-out prediction table is keyed by measurements as the tool answers show them."""
-
-    def __init__(self, classifiers):
-        self.base, self.alpha = classifiers.base, classifiers.alpha
-        self.lookup = {}
-        for tier, table in classifiers.lookup.items():
-            self.lookup[tier] = {signature(public_result(dict(key))): pred for key, pred in table.items()}
-            if len(self.lookup[tier]) != len(table):
-                raise ValueError(f"renaming and rounding make two tier-{tier} measurements identical")
-
-    def predict(self, tier, result):
-        return self.lookup[tier][signature(result)]
-
-
-def play(policy, first_observation, send):
-    """Run one episode. send(action) delivers the action as a tool call and returns the answer text. The policy sees the
-    first observation, which holds the facts the question states, and after that only what the answers carry; the
-    episode is over when an answer says so."""
-    obs = {**first_observation, "history": []}
+def play(policy, opening, send):
+    """Run one episode. send(action) delivers the action as a tool call and returns the answer text. The policy starts
+    from the opening envelope, whose result is the asset profile, and after that sees only the answers; the episode is
+    over when an answer says so."""
+    policy.start(opening)
+    obs = opening
     while True:
-        answer = json.loads(send(policy.act(obs)))
-        if answer.get("event") is not None:
-            obs["history"] = [*obs["history"], answer["event"]]
-        obs.update((key, answer[key]) for key in STATUS_KEYS)
-        if answer["episode_over"]:
+        obs = json.loads(send(policy.act(obs)))
+        if obs["episode_over"]:
             return

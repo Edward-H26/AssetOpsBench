@@ -1,0 +1,28 @@
+{
+  "name": "timed",
+  "description": "Timed episodes: a seeded degradation schedule drops one component level by level from a first cycle drawn in first_drop, and with probability 0.3 a technician replaces one faulty component at a cycle drawn in window. The same seed gives the same hidden start as static.json, so a static and a timed episode of one seed share their start. first_drop ends at 30 so that a component with three recorded drops at interval 10 reaches its worst level by cycle 50 and a work order created then closes, after the longest lead time and repair downtime of the defaults, before the horizon of 60 with one cycle left for finish.",
+  "schedule": {
+    "mode": "seeded",
+    "components": 1,
+    "first_drop": [
+      5,
+      30
+    ],
+    "interval": 10
+  },
+  "external_events": {
+    "mode": "seeded",
+    "probability": 0.3,
+    "window": [
+      5,
+      50
+    ]
+  },
+  "clock_mode": "declared",
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

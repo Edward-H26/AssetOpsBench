@@ -211,3 +211,4 @@ src/envs/hydraulic_rig/data/*
 benchmarks/hydraulic_rig/runs/
 benchmarks/hydraulic_rig/results/
 src/servers/causal_diagnosis/models.json
+src/servers/causal_diagnosis/grades.json

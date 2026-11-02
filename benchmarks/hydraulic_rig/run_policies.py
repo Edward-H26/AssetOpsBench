@@ -1,59 +1,87 @@
-"""Run the reference policies on seeded episodes and write per-episode scores to CSV.
-usage: python3 -I benchmarks/hydraulic_rig/run_policies.py [--facts PATH] [--episodes N] [--out benchmarks/hydraulic_rig/results/v0_scores.csv]"""
+"""The reference policies in process on seeded episodes of one configuration, each episode verified from its log, as
+one CSV row per policy and seed, with the ordering check of OpenEnv RFC 008 printed: the oracle's reward above the do
+nothing policy's on every seed (docs/hydraulic_rig/benchmarks.md).
+usage: python benchmarks/hydraulic_rig/run_policies.py [--config static] [--seeds 100] [--first-seed 0] [--facts PATH]
+       [--out benchmarks/hydraulic_rig/results/policies_<config>.csv]
+
+No server runs here, so the released evidence the verifier reads is composed by verifier.released_from_env from the
+environment's public view of its log.
+"""
 import argparse
-import csv
 import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # the fork's src/, also outside an editable install
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from common import SCORE_COLUMNS, flat, load_config, load_world, write_rows  # noqa: E402
+from envs.hydraulic_rig import verifier  # noqa: E402
 from envs.hydraulic_rig.classifiers import TierClassifiers  # noqa: E402
-from envs.hydraulic_rig.data import build_blocks, default_facts_path, load_cycles  # noqa: E402
-from envs.hydraulic_rig.env import TinyHydraulicEnv  # noqa: E402
-from envs.hydraulic_rig.greedy import GreedyPolicy  # noqa: E402
-from envs.hydraulic_rig.policies import OraclePolicy, RandomPolicy, run_episode  # noqa: E402
-from envs.hydraulic_rig.scoring import score  # noqa: E402
+from envs.hydraulic_rig.env import HydraulicRigEnv  # noqa: E402
+from envs.hydraulic_rig.greedy import GreedyPolicy, ServedClassifiers  # noqa: E402
+from envs.hydraulic_rig.policies import DoNothingPolicy, OraclePolicy, RandomPolicy, run_episode  # noqa: E402
+
+POLICIES = ("oracle", "do_nothing", "random", "greedy")
 
 
-def policy_table(env, classifiers):
-    """Policy name to constructor taking the episode seed; the tests import this table, so a CSV row reruns the
-    same way it was produced."""
+def policy_table(cycles, blocks):
+    """Policy name to a constructor taking the environment and the episode seed, so a CSV row reruns the same way it
+    was produced. The greedy policy's classifiers are cross fitted once per table."""
+    classifiers = ServedClassifiers(TierClassifiers(cycles, blocks), cycles)
     return {
-        "random": lambda seed: RandomPolicy(seed),
-        "oracle": lambda seed: OraclePolicy(env),
-        "greedy_prior_1to2": lambda seed: GreedyPolicy(classifiers, use_max_faulty=True),
-        "greedy": lambda seed: GreedyPolicy(classifiers),
+        "oracle": lambda env, seed: OraclePolicy(env),
+        "do_nothing": lambda env, seed: DoNothingPolicy(),
+        "random": lambda env, seed: RandomPolicy(seed),
+        "greedy": lambda env, seed: GreedyPolicy(classifiers, use_max_faulty=True),
     }
+
+
+def play(cycles, blocks, config, make, seed):
+    """One verified episode: the verdict as a dict and the reward."""
+    env = HydraulicRigEnv(cycles, blocks, config)
+    log = run_episode(env, make(env, seed), seed)
+    reference = HydraulicRigEnv(cycles, blocks, config)
+    run_episode(reference, OraclePolicy(reference), seed)
+    verdict = verifier.verify(log, verifier.released_from_env(env), env.oracle(), reference.cost, grade=None, scope=config.verifier_scope)
+    return verdict, verifier.reward(verdict, config.horizon)
+
+
+def rows_of(cycles, blocks, config, seeds):
+    rows = []
+    for name, make in policy_table(cycles, blocks).items():
+        for seed in seeds:
+            verdict, reward = play(cycles, blocks, config, make, seed)
+            row = {"policy": name, "seed": seed, **{k: flat(verdict.get(k)) for k in SCORE_COLUMNS}}
+            row.update(reward=reward, verified=verdict.get("verified"))
+            rows.append(row)
+    return rows
+
+
+def ordering_holds(rows):
+    """RFC 008: on every seed the oracle's reward exceeds the do nothing policy's."""
+    by = {(r["policy"], r["seed"]): r["reward"] for r in rows}
+    seeds = sorted({r["seed"] for r in rows})
+    return all(by.get(("oracle", s)) is not None and by.get(("do_nothing", s)) is not None and by[("oracle", s)] > by[("do_nothing", s)] for s in seeds)
 
 
 def main(argv):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--facts", default=str(default_facts_path()))
-    ap.add_argument("--episodes", type=int, default=100)
-    ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "results" / "v0_scores.csv"))
+    ap.add_argument("--config", default="static")
+    ap.add_argument("--seeds", type=int, default=100)
+    ap.add_argument("--first-seed", type=int, default=0)
+    ap.add_argument("--facts", default=None)
+    ap.add_argument("--out", default=None)
     a = ap.parse_args(argv)
-    cycles = load_cycles(a.facts)
-    blocks = build_blocks(cycles)
-    env = TinyHydraulicEnv(cycles, blocks)
-    classifiers = TierClassifiers(cycles, blocks)
-    rows = []
-    t0 = time.time()
-    for name, make in policy_table(env, classifiers).items():
-        for seed in range(a.episodes):
-            policy = make(seed)  # one policy per episode, so any single row of the CSV can be rerun on its own
-            s = score(run_episode(env, policy, seed))
-            s = {k: (v if not isinstance(v, (dict, tuple)) else str(v)) for k, v in s.items()}
-            rows.append({"policy": name, "seed": seed, **s})
-    Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-    with open(a.out, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
-    for name in policy_table(env, classifiers):
-        rs = [r for r in rows if r["policy"] == name]
-        n = len(rs)
-        print(f"{name}: episodes {n}, diagnosis all correct {sum(r['diagnosis_all_correct'] for r in rs)/n:.2f}, recovered {sum(r['recovered'] for r in rs)/n:.2f}, mean cost {sum(r['cost'] for r in rs)/n:.1f}, unnecessary replacements {sum(r['unnecessary_replacements'] for r in rs)}, insufficient evidence {sum(r['insufficient_evidence'] for r in rs)/n:.2f}")
-    print(f"wrote {a.out}; {len(rows)} episodes in {time.time() - t0:.2f} s")
+    _facts, cycles, blocks = load_world(a.facts)
+    name, config = load_config(a.config)
+    out = Path(a.out) if a.out else HERE / "results" / f"policies_{name}.csv"
+    started = time.perf_counter()
+    rows = rows_of(cycles, blocks, config, list(range(a.first_seed, a.first_seed + a.seeds)))
+    write_rows(out, rows, ["policy", "seed", *SCORE_COLUMNS, "verified"])
+    print(f"wrote {out}: {len(rows)} episodes of {len(POLICIES)} policies in {time.perf_counter() - started:.1f} s; "
+          f"RFC 008 ordering (oracle above do_nothing on every seed): {'holds' if ordering_holds(rows) else 'FAILS'}")
 
 
 if __name__ == "__main__":

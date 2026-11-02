@@ -1,202 +1,257 @@
 # Causal Diagnosis Server
 
-`src/servers/causal_diagnosis/` is an MCP server with seven tools that help an agent reason about one hydraulic rig episode: asset information, failure modes, the complaint that opened the episode, the evidence released so far, root causes ranked by probability, the predicted effect of replacing a component, and, after the replacement, a check of that prediction against the recordings. The tools read only what the action server has released and models fitted once outside the evaluation class, so no tool touches the hidden answer or contains a language model. This page covers the design rules, the models file, the tool contract, the methods behind the tools, and how to run and test the server.
+`src/servers/causal_diagnosis/` is the diagnostics server of the hydraulic rig gym, registered under the MCP name `causal_diagnosis`. It offers four read only tools over the evidence an episode has released: `get_episode_evidence` lists the readings with their healthy bands and anomaly scores, `rank_root_causes` ranks the candidate start combinations under an interventional effect model and decides whether the evidence is insufficient, `estimate_intervention_effect` predicts what a repair would do with conformal intervals, and `verify_outcome` checks a stored prediction against the recordings after the repair. Every threshold in a result traces to a price, a duration, a downtime rate or the declared error level, and the assumptions of every result say how. The server contains no language model and never touches the hidden state. This page covers the design rules, the models file and the grade table, the contract of the tools, the four tools with their results, the formulas E1 to E19 with the module that implements each, the ranking models and the abstention rules, the calibration report, and how to run and test the server.
 
-Related docs: [README.md](README.md) for the index, [environment.md](environment.md) for the environment and its data file, [action-server.md](action-server.md) for the server that writes the released answers, [benchmarks.md](benchmarks.md) for the drivers and studies, and [../mcp-servers.md](../mcp-servers.md) for every MCP server of the repository.
+Related docs: [README.md](README.md) for the index, [environment.md](environment.md) for the environment and its data file, [action-server.md](action-server.md) for the server that writes the released evidence and the tool contract, [benchmarks.md](benchmarks.md) for the drivers and the ablations, and [../mcp-servers.md](../mcp-servers.md) for every MCP server of the repository.
 
 ---
 
 ## Design rules
 
-- **Deterministic.** The same released answers, stored predictions, and models file give the same result, and no tool prompts a language model.
-- **Only what the agent has seen.** The episode tools read `released.json`, which `src/servers/hydraulic_rig/episode.py` rewrites after every call of the action server. Besides that file, the server opens only `predictions.json` beside it, `models.json`, and the IoT asset profile of `hyd_1`. It never opens the state file `episode.json`, the scored log, or the data file, so it never sees the seed, the hidden combination, a cycle number, or a recording not yet served.
-- **One server per episode.** A copy of the launcher beside `released.json` binds a process to one episode, so no tool takes an episode identifier. Every call replays the released events, so a process started for each tool call, as the Plan-Execute executor does, answers as a long-lived one would.
-- **Models fitted once.** The models are fitted once on a fixed pool outside the evaluation class S2, never per episode, so they carry no information about the hidden combination. [The models file](#the-models-file) gives the reasoning.
+- **Deterministic.** The same released evidence, stored predictions and models file give the same result. The Monte Carlo of the decision rule and of the grade is seeded with declared seeds, and no tool prompts a language model.
+- **Only what the agent has seen.** The tools read `released.json`, which `src/servers/hydraulic_rig/episode.py` rewrites after every call of the action server, and the predictions the server stored itself in `predictions.json` beside it. They never open the state file `episode.json`, the hidden files of an episode or the data file, so they never see the seed, the hidden combination, a recording index or a recording not yet served.
+- **One server per episode, no memory between calls.** A copy of the launcher beside `released.json` binds a process to one episode, so no tool takes an episode identifier. Every call replays the released observations and closed work orders into a fresh posterior, so a process started for each tool call, as the Plan-Execute executor does, answers exactly as a long lived one would. The models file is parsed once per process. The cost of this design is one process start and one replay per call, which the executor pays for every tool.
+- **Models fitted once on a fixed pool.** Every model is fitted once by `src/servers/causal_diagnosis/fit.py` on the stable cycles of the combinations outside the evaluation split, never per episode, so no model has seen a combination an episode can start from and no model depends on the episode. [The models file](#the-models-file) gives the reasoning.
+- **Every threshold traces to a cost or to alpha.** The decision whether the evidence is insufficient compares expected losses built from the released prices, durations and downtime rates. The intervals and the verdicts use the declared error level `alpha`. No fixed confidence cut enters a default result, and the one cut the server knows is an ablation arm named in the result that uses it.
+- **Read only.** Every tool is registered with `readOnlyHint` true, since none changes the asset or the case record. `estimate_intervention_effect` stores its prediction in `predictions.json`, the server's own record, which is the only file the tools write.
 
-`CausalTools` in `src/servers/causal_diagnosis/adapter.py` implements the tools as plain methods, and `build_server` in `src/servers/causal_diagnosis/main.py` registers them with FastMCP.
+`CausalTools` in `src/servers/causal_diagnosis/adapter.py` implements the tools as plain methods, testable without the mcp package, and `build_server` in `src/servers/causal_diagnosis/main.py` registers them with FastMCP.
 
 ---
 
 ## The models file
 
-`models.json` in `src/servers/causal_diagnosis/` is generated from the rig data by `src/servers/causal_diagnosis/fit.py` and ignored by git. `ensure_models()` fits it when it is missing. The drivers call it before they start the server or read the models, and the test conftests call it once per session when the data file is present. `load_models()` caches the file per process and raises `FileNotFoundError` with the fit command when the file is missing, so the server cannot start without it. The fit writes the file with `write_json_atomically` of `src/servers/json_files.py`, through a temporary file and a rename.
-
-The fit uses the standard library only and reads the data file that `HYD_FACTS_PATH` names, or `src/envs/hydraulic_rig/data/hyd_cycles.jsonl` when the variable is unset. To refit from the fork root:
+`models.json` in `src/servers/causal_diagnosis/` is generated from the rig data by `src/servers/causal_diagnosis/fit.py` and ignored by git. `ensure_models` fits it when it is missing or in an older format. The drivers call it before they start a server or look a grade up, and the test fixtures call it once per session when the data file is present. `load_models` parses the file once per process into a `Models` object (the effect model, its conformal calibration, the within standard deviations, the urn model and the pool) and raises `FileNotFoundError` with the fit command when the file is missing, so the server cannot start without it. To refit from the fork root:
 
 ```bash
-export HYD_FACTS_PATH=/path/to/hyd_facts.jsonl
-uv run python -m servers.causal_diagnosis.fit
+export HYD_FACTS_PATH=~/rig-data/hyd_facts.jsonl
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python -m servers.causal_diagnosis.fit [--interactions select|none] [--resamples N] [--seed S] [--out PATH]
 ```
 
-The pool is the stable cycles of every combination whose number of faulty components is not `EVALUATION_FAULTS`, which is two. No model sees a combination of class S2, which holds every combination with exactly two faulty components, while the combinations of class S1, with one faulty component, belong to the pool.
+**The pool.** The evaluation split is every combination the default public fault rule can start an episode from, the combinations with one or two faulty components. The pool is the stable cycles of every other combination: the healthy one and those with three or four faulty components. No model sees a combination of the evaluation split, and the same models serve every episode, so they carry no information about the hidden combination. A cross fit per episode would instead serve different models depending on the fold of the hidden combination, and an agent that plays many episodes could learn which answers go with which fold and narrow its candidates with information no reading paid for.
 
-**Why one fixed pool.** A cross-fit per episode would keep the start combination out of its own models by fitting them on the folds that do not hold it. The models served would then change with the fold of the hidden combination, and wherever the folds give different bands, the bands that `get_episode_evidence` returns would tell the folds apart. An agent that plays many episodes, as in training, could learn which bands go with which fold and narrow its candidates with information that no measurement paid for. The last step of `benchmarks/hydraulic_rig/causal_tools_example.py` prints, for the folds that `stratified_folds` draws over all 144 combinations, the candidates of the default rule and the S1 combinations in each fold, and how many distinct sets of tier 1 bands those folds would serve. The fixed pool serves the same models in every episode, so they say nothing about the hidden combination, and an episode of class S2 still never meets its start combination in a model.
+`models.json`, format 2, holds:
 
-The cost is that the models have already seen part of the evidence, in two places. On class S1, the classifiers and bands have seen the recordings that an episode serves. In an episode of class S2, a replacement of a faulty component moves the unit to a combination of the pool, whose recordings the classifiers and bands have also seen. The effect model avoids both, since the prediction for each combination comes from a fit without the recordings of that combination, and that fit is the same in every episode.
+| Field | Content |
+| --- | --- |
+| `format`, `generated`, `facts_sha256`, `records` | the format, the fit date, the SHA-256 of the data file and its number of records |
+| `pool` | the rule in words, the pool combinations, the evaluation combinations, the number of pool cycles, the number of folds and the fold seed |
+| `components`, `levels`, `healthy` | the facts of the asset |
+| `ranking_models`, `default_ranking_model` | the three ranking models and the default, `joint_block` |
+| `effect` | the effect model E1: the 34 summary fields, the summaries of every sensor group, the main effect terms, the selected interaction pairs and their indicator terms, the coefficients, the within covariance, the block misfit covariance, the healthy median and median absolute deviation of every summary, the conformal calibration scores with their block weights, the resampled fits, and the provenance (pool, folds, selection log, shrinkage weights, resample seed) |
+| `discriminant_urn` | the v1 ranking model refitted on the pool for ablation A12: per sensor group the discriminants, the confusion rows, the urn concentrations and the held out accuracies |
 
-The file holds:
+Resampled fits and calibration scores are rounded to the six significant digits at which values are served. `test_models_json_is_the_fit_of_the_facts_file_in_format_2` refits and compares the result with the stored file.
 
-- **`tiers`.** Per tier and component, a linear discriminant analysis (LDA) of `src/envs/hydraulic_rig/classifiers.py`, fitted on the pool and kept at full precision so that the classifications cannot change with the file. Beside it, the confusion rows, the urn concentrations `alpha` chosen on `ALPHA_GRID`, and the held-out accuracies of a cross-fit within the pool over `FOLDS` folds of `stratified_folds` at `FOLD_SEED`, counted on the pool combinations with one or three faulty components, `ROW_FAULTS`.
-- **`bands`.** For every served summary, the 1st and 99th percentiles, `BAND`, over the pool cycles in which every component that the channel indicates is healthy, or over all pool cycles for a channel that indicates none.
-- **`effect` and `effect_pool`.** An additive model of the 17 channel means. For each pool combination, the file keeps the prediction of the fit on the other pool combinations and its residual quantiles on `EFFECT_GRID`, and for the other combinations, the fit on the whole pool.
-- **Provenance.** The `pool` rule and combinations, `facts_sha256` of the data file, its number of `records`, and the date `generated`.
+**The grade table.** `grades.json` beside `models.json`, format 1, holds one table of diagnosability grades per hash of the released prices, durations, downtime rates, horizon, fault rule, budget and ranking model (`rules_key` in `src/servers/causal_diagnosis/grade.py`). `ensure_grades(models, rules, budget=None, ranking_model=...)` computes a table on first use and `grade_of(start, models, rules, ...)` returns the grade of one start, or None when the start is inseparable under the budget. The drivers look the grade of every episode up and hand it to the verifier. A table for the default configuration is regenerated with
 
-Bands, quantiles, and predicted means are rounded to the six significant digits at which values are served. `test_models_json_is_the_fit_of_the_facts_file` refits and compares the result with the stored file.
+```bash
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python -m servers.causal_diagnosis.grade [--ranking-model joint_block|joint] [--budget B] [--rollouts R] [--samples N] [--seed S] [--force] [--out PATH]
+```
+
+Both files are git ignored. Generating a grade table runs rollouts to budget exhaustion for inseparable starts, so the first use of a new table takes a while.
 
 ---
 
 ## Contract shared by the tools
 
-**Inputs.** The episode tools check the `format` of `released.json` against `RELEASED_FORMAT` and use its public rule from `min_faulty` to `max_faulty`, its budget, limits, prices, and counters, the optional `task_text`, and the `events`: accepted measurements with their released values, replacements, and refusals. The only file a tool writes is `predictions.json`.
+**Inputs.** The tools check the `format` of `released.json` against `RELEASED_FORMAT` and read its `rules` (the public fault rule, the sensor groups, the prices, the durations, the downtime rates, the horizon and the healthy bands), its `status` (`time`, `open_work_orders`, `episode_over`), its `observations` (the readings with `n`, `t`, `sensor_group` and `values`) and its `work_order_closed` events (`id`, `component`, `source`, `t_end`), which enter the posterior as closed orders whatever their source. Refused calls release nothing. Without a released file, or with a server started without an episode, every tool answers an error.
 
-**Parameters.** Every parameter is flat, typed, and required, because the Plan-Execute argument filler sees only the name, JSON type, and required flag of a parameter. The tool descriptions state the legal values.
+**Parameters.** Every parameter is flat, typed and required, because the Plan-Execute argument filler sees only the name, the JSON type and the required flag of a parameter. The tool descriptions state the legal values and carry no number.
 
 **Results.** Each tool returns a pydantic model of `src/servers/causal_diagnosis/models.py` that extends `ToolResult`, or an `ErrorResult` whose field `error` explains a bad argument or a missing episode. A client receives the error as an ordinary answer, `{"error": ...}`.
 
 | Field | Content |
 | --- | --- |
-| `evidence_ids` | `obs/{n}/{field}` for a summary of the n-th accepted measurement, `fmea/industryasseteqa_hydraulic_facts/{code}` for a failure-mode code, `assoc/helwig2015condition/{channel}_{component}` for an association, and `pred/{n}` for a stored prediction |
-| `time_window` | `start`, `end`, and `unit`, which is `static` for the static tools and `measurement` for the others. Measurements count from 1, and refused calls do not count |
-| `assumptions` | Plain statements of the modeling choices behind the answer |
-| `uncertainty` | `kind`, `value`, and an optional `detail` |
-| `message` | A one-line summary |
+| `evidence_ids` | `obs/{n}/{field}` for a released value, `wo/{id}` for a closed work order, and `pred/{n}` for a stored prediction, the identifiers the result rests on |
+| `time_window` | `start`, `end` and `unit`, which is `cycle`: the first reading used and the current time, or for a prediction the current time and the time the action would end |
+| `assumptions` | plain statements of the formulas behind the answer, each threshold traced to its price, duration, downtime rate or alpha, with the Monte Carlo count and seed where one is used |
+| `uncertainty` | `kind`, `value` and an optional `detail` |
+| `message` | a one line summary, which the audit report prints |
 
-The uncertainty kind is `none` for the asset context, `held_out_accuracy_tier3` for the paths, `candidates` for the symptom report, `band_coverage` for the evidence and the verification, `posterior` for the ranking, and `recovery_probability` for the effect.
+| Tool | Uncertainty kind |
+| --- | --- |
+| `get_episode_evidence` | `largest_anomaly_score` |
+| `rank_root_causes` | `top_marginal_resampling_interval`, with the interval and the top share in `detail` |
+| `estimate_intervention_effect` | `recovery_probability`, with its resampling interval in `detail` |
+| `verify_outcome` | `smallest_p_value` |
 
 ---
 
 ## Tools
 
-| Tool | Arguments | Returns, besides the shared fields | Needs an episode |
-| --- | --- | --- | --- |
-| `get_asset_context` | `asset_id` | `asset_type`, `description`, `site`, the `components` with their levels and healthy level, the `channels` with unit, rate, group, and indicated components, `n_failure_codes`, and `n_fault_codes` | No |
-| `query_fmea_paths` | `asset_id`, `node` | `node_kind` and the `paths`, each with code, severity, recommended action, indicating channels, and held-out accuracy per group | No |
-| `get_symptom_report` | none | `task_text`, `report_time`, `fault_count_min`, `fault_count_max`, `n_candidates`, `budget`, `step_cap`, `repairs`, `prices`, and `status` | Yes |
-| `get_episode_evidence` | `sensor_group` | `n_measurements` and the `items`, each with value, unit, release time, healthy band, and whether the value lies inside it | Yes |
-| `rank_root_causes` | `top_k` | `n_candidates`, the top `candidates` with faults, probability, and supporting evidence, `component_fault_probability`, `level_probability`, `insufficient_evidence`, `unseparated`, and `separating_channels` | Yes |
-| `estimate_intervention_effect` | `action` | `prediction_id`, `component`, `addresses_fault`, `recovery`, `price`, and the `predicted` channel means with their bands | Yes |
-| `verify_outcome` | `prediction_id` | `status`, `observation`, the `residuals`, `n_inside`, `n_outside`, `n_outside_tolerated`, `p_value_outside`, `recovery_predicted`, `recovered`, `recovery_status`, and `consistent` | Yes |
-
-- `asset_id` is `hyd_1`. Any other asset returns an error.
-- `node` is a component, a failure-mode code such as `valve_switching_critical`, or a channel such as `PS1` or `P1_MotorPower_W_100Hz`. A channel returns the fault codes of every component that it indicates.
-- `sensor_group` is `all`, `tier1`, `tier2`, `tier3`, or one channel. A tier keeps the channels that a measurement at that tier returns.
-- `top_k` is a positive integer, `action` is `monitor` or `replace:<component>`, and `prediction_id` is an ID such as `pred/1`.
+| Tool | Argument | Returns, besides the shared fields |
+| --- | --- | --- |
+| `get_episode_evidence` | `sensor_group`: `all`, a group name such as `tier1`, a channel such as `PS1`, or a field such as `PS1_Pressure_bar_100Hz` | `n_observations`, the `items` (per released value its evidence identifier, field, channel, statistic, value, unit, sampling rate, observation number, cycle, sensor group, the public band of the channel mean with `inside_band`, and the anomaly score E3), and `work_orders_closed` |
+| `rank_root_causes` | `top_k`: a positive integer | `ranking_model`, `n_candidates`, the top `candidates` (rank, start combination, current combination, faults with their codes, probability and the released values whose channel indicates a faulty component), `component_fault_probability`, `current_fault_probability`, `level_probability`, the `attribution` per component E4, the `stability` E6, the decision fields E10 (`insufficient_evidence`, `separating_test`, `expected_saving`, `expected_loss_act`, `expected_loss_test`), `unseparated` and `separating_channels` E12, `monte_carlo` and the `costs` E7 |
+| `estimate_intervention_effect` | `action`: `replace:<component>` or `monitor` | `prediction_id`, `action`, `component`, `addresses_fault`, `recovery` with its resampling interval, `price`, `duration`, `downtime_during_action`, the `predicted` summaries with their intervals E14 and `alpha`, and `risk_before`, `risk_after`, `direction` and `dead_band` E15 |
+| `verify_outcome` | `prediction_id`: an identifier such as `pred/1` | `status`, the `observation` compared and its cycle, the `channels` with predicted and observed values, the interval, the score, the p value E16 and the Bonferroni and Holm flags E17, `n_channels`, `alpha`, `consistent`, the rejection counts, `recovery_predicted` with its interval, `recovery_posterior` and `recovery_status` |
 
 ---
 
-## Knowledge base
+## Formulas
 
-`src/servers/causal_diagnosis/knowledge.py` holds the static knowledge. `FAILURE_CODES` holds the 16 distinct failure-mode entries of the IndustryAssetEQA hydraulic facts file, each with a component, the condition level that carries it, a severity, and a recommended action. The ten with the severity `critical` or `degraded` form `FAULT_CODES`, four mark the healthy levels, such as `cooler_ok`, and `transient` and `steady` describe the operating regime. In `INDICATES`, a channel indicates a component when the channel, or the virtual sensor served as CE, CP, or SE, is among the features most correlated with the condition of that component in Table II of Helwig, Pignanelli, and Schütze, IEEE I2MTC 2015. The temperatures indicate the cooler, and PS4, PS5, PS6, FS2, and VS1 indicate no component. The table takes the levels from `LEVELS` and `HEALTHY` of `src/envs/hydraulic_rig/data.py`.
+The numbers are those of the design and of the paper's appendix. Every function takes the released rules and `alpha`, and nothing in them names this rig (E19).
 
-| Component | Condition levels | Healthy | Fault codes by level | Indicating channels |
-| --- | --- | --- | --- | --- |
-| cooler | 3, 20, 100 | 100 | `cooler_efficiency_critical` at 3, `cooler_efficiency_reduced` at 20 | CE, CP, TS1, TS2, TS3, TS4 |
-| valve | 73, 80, 90, 100 | 100 | `valve_switching_critical` at 73, `valve_switching_severe_lag` at 80, `valve_switching_small_lag` at 90 | PS1, PS2, PS3, FS1, EPS1, SE |
-| pump | 0, 1, 2 | 0 | `pump_internal_leakage_weak` at 1, `pump_internal_leakage_severe` at 2 | PS3, FS1, SE |
-| accumulator | 90, 100, 115, 130 | 130 | `accumulator_pressure_low_critical` at 90, `accumulator_pressure_severely_reduced` at 100, `accumulator_pressure_reduced` at 115 | PS1, PS2, PS3, FS1, EPS1, SE |
+| Formula | Module and function | Declared constants |
+| --- | --- | --- |
+| E1 effect model | `effect_model.fit_effect_model`, `select_interactions`, `cross_fitted_log_likelihood`, `within_covariance`, `ledoit_wolf_diagonal`, `EffectModel` | `FOLDS` 8, `FOLD_SEED` 0, `RESAMPLES` 200, `RESAMPLE_SEED` 0, `RESAMPLE_ATTEMPTS` 100 |
+| E2 likelihood and posterior | `posterior.Posterior`, `segments`, `merge_observations`, `orders_before`, `segment_log_likelihood` | a uniform prior over the public rule |
+| E3 anomaly score | `EffectModel.anomaly_scores` | none |
+| E4 attribution | `EffectModel.component_terms`, `Posterior.attribution` | none |
+| E5 marginals | `Posterior.component_marginals`, `level_probability`, `current_marginals`, `order` | none |
+| E6 stability | `Posterior.stability`, `resampled_recovery`, `EffectModel.resampled` | `RESAMPLES` 200 |
+| E7 costs | `decision.costs`, `test_cost`, `downtime_rate`, `expected_downtime_rate` | the released prices, durations, downtime rates and horizon |
+| E8 loss of acting | `decision.loss_matrix`, `expected_loss_act` | none |
+| E9 loss of testing | `decision.expected_loss_test`, `Posterior.sample_next`, `update_with` | `MONTE_CARLO_SAMPLES` 512, `MONTE_CARLO_SEED` 0 |
+| E10 decision | `decision.decide` | the candidate tests, one cycle of each sensor group |
+| E11 one component threshold | `decision.one_component_threshold` | none |
+| E12 unseparated | `decision.unseparated` | none |
+| E13 post repair posterior | `Posterior.post_repair`, `CausalTools.estimate_intervention_effect` | none |
+| E14 conformal interval | `conformal.Calibration.quantile`, `conformal.interval`, `CausalTools._predict` | `DEFAULT_ALPHA` 0.05 |
+| E15 risk and direction | `CausalTools.estimate_intervention_effect` | the dead band from E6 |
+| E16 p value | `conformal.Calibration.p_value`, `CausalTools.verify_outcome` | the `alpha` of the stored prediction |
+| E17 verdict and recovery check | `conformal.verdict`, `CausalTools.verify_outcome` | `alpha` |
+| E18 grade | `grade.rollout`, `grade`, `compute_grades`, `ensure_grades`, `grade_of`, `expected_information_gain` | `ROLLOUTS` 10, `GRADE_SAMPLES` 128, `GRADE_SEED` 0, the budget of the rules |
+| E19 transfer | every function above | none |
+| Calibration test | `calibration.evaluate`, `report`, `run` | `READINGS` 10, `ROLLOUTS` 20, `SEED` 0, `BINS` 10 |
 
-`query_fmea_paths` returns the correlations of that table, `HELWIG_CORRELATIONS`, with the assumption that they describe interval features of the fixed working cycle rather than the served summaries. An association is diagnostic evidence, not a causal edge. The 17 channels of `SENSORS` carry the field names of `HYD1_FIELDS` in `src/servers/hydraulic_rig/names.py`, such as `P1_MotorPower_W_100Hz` for EPS1, each with the four `STATISTICS`: mean, std, min, and max. `group_of` names the cheapest tier that serves a channel, and the groups are nested: `tier1` serves six channels, `tier2` adds three, and `tier3` serves all 17. `asset_profile` reads the `hyd_1` entry of `src/couchdb/scenarios_data/shared/iot/asset_profile_sample.json`.
+**E1, the interventional effect model.** The experimenters of the dataset set every component level, so the recordings under a combination are draws from the interventional distribution of the channel summaries under that combination, and the effect of a component condition on a channel is estimated from the recordings without causal discovery. The mean of each of the 34 summaries, the mean and the standard deviation of the 17 channels over one recorded cycle, is an intercept plus one main effect per non healthy level of each component plus the pairwise interaction indicators selected forward by the cross fitted log likelihood over the pool, with the folds of `stratified_folds` in `src/envs/hydraulic_rig/classifiers.py` restricted to the pool. A pair is admissible only when the pool design keeps full column rank, a pair that some training fold cannot identify is not selectable, and the selection log is stored in the provenance. The fit is weighted least squares on block means with the block lengths as weights, which equals least squares over cycles. The residual covariance is the pooled within combination covariance, every block centered on its own mean, shrunk toward its diagonal by the Ledoit and Wolf weight in the diagonal target form of Schaefer and Strimmer. The fit also keeps the block misfit covariance, the shrunk covariance of the cross fitted block mean residuals, the healthy reference of E3, the conformal calibration scores of E14, and the resampled fits of E6, one per block bootstrap draw of the pool, redrawn when a draw loses a level.
+
+**E2, the posterior.** The candidates are the start combinations the public fault rule allows, with a uniform prior. The combination current at a reading is the start combination with every component of a work order closed at or before the reading's cycle set to its healthy level, so the readings are grouped into segments between closures and each segment is read under its own combination. A cycle served twice within a segment, because the recording window wrapped or two groups read the same cycle, enters once with the union of its summaries. The literal E2, the ranking model `joint`, treats the observations of a segment as independent Gaussian draws around the model mean with the within covariance restricted to the observed summaries. The default, `joint_block`, adds a latent block mean: the cycles of one recorded block share an offset from the model mean, since the block was recorded in one run of the rig under one setting and the effect model predicts it from the other blocks. The offset has the block misfit covariance, is integrated out by a Kalman step per observation, and makes repeated readings of one block add less than independent draws would, the same reason for which E6 resamples by block. Scheduled drops are not modeled, which the assumptions state.
+
+**E3, the anomaly score** of a summary is its absolute deviation from the median of the healthy recordings over their median absolute deviation, with the within standard deviation as the scale when the deviation is zero. It enters no decision.
+
+**E4, the attribution.** The predicted deviation of a summary under the top candidate splits into the main effects of its faulty components and halves of their interactions, the shares are normalized per summary, and a component's explained anomaly is the sum over summaries of the anomaly score times its share, for the top candidate at the latest segment with readings.
+
+**E5, the marginals.** The fault probability of a component at the start, its level probabilities, and its fault probability now, after the released closures. Candidates are ordered by decreasing posterior.
+
+**E6, the stability.** The posterior is recomputed under every resampled fit. The interval of the top component's marginal is its range over the resamples, and `top_share` is the share of resamples in which that component stays on top. No band constant is used. The same resamples give the recovery probability of E13 under every fit, from which E15 takes its dead band.
+
+**E7, the costs**, from the released rules at the current cycle. An unnecessary replacement costs the part plus the repair charge plus the stopped downtime rate over the repair downtime. A missed fault costs its downtime rate over the remaining horizon. A test costs its read price for one cycle plus one cycle of the expected downtime rate of the current state.
+
+**E8 and E9, the two expected losses.** The loss of acting on the faulty set of combination a when h is true sums, over components, an unnecessary replacement where a is faulty and h healthy and a missed fault where a is healthy and h faulty. E8 is the posterior expected loss of acting on the top candidate's current faulty set. E9 is the expected loss of first reading one cycle of a sensor group and then acting on the top candidate of the updated posterior, integrated over the predictive mixture of the next reading by Monte Carlo with the declared sample count and seed, plus the test cost. The standard error of the Monte Carlo mean is reported per test.
+
+**E10, the decision.** The evidence is insufficient when some test lowers the expected loss below acting now. The separating test is the test that lowers it most, and the expected saving is the difference. The candidate tests are one cycle of each sensor group. This is the one step lookahead of Heckerman, Breese and Rommelse written for the rig's prices, durations and downtime rates and for more than one fault.
+
+**E11, the one component case.** With one uncertain component, one resolving test and a replacement that is unnecessary with probability one minus p, acting now is cheaper than testing when p is at least one minus the test cost over the cost of an unnecessary replacement. It shows what a fixed confidence cut stands for.
+
+**E12, the unseparated components.** A component is unseparated when the decision to replace it differs between the top two candidates and some test lowers the expected loss of that decision alone. Its separating channels are the fields of that test.
+
+**E13, the post repair posterior.** The posterior moves every candidate's current combination through the replacement. The probability that the action addresses a fault is the posterior mass on which the component is faulty now, and the recovery probability is the moved mass of the healthy combination. `monitor` is one cycle without a repair: it addresses nothing, costs no price, lasts one advance cycle and accrues the expected downtime of that cycle, since no observation is free.
+
+**E14, the conformal interval.** The predicted mean of a summary after the action is the posterior weighted mean of the model means of the reachable combinations. The interval is the mean plus or minus q times the within standard deviation of the summary, where q is the smallest held out calibration score such that at least (1 minus alpha)(n plus 1) units of calibration weight lie at or below it, n the number of pool blocks. The calibration set holds the held out cycles of the cross fit with one unit of weight per block shared by the block's cycles, so that the exchangeability behind the coverage guarantee is across blocks rather than across the correlated cycles of one block. When the target exceeds the calibration set, the largest score stands in and the result flags it. `alpha` is the one declared constant, printed in every result.
+
+**E15, risk and direction.** The risk before the action is one minus the posterior of the healthy combination now, the risk after is one minus the recovery probability, and the direction is `lower`, `higher` or `no change` with a dead band equal to the half width of the resampling interval of the recovery probability, or `undetermined` without resamples.
+
+**E16 and E17, the verification.** On the first reading at or after the closure of the component's work order, every predicted summary the reading holds gets a nonconformity score, the absolute residual over the within standard deviation, and a p value, one plus the calibration weight at or above the score over n plus 1. The outcome is inconsistent when the smallest p value is at or below alpha over the number of channels compared (Bonferroni, valid under any dependence), and the Holm step down is reported beside it. The recovery check compares the predicted recovery and its resampling interval with the posterior of the healthy combination computed from the post repair readings alone, under a uniform prior over the combinations the repair can reach.
+
+**E18, the grade.** The diagnosability grade of a start under a budget is the cost of the cheapest test sequence after which the decision rule of E10 commits to the correct faulty set, in expectation over resampled cycles of the true combination. Each rollout reads the group with the largest expected information gain per unit price, the mutual information by Monte Carlo under the joint model, charges the price plus one cycle of the true downtime, draws the reading among the recorded cycles of the true block, and stops when E10 says the evidence is sufficient and the top candidate's faulty set equals the truth. A commitment to a wrong set does not stop the search. A start with no committing rollout within the budget is inseparable under that budget. Because the grade and the declaration use one rule, an abstention is correct exactly on the starts the grade marks inseparable, which is how the verifier scores abstentions.
+
+---
+
+## Ranking models
+
+| `ranking_model` | What the posterior is |
+| --- | --- |
+| `joint_block` | the default: E2 with the latent block mean, chosen from the calibration report |
+| `joint` | the literal E2, an arm of ablation A12 |
+| `discriminant_urn` | the v1 ranking model, kept for ablation A12 in `src/servers/causal_diagnosis/discriminant_urn.py`: one linear discriminant per sensor group and component reads a level from the same 34 summaries, and repeated readings of one block combine by a Polya urn around the confusion row of a cross fit within the pool, with add one smoothing of the rows and the concentrations fitted on `ALPHA_GRID` of `src/envs/hydraulic_rig/classifiers.py`. It is fitted on the same pool, so the ablation compares the observation models and nothing else. Under this arm the posterior probabilities are the urn's, replayed in time order with each distinct cycle read once at its richest group and the closed orders applied at their closing cycle, while the lookahead and the predictions keep the joint model's Gaussian predictive around them, as the assumptions state |
+
+`DEFAULT_RANKING_MODEL` in `src/servers/causal_diagnosis/posterior.py` is the single constant read by the tools, the server, the grade and the fit, which writes it into `models.json`. The grade table is computed under `joint` or `joint_block` only.
+
+## Abstention rules
+
+| `abstention_rule` | `insufficient_evidence`, `separating_test` and `unseparated` |
+| --- | --- |
+| `decision` | the default: E10 and E12 |
+| `fixed_cut` | the v1 rule, kept for ablation A8: the evidence is insufficient when the top posterior is below `abstention_cut` (the parameter of the ablation, named in the result, with `DEFAULT_ABSTENTION_CUT` as its default), the separating test is the cheapest sensor group, and a component is unseparated when its most probable level is below the cut. The expected losses of E8 to E10 are still computed and reported, so an audit sees both rules on the same evidence, and the grade keeps E10, since the grade is the reference the abstention is scored against |
 
 ---
 
 ## Ranking root causes
 
-`rank_root_causes` replays the released events into a `Belief`, whose prior is uniform over the combinations of `COMBOS` that the public rule allows. The classifiers of the measured tier read each accepted measurement from its released values, one level per component, and repeated readings of one served block combine by the Polya urn of the greedy reference policy in `src/envs/hydraulic_rig/greedy.py`. Each reading multiplies the weight of a hypothesis by one factor per component:
-
-```
-factor = (alpha * row[true level][level read] + earlier[level read]) / (alpha + number of earlier readings)
-```
-
-`row` is the confusion row at that tier, `alpha` the urn concentration, and `earlier` counts the levels read before from the same block at the same tier. A cycle read again at the same tier adds nothing. A released replacement moves each hypothesis in which the component was faulty to the combination with that component healthy and restarts its counts, since the environment then serves the recordings of the new combination. A hypothesis in which the component was healthy keeps its block. The environment ends an episode at once when every component is healthy, so when the episode continues after a replacement, the hypotheses that the replacement brings to the healthy combination drop out. Hypotheses stay per start combination, so two start combinations that a replacement brings together keep their own blocks.
-
-The answer lists the `top_k` most probable combinations with their fault codes and the released fields whose channels indicate a faulty component, and the fault probability and level distribution of every component. `insufficient_evidence` is true while the top probability is below `CONFIDENCE`, which is 0.95, the default of the greedy reference policy. `unseparated` lists each component whose most probable level has a probability below `CONFIDENCE`, and `separating_channels` names the fields of the channels that indicate it.
+`rank_root_causes` replays the released readings and closed orders into the posterior of the configured ranking model, computes the costs E7 at the current cycle and the decision E10, and returns the `top_k` most probable start combinations with their current combinations, their fault codes from the knowledge base and the released values whose channel indicates a faulty component of the candidate, the fault probability and the level distribution of every component at the start and now, the attribution E4, the stability E6, the decision fields with the separating test (its group, one cycle, its price, its duration, its cost and the expected loss after it), the unseparated components with their channels, the Monte Carlo count, seed and standard errors, and the costs the decision used. The assumptions name the candidate rule, the pool, E1, E2, the block variant or the urn when they apply, the deduplication of repeated cycles, E3, E4, E6, the cost rule with the prices behind it, the abstention rule and the time convention.
 
 ---
 
 ## Estimating an intervention effect
 
-For `replace:<component>`, `estimate_intervention_effect` reports the posterior probability that the component is faulty as `addresses_fault` and moves the posterior through the replacement as the ranking does. It then reports the moved probability of the combination with every component healthy as `recovery` and the part price plus the downtime charge as `price`. For `monitor`, `addresses_fault` and `price` are 0 and the posterior stays as it is.
-
-`predicted` holds the means of all 17 channels, which a measurement at tier 3 returns. Each combination in the moved posterior contributes the additive model fitted without it when it belongs to the pool, or the fit on the whole pool otherwise:
-
-```
-channel mean = intercept + sum over components of effect[component][level], with no effect at a healthy level
-```
-
-The mean is weighted by the posterior, and the band runs from the 1st to the 99th percentile of the posterior-weighted mixture of prediction plus residual. `mixture` in `src/servers/causal_diagnosis/effect.py` interpolates each residual distribution between its 39 quantiles on `EFFECT_GRID`, every half percent in the outer 5 percent of each tail and every five percent between. It finds the band ends by bisection and drops the combinations whose weight does not exceed `NEGLIGIBLE`.
-
-Each call appends the prediction to `predictions.json` as `pred/{n}`, with the number of events released so far, for `verify_outcome` to read later. A note in the assumptions flags an action that the environment would refuse: a repair before the diagnosis, a repair with none left, or any action after the episode is over.
+`estimate_intervention_effect` takes `replace:<component>` or `monitor`. It moves the posterior through the action (E13), predicts every summary with its conformal interval (E14), reports the risk before and after with the direction (E15), the price and the duration of the action from the released rules (the part plus the repair charge, the lead time plus the repair downtime, and the stopped rate over the repair downtime for a repair), and appends the prediction to `predictions.json` as `pred/{n}` with the number of events and observations released so far, the time, the posterior after the action and the predicted intervals with their alpha. The assumptions flag an action the environment would refuse: a work order on a component whose order is open, a repair before a diagnosis or a declaration, or any action after the episode is over.
 
 ---
 
 ## Verifying an outcome
 
-`verify_outcome` compares a stored prediction with the first measurement released after the action, which is the first replacement of that component since the prediction, or the prediction itself for `monitor`.
+`verify_outcome` compares a stored prediction with the first reading released at or after the closing cycle of the component's work order that closed after the prediction, or with the first reading after the prediction for `monitor`.
 
 | `status` | When |
 | --- | --- |
-| `not yet observable: the action has not been taken` | No replacement of the component since the prediction |
-| `action refused: <reason>` | The environment refused that replacement |
-| `not yet observable: no measurement since the action` | No measurement followed the action |
-| `not comparable: <replacements> came between the prediction and the measurement` | Another component was replaced after the prediction and before that measurement, so the measurement can read another combination |
-| `verified` | A measurement followed the action |
+| `not yet observable: the work order is open and has not closed` | an order on the component is open |
+| `not yet observable: no work order on the component has closed since the prediction` | no order on the component closed after the prediction and none is open |
+| `action refused: <reason>` | the environment refused a work order on the component after the prediction and none closed |
+| `not yet observable: no reading since the action` | the repair closed, or `monitor` was predicted, and no reading followed |
+| `not comparable: <actions> closed between the prediction and the reading` | another component's order closed after the prediction and before the reading, so the reading can show another combination |
+| `verified` | a reading followed the action, and the channels, the verdict and the recovery check are filled |
 
-Each channel mean of that measurement, six, nine, or 17 at tier 1, 2, or 3, gets a residual, the observed value minus the predicted mean, and a flag for whether it lies inside the band. The environment ends an episode at once on recovery, so `recovered` is false when the episode continues after the replacement. It is null when the episode ends with the replacement, since a recovery, the last allowed repair, and the step cap look the same in the released answers. For `monitor`, recovery does not apply.
-
-A calibrated prediction misses each band with probability `MISS_RATE`, one minus `BAND_COVERAGE`, which is 0.02. Requiring all 17 means inside would call a calibrated prediction inconsistent in more than one case out of four, so the verdict tolerates as many misses as a calibrated prediction exceeds with probability at most `FALSE_ALARM`, which is 0.05, under a binomial model of independent summaries:
-
-```
-X                   ~ Binomial(n, MISS_RATE), n = number of residuals
-n_outside_tolerated = smallest k with P(X >= k + 1) <= FALSE_ALARM
-p_value_outside     = P(X >= n_outside)
-consistent          = n_outside <= n_outside_tolerated
-                      and (recovered is null or recovered == (recovery_predicted >= 0.5))
-```
-
-For six, nine, or 17 residuals, one miss is tolerated. `misses_tolerated`, `binomial_tail`, and `outcome_consistent` in `src/servers/causal_diagnosis/adapter.py` implement the rule.
+A reading that follows a work order of the technician counts like one that follows the agent's own order, since the released evidence lists both as closed orders. A second order on the same component after its closure is not flagged here. The verifier of [environment.md](environment.md) counts it as unnecessary when the component was healthy.
 
 ---
 
-## A worked episode
+## The calibration report
 
-`test_worked_s2_example_of_the_design_document` in `src/servers/causal_diagnosis/tests/test_server.py` plays this sequence on an episode of class S2, from the ranking in step 1 onward.
+`src/servers/causal_diagnosis/calibration.py` writes the calibration test of the component marginals as Markdown under `benchmarks/hydraulic_rig/results/`, which git ignores:
 
-1. `get_asset_context`, `query_fmea_paths`, and `get_symptom_report` describe the asset, its failure modes, the task, and the public rule, and a ranking gives every candidate the same probability.
-2. The action server's `measure` reads tier 1, `get_episode_evidence` lists the summaries with their bands, and `rank_root_causes` updates the posterior. While the evidence is insufficient, the agent measures again, for example at tier 3, or calls the action server's `submit_insufficient_evidence`.
-3. `estimate_intervention_effect` with `replace:accumulator` stores `pred/1`, and the agent submits the top candidate through the action server's `submit`, since a repair needs a diagnosis first.
-4. After the action server's `replace`, `verify_outcome` reports `pred/1` as not yet observable and the unit as not recovered. After a `measure` at tier 3, it returns the residuals and the verdict, and `rank_root_causes` keeps only combinations with a healthy accumulator.
-5. `estimate_intervention_effect` with `replace:valve` stores `pred/2`. The `replace` that follows uses the last repair and ends the episode, so `verify_outcome` reports recovery as not observable.
+```bash
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python -m servers.causal_diagnosis.calibration [--readings N] [--rollouts R] [--seed S] [--out DIR]
+```
 
-`benchmarks/hydraulic_rig/causal_tools_example.py` fits the same models itself with the standard library only and prints the steps of this episode. Its bands come from the full residual lists rather than from the stored quantiles.
+For every evaluation combination, the script draws rollouts of readings with replacement from its recorded block at the full sensor group, feeds each ranking model, and reports the Brier score and the calibration curve of the E5 fault probabilities by number of readings, the share of rollouts whose top candidate equals the truth by number of readings, and the coverage of the E14 interval of the true combination on the drawn cycles, under the placeholder rules. The report states that nothing in it enters code, tests or docs, and a revision of a model that it prompts is a declared decision. The default ranking model `joint_block` is such a decision.
 
 ---
 
 ## Running the server
 
-The `causal-diagnosis-mcp-server` script of `pyproject.toml` starts the server without an episode, which serves the two static tools only:
-
-```bash
-uv run causal-diagnosis-mcp-server
-```
-
-For the episode tools, a copy of `src/servers/causal_diagnosis/launcher.py` beside the `released.json` of an episode passes that file to `main`, with `src/` on the import path as in the project environment. The server speaks MCP over stdio and waits for a client:
+A copy of `src/servers/causal_diagnosis/launcher.py` beside the `released.json` of an episode binds a server process to that episode. The launcher accepts optional `key=value` arguments, `ranking_model=joint_block|joint|discriminant_urn`, `abstention_rule=decision|fixed_cut` and `abstention_cut=<probability>`, forwarded to `main`, so a driver selects the arms of ablations A12 and A8 per episode. The server speaks MCP over stdio and waits for a client:
 
 ```bash
 cp src/servers/causal_diagnosis/launcher.py /path/to/episode/causal_server.py
-uv run python /path/to/episode/causal_server.py
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python /path/to/episode/causal_server.py
 ```
 
-The AssetOpsBench runners register by default only the servers of `DEFAULT_SERVER_PATHS` in `src/agent/runner.py`, so this server reaches a runner through `server_paths`. `benchmarks/hydraulic_rig/run_episodes.py` calls `ensure_models()`, creates each episode with `start_episode`, and writes one launcher per server into its folder with `write_launchers` of `benchmarks/hydraulic_rig/common.py`. These launchers put the fork's `src/` on the import path themselves, since a server process receives almost no environment variables. `PlanExecuteRunner` gets the launcher paths, and its executor starts a server process for every tool call. The studies `benchmarks/hydraulic_rig/verify_predictions.py` and `benchmarks/hydraulic_rig/diagnosability.py` call `CausalTools` in process.
+The `causal-diagnosis-mcp-server` script of `pyproject.toml` starts the server without an episode, in which every tool answers an error that says so. The AssetOpsBench runners register by default only the servers of `DEFAULT_SERVER_PATHS` in `src/agent/runner.py`, so this server reaches a runner through `server_paths`. `benchmarks/hydraulic_rig/run_episodes.py` calls `ensure_models`, creates each episode and writes one launcher per server into its folder with `write_launchers` of `benchmarks/hydraulic_rig/common.py`. These launchers put the fork's `src` on the import path themselves, since a server process receives almost no environment variables, name the ranking model the server runs, and name the abstention rule when it differs from the default. The driver takes its default ranking model from `DEFAULT_RANKING_MODEL` of this package, so the two cannot drift apart.
 
 ---
 
 ## Tests
 
-Run the tests from the fork root with the data file set:
-
 ```bash
-export HYD_FACTS_PATH=/path/to/hyd_facts.jsonl
-uv run pytest src/servers/causal_diagnosis -q
+export HYD_FACTS_PATH=~/rig-data/hyd_facts.jsonl
+PATH=$PWD/.venv/bin:$PATH python -m pytest src/servers/causal_diagnosis -q
 ```
 
-`default_facts_path()` in `src/envs/hydraulic_rig/data.py` finds the data file. When it is present, the session fixture of `src/servers/causal_diagnosis/tests/conftest.py` calls `ensure_models()` once. When it is absent, `src/servers/causal_diagnosis/tests/test_server.py` is skipped as a whole, so a passing run without the file does not exercise the server. The stdio test also needs the mcp package. Most tool calls in the tests run inside `hidden_files_sealed`, which makes every open of `episode.json`, `log.json`, `score.json`, or the data file fail. No test states a value computed from the rig data.
+`src/servers/causal_diagnosis/tests/conftest.py` calls `ensure_models` once per session when the data file is present, and `src/servers/causal_diagnosis/tests/fixture_episode.py` writes a `released.json` of format 2 by hand over the recorded blocks, so the tools are tested without the action server.
+
+| Test file | Covers |
+| --- | --- |
+| `src/servers/causal_diagnosis/tests/test_effect_model.py` | the design matrix, the weighted fit against least squares over cycles, the Ledoit and Wolf shrinkage, a synthetic additive world recovered from the pool, the refusal of pairs a fold cannot identify, the fit on the data file (identified, deterministic, round trips), the split of interactions in halves |
+| `src/servers/causal_diagnosis/tests/test_posterior.py` | the uniform posterior without readings, a reading at the model mean, closed orders and segments, the merge of repeated cycles, the block variant against the literal model, the stability, the predictive sampling, the override by another ranking model, a posterior over given starts |
+| `src/servers/causal_diagnosis/tests/test_decision.py` | the costs against the rules, the loss matrix, the seeded lookahead, an informative reading, the one component threshold, the unseparated rule |
+| `src/servers/causal_diagnosis/tests/test_conformal.py` | the finite sample quantile, one unit of weight per block, the Bonferroni and Holm verdicts |
+| `src/servers/causal_diagnosis/tests/test_grade.py` | the information gain, rollouts within the budget, one table per rules key, the command line |
+| `src/servers/causal_diagnosis/tests/test_calibration.py` | the report is written with every section |
+| `src/servers/causal_diagnosis/tests/test_adapter.py` | a worked episode from the empty ranking to a verified prediction, a second closure before the reading, an external replacement as a closed order, every ranking model, the evidence tool, the errors, the models file, the default ranking model, the fixed cut rule |
+| `src/servers/causal_diagnosis/tests/test_server.py` | the four tools are read only and required, the advertised tools match the contract, the server answers over stdio with the default and with the ablation arguments |
+
+The tests that need the data file are skipped without it, and the stdio test needs the mcp package. No test states a value computed from the rig data.
+
+---
+
+## Known limits
+
+- Under the default pool, every combination with one or two faulty components is held out, so a pairwise interaction is identified on the pool only one pair at a time and in no cross fit fold. The selection therefore keeps the main effects alone and the selection log in `models.json` records every pair as not identified. This follows from the split, not from the data. A wider pool would put start combinations into the fit.
+- The conformal interval of E14 is calibrated for a known combination. The posterior weighted mean with one quantile does not carry the spread of a posterior over several combinations, which the assumptions state.
+- The decision of E10 compares a Monte Carlo estimate with the loss of acting, so when the saving is within the reported standard error the flag can turn with the seed. The result carries the standard error per test, and the sample count is one declared constant.
+- The discriminant and urn arm keeps the fixed constants of the v1 classifiers (`SHRINKAGE`, `ALPHA_GRID`, the fold count) and fits its discriminants on the whole pool while its rows come from a cross fit within the pool, as the v1 server did. It exists to be compared with the joint model, not to be tuned.
+- The grade table depends on the price table, the durations, the downtime rates, the horizon, the fault rule, the budget and the ranking model, so an ablation that changes any of them computes its own table on first use.
+- Every call replays the whole released history, and the Plan-Execute executor starts one process per call. The cost is one process start, one parse of `models.json` and one replay per tool call.

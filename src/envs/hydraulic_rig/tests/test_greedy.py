@@ -1,3 +1,5 @@
+"""The per-tier classifiers of the greedy policy (src/envs/hydraulic_rig/classifiers.py): the linear algebra, the stratified
+folds, the cross-fit, the observation model, the information gain, and the lookup keyed by served values."""
 import random
 from pathlib import Path
 
@@ -5,11 +7,9 @@ import pytest
 
 from envs.hydraulic_rig.classifiers import (COMBOS, FOLD_SEEDS, N_FOLDS, TIERS, TierClassifiers, cross_fitted_predictions, lda_fit,
                                     lda_predict, scatter, solve_spd, stratified_folds)
-from envs.hydraulic_rig.data import COMPONENTS, HEALTHY, LEVELS, build_blocks, default_facts_path, load_cycles, tier_features
-from envs.hydraulic_rig.env import TinyHydraulicEnv
-from envs.hydraulic_rig.greedy import GreedyPolicy, expected_information_gain
-from envs.hydraulic_rig.policies import run_episode
-from envs.hydraulic_rig.scoring import score
+from envs.hydraulic_rig.data import COMPONENTS, LEVELS, TIER_SENSORS, build_blocks, default_facts_path, load_cycles, tier_features
+from envs.hydraulic_rig.greedy import ServedClassifiers, expected_information_gain
+from envs.hydraulic_rig.env import served_values
 
 if not Path(default_facts_path()).exists():
     pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH", allow_module_level=True)
@@ -96,22 +96,11 @@ def test_expected_information_gain_is_bounded_by_the_belief_entropy():
     assert 0.0 <= expected_information_gain(belief, noisy) <= 2.0
 
 
-def test_prior_takes_the_fault_count_rule_from_the_observation():
-    healthy = tuple(HEALTHY[c] for c in COMPONENTS)
-    for min_faulty, max_faulty in ((1, 1), (2, 2), (1, 2)):
-        env = TinyHydraulicEnv(CYCLES, BLOCKS, min_faulty=min_faulty, max_faulty=max_faulty)
-        for use_rule, support in ((False, set(COMBOS) - {healthy}), (True, set(env.candidates))):
-            policy = GreedyPolicy(CLF, use_max_faulty=use_rule)
-            policy.act(env.reset(0))
-            assert {h for h, b in zip(COMBOS, policy.belief) if b > 0} == support
-
-
-def test_greedy_episodes_are_deterministic_legal_and_keep_budget_for_repairs():
-    env = TinyHydraulicEnv(CYCLES, BLOCKS)
-    policy = GreedyPolicy(CLF)
-    first = [score(run_episode(env, policy, seed)) for seed in range(20)]
-    assert first == [score(run_episode(env, policy, seed)) for seed in range(20)]
-    for s in first:
-        assert s["submitted"] and s["refusals"] == 0 and s["end_reason"] != "budget"
-        assert s["cost"] <= env.budget and s["repairs_match_diagnosis"]
-        assert s["diagnosis_per_component"]["cooler"]  # the held-out cooler predictions are correct at every tier
+def test_served_values_key_every_held_out_prediction_without_collisions():
+    served = ServedClassifiers(CLF, CYCLES)
+    for tier in TIERS:
+        assert len(served.lookup[tier]) == len(CLF.predicted[tier])
+        cycle = BY_INDEX[next(iter(CLF.predicted[tier]))]
+        assert served.predict(tier, served_values(cycle, TIER_SENSORS[tier])) == CLF.predict(tier, tier_features(cycle, tier))
+    with pytest.raises(KeyError):
+        served.predict(1, {"not": "served"})

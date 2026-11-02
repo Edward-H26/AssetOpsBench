@@ -1,9 +1,10 @@
-"""Measurements as the tool answers show them: names as AssetOpsBench's hyd_1 asset spells them (docs/hydraulic_rig/environment.md: the v0.1
-tool interface maps the names) and values to six significant digits.
+"""Field names of the served values: the channel names as AssetOpsBench's hyd_1 asset spells them, with the statistic
+appended, and values at six significant digits (docs/hydraulic_rig/environment.md, section Data).
 
 The facts file names a summary quantity first, as in Pressure_PS1_mean; hyd_1 names the channel first with its unit and
 sampling rate, as in PS1_Pressure_bar_100Hz, and calls the motor power P1 rather than EPS1. hyd_1 holds per-cycle means
-only, so the statistic is appended as a suffix: Pressure_PS1_std becomes PS1_Pressure_bar_100Hz_std.
+only, so the statistic is appended as a suffix: Pressure_PS1_std becomes PS1_Pressure_bar_100Hz_std. The environment
+serves every value under these names (envs.hydraulic_rig.env.served_values), so the tool answers and the log agree.
 """
 from envs.hydraulic_rig.data import TIER_SENSORS
 
@@ -36,10 +37,15 @@ def public_name(feature_name):
 
 
 def public_result(result):
-    """A measurement result as a tool answer carries it; the episode log keeps the full values."""
+    """Recorded summaries as a tool answer carries them: public names, six significant digits, sorted by name."""
     return {public_name(k): float(f"{v:.6g}") for k, v in sorted(result.items())}
 
 
+def public_fields(sensors):
+    """The hyd_1 names of the given channels."""
+    return [HYD1_FIELDS[s] for s in sensors]
+
+
 def tier_fields(tier):
-    """The hyd_1 names of the channels a measurement at this tier returns."""
-    return [HYD1_FIELDS[s] for s in TIER_SENSORS[tier]]
+    """The hyd_1 names of the channels of a measurement tier."""
+    return public_fields(TIER_SENSORS[tier])
