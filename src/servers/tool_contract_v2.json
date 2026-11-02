@@ -1,0 +1,126 @@
+{
+  "format": 2,
+  "servers": {
+    "hydraulic_rig": "the action server: the tools that read the rig and change the asset or the case record",
+    "causal_diagnosis": "the diagnostics server: analytic tools over the released evidence that change nothing"
+  },
+  "tools": {
+    "get_asset_profile": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "read_sensors": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"sensor_group": "string", "cycles": "integer"},
+      "duration": {"rule": "cycles times durations.read_per_cycle, since the rig has to run the cycles it records", "cycles_per_unit": 1},
+      "price": {"rule": "cycles times prices.read[sensor_group]"},
+      "scored": false,
+      "aliases": ["inspect"]
+    },
+    "advance_time": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"cycles": "integer"},
+      "duration": {"rule": "cycles times durations.advance_per_cycle", "cycles_per_unit": 1},
+      "price": {"rule": "free; downtime accrues while time passes"},
+      "scored": false,
+      "aliases": ["advance_time"]
+    },
+    "summarize_changes_since": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"cycle": "integer"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "get_failure_modes": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"component": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "submit_diagnosis": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"cooler": "integer", "valve": "integer", "pump": "integer", "accumulator": "integer", "evidence_ids": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": ["diagnose"]
+    },
+    "declare_insufficient_evidence": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"sensor_group": "string", "cycles": "integer", "evidence_ids": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": []
+    },
+    "create_work_order": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"component": "string", "prediction_id": "string", "evidence_ids": "string"},
+      "duration": {"rule": "the order closes at the creation time plus durations.lead_time[component] plus durations.repair_downtime[component]; the rig is stopped during the repair downtime", "cycles_per_unit": 0},
+      "price": {"rule": "prices.parts[component] plus prices.repair_charge, charged at creation; the stopped downtime rate accrues during the repair"},
+      "scored": true,
+      "aliases": ["replace"]
+    },
+    "finish": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"summary": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": []
+    },
+    "get_episode_evidence": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"sensor_group": "string"},
+      "duration": {"rule": "none in the first release", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "rank_root_causes": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"top_k": "integer"},
+      "duration": {"rule": "none in the first release", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "estimate_intervention_effect": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"action": "string"},
+      "duration": {"rule": "none in the first release", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "verify_outcome": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"prediction_id": "string"},
+      "duration": {"rule": "none in the first release", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    }
+  }
+}

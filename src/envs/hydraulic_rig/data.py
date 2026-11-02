@@ -1,6 +1,6 @@
 """Loading the recorded cycles and building the stable blocks per component-state combination.
 
-v0 reads the IndustryAssetEQA facts file (labels plus per-cycle features); the release path recomputes the
+The environment reads the IndustryAssetEQA facts file (labels plus per-cycle features); the release path recomputes the
 same records from the CC BY 4.0 UCI raw data (docs/hydraulic_rig/environment.md).
 """
 import json
@@ -62,18 +62,32 @@ def build_blocks(cycles):
 _SENSOR_RE = {s: re.compile(rf"_{s}(_|$)") for s in SENSORS}
 
 
-def tier_features(cycle, tier):
-    """The mean, std, min and max of every sensor in the tier, taken from the cycle's recorded features."""
-    allowed = TIER_SENSORS[tier]
+def group_features(cycle, sensors, suffixes=SUMMARY_SUFFIXES):
+    """The recorded summaries of the given sensors whose names end with one of the suffixes, from the cycle's features."""
     out = {}
     for name, value in cycle.features.items():
-        if not name.endswith(SUMMARY_SUFFIXES):
+        if not name.endswith(suffixes):
             continue
-        for s in allowed:
+        for s in sensors:
             if _SENSOR_RE[s].search(name):
                 out[name] = value
                 break
     return out
+
+
+def tier_features(cycle, tier):
+    """The mean, std, min and max of every sensor in the tier, taken from the cycle's recorded features."""
+    return group_features(cycle, TIER_SENSORS[tier])
+
+
+def percentile(values, q):
+    """The q-th quantile (0 <= q <= 1) of the values by linear interpolation between order statistics, the default rule of
+    numpy, so that a band computed here equals one computed with numpy on the same cycles."""
+    ordered = sorted(values)
+    position = q * (len(ordered) - 1)
+    low = int(position)
+    high = min(low + 1, len(ordered) - 1)
+    return ordered[low] + (ordered[high] - ordered[low]) * (position - low)
 
 
 def default_facts_path():

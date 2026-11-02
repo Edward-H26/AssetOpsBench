@@ -1,5 +1,5 @@
-"""The models of the causal-diagnosis server are generated from the rig data, not committed, so they are fitted once
-before the tests when the data file is present."""
+"""The models of the diagnostics server are generated from the rig data, not committed, so they are fitted once before
+the tests when the data file is present."""
 from pathlib import Path
 
 import pytest

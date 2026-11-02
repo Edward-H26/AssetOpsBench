@@ -9,9 +9,10 @@ MCP_SERVERS = "docs/mcp-servers.md"
 PATH = re.compile(r"\b(?:src|benchmarks|docs)/[A-Za-z0-9_.\-/]*[A-Za-z0-9_/]")
 DOC_NAME = re.compile(r"`((?:hydraulic-rig|causal-diagnosis)-[a-z\-]+\.md)`")  # documents named without docs/
 # generated and git-ignored: the run folders of the drivers, the data folder that fetch_uci.py and build_blocks.py fill
-# (all but CHECKSUMS.txt, which the first download writes for committing) and the models.json that fit.py writes
+# (all but CHECKSUMS.txt, which the first download writes for committing), the models.json that fit.py writes and the
+# grades.json that grade.py writes beside it
 GENERATED = ("benchmarks/hydraulic_rig/runs/", "benchmarks/hydraulic_rig/results/", "src/envs/hydraulic_rig/data/",
-             "src/servers/causal_diagnosis/models.json")
+             "src/servers/causal_diagnosis/models.json", "src/servers/causal_diagnosis/grades.json")
 
 
 def named_paths(text):

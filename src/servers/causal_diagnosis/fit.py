@@ -1,167 +1,92 @@
-"""Fit the fixed-pool models of the causal-diagnosis server once and write them to models.json beside this file, a file
-generated from the public rig data and never committed (ensure_models fits it on first use in the drivers and tests)
-(docs/hydraulic_rig/causal-diagnosis-server.md: models fitted on a fixed pool, never per episode).
+"""Fit the models of the diagnostics server once and write them to models.json beside this file, a file generated from
+the public rig data and never committed; ensure_models fits it on first use in the drivers and the tests
+(docs/hydraulic_rig/causal-diagnosis-server.md).
 
-The pool is the stable cycles of every combination outside the evaluation class S2, that is the combinations with one,
-three or four faulty components and the healthy one, so that no model has seen an S2 combination. Per measurement tier
-the file holds the per-component LDA classifiers fitted on the pool, the confusion rows counted on the pool's one- and
-three-fault combinations from a cross-fit within the pool, the urn concentrations and the held-out accuracies, and the
-healthy band of every served summary; per pool combination it holds the additive effect model of the 17 channel means
-fitted on the other pool combinations, and for combinations outside the pool the fit on the whole pool. Standard
-library only. The LDA parameters are kept at full precision, since the classifications must not change with the file;
-bands and quantiles are rounded to the six significant digits at which values are served.
+Format 2 holds the interventional effect model of E1 with its resampled fits, the healthy reference of E3, the conformal
+calibration scores of E14, and the v1 discriminant and urn model kept for ablation A12, all fitted on one pool: the stable
+cycles of every combination outside the evaluation split, which is every combination the default public fault rule can
+start an episode from. The same models serve every episode, so they carry no information about the hidden combination.
 
-usage: HYD_FACTS_PATH=<facts file> python -m servers.causal_diagnosis.fit     (src/ on sys.path, as under uv run)
+usage: HYD_FACTS_PATH=<facts file> python -m servers.causal_diagnosis.fit [--interactions select|none] [--resamples N] [--seed S]
 """
+import argparse
 import datetime
 import hashlib
+import json
 from pathlib import Path
 
-from envs.hydraulic_rig.classifiers import ALPHA_GRID, COMBOS, TIERS, cross_fitted_predictions, dm_log_likelihood, lda_fit, scatter, solve_spd, stratified_folds
-from envs.hydraulic_rig.data import COMPONENTS, HEALTHY, LEVELS, build_blocks, default_facts_path, load_cycles, tier_features
-from envs.hydraulic_rig.env import n_faulty
-from servers.hydraulic_rig.names import public_name
+from envs.hydraulic_rig.classifiers import COMBOS, stratified_folds
+from envs.hydraulic_rig.data import COMPONENTS, HEALTHY, LEVELS, build_blocks, default_facts_path, load_cycles
 from servers.json_files import write_json_atomically
 
-from .effect import BAND, EFFECT_GRID, combo_key, design, percentile
-from .knowledge import INDICATES
+from .discriminant_urn import fit_discriminant_urn
+from .effect_model import FOLD_SEED, FOLDS, PoolData, combo_key, fit_effect_model, n_faulty
+from .posterior import DEFAULT_RANKING_MODEL, RANKING_MODELS
 
 MODELS_PATH = Path(__file__).resolve().with_name("models.json")
-EVALUATION_FAULTS = 2  # the evaluation class S2 holds every two-fault combination; the pool is everything else
-ROW_FAULTS = (1, 3)  # confusion rows are counted on the pool's one- and three-fault combinations, the neighbours of S2
-FOLDS, FOLD_SEED = 8, 0
+MODELS_FORMAT = 2
+EVALUATION_FAULT_RULE = {"min_faulty": 1, "max_faulty": 2}  # the default public fault rule; its combinations are the evaluation split
+RESAMPLES, RESAMPLE_SEED = 200, 0
 
 
-def rounded(value):
-    return float(f"{value:.6g}")
+def split(fault_rule=EVALUATION_FAULT_RULE):
+    """The fitting pool and the evaluation combinations under the fault rule."""
+    low, high = fault_rule["min_faulty"], fault_rule["max_faulty"]
+    pool = [h for h in COMBOS if not low <= n_faulty(h) <= high]
+    evaluation = [h for h in COMBOS if low <= n_faulty(h) <= high]
+    return pool, evaluation
 
 
-def fit(facts_path):
+def fit(facts_path, interactions="select", resamples=RESAMPLES, seed=RESAMPLE_SEED):
     cycles = load_cycles(facts_path)
     blocks = build_blocks(cycles)
-    by_index = {c.index: c for c in cycles}
-    cycle_combo = {i: h for h in COMBOS for i in blocks[h]}
-    pool = [h for h in COMBOS if n_faulty(h) != EVALUATION_FAULTS]
-    pool_cycles = [i for h in pool for i in blocks[h]]
-    level_index = {h: tuple(LEVELS[c].index(v) for c, v in zip(COMPONENTS, h)) for h in COMBOS}
-    out = {
-        "format": 1,
+    pool, evaluation = split()
+    effect = fit_effect_model(cycles, blocks, pool, interactions=interactions, resamples=resamples, seed=seed)
+    data = PoolData(cycles, blocks, pool)
+    fold_all = stratified_folds(FOLDS, FOLD_SEED)
+    urn = fit_discriminant_urn(data, {h: fold_all[h] for h in data.pool})
+    low, high = EVALUATION_FAULT_RULE["min_faulty"], EVALUATION_FAULT_RULE["max_faulty"]
+    return {
+        "format": MODELS_FORMAT,
         "generated": datetime.date.today().isoformat(),
         "facts_sha256": hashlib.sha256(Path(facts_path).read_bytes()).hexdigest(),
         "records": len(cycles),
-        "pool": {"rule": f"stable cycles of every combination whose number of faulty components is not {EVALUATION_FAULTS}",
-                 "combinations": [combo_key(h) for h in pool], "cycles": len(pool_cycles), "row_faults": list(ROW_FAULTS),
-                 "folds": FOLDS, "fold_seed": FOLD_SEED},
+        "pool": {"rule": (f"stable cycles of every combination whose number of faulty components is outside {low} to {high}, "
+                          "the evaluation split of the default public fault rule"),
+                 "combinations": [combo_key(h) for h in pool], "evaluation": [combo_key(h) for h in evaluation],
+                 "cycles": int(sum(len(x) for x in data.arrays)), "folds": FOLDS, "fold_seed": FOLD_SEED},
         "components": list(COMPONENTS), "levels": {c: list(LEVELS[c]) for c in COMPONENTS}, "healthy": dict(HEALTHY),
-        "tiers": {}, "bands": {}, "band_quantiles": list(BAND),
+        "ranking_models": list(RANKING_MODELS), "default_ranking_model": DEFAULT_RANKING_MODEL,
+        "effect": effect.to_json(),
+        "discriminant_urn": urn,
     }
-    fold_all = stratified_folds(FOLDS, FOLD_SEED)
-    fold_pool = {h: fold_all[h] for h in pool}
-    for tier in TIERS:
-        feats = {i: tier_features(by_index[i], tier) for i in pool_cycles}
-        names = sorted(next(iter(feats.values())))
-        x = {i: [feats[i][n] for n in names] for i in pool_cycles}
-        total = scatter([x[i] for i in pool_cycles])
-        models = []
-        for j, comp in enumerate(COMPONENTS):
-            sums = [[0.0] * len(names) for _ in LEVELS[comp]]
-            counts = [0] * len(LEVELS[comp])
-            for i in pool_cycles:
-                k = level_index[cycle_combo[i]][j]
-                counts[k] += 1
-                sums[k] = [a + b for a, b in zip(sums[k], x[i])]
-            mean, scale, coef, bias = lda_fit(total, sums, counts)
-            models.append({"mean": mean, "scale": scale, "coef": coef, "bias": bias})
-        pred = cross_fitted_predictions(x, {i: cycle_combo[i] for i in pool_cycles}, fold_pool)
-        source = [i for i in pool_cycles if n_faulty(cycle_combo[i]) in ROW_FAULTS]
-        rows, alpha, accuracy = [], [], []
-        for j, comp in enumerate(COMPONENTS):
-            n = len(LEVELS[comp])
-            counts = [[0] * n for _ in range(n)]
-            per_block = {}
-            for i in source:
-                counts[level_index[cycle_combo[i]][j]][pred[i][j]] += 1
-                per_block.setdefault(cycle_combo[i], [0] * n)[pred[i][j]] += 1
-            smoothed = [[(c + 1.0) / (sum(r) + n) for c in r] for r in counts]
-            base = [smoothed[level_index[h][j]] for h in per_block]
-            rows.append(smoothed)
-            alpha.append(max(ALPHA_GRID, key=lambda a: dm_log_likelihood(a, base, list(per_block.values()))))
-            accuracy.append(sum(counts[k][k] for k in range(n)) / len(source))
-        out["tiers"][str(tier)] = {"names": names, "public_names": [public_name(n) for n in names], "lda": models,
-                                   "rows": rows, "alpha": alpha, "accuracy": accuracy, "row_cycles": len(source)}
-        for name in names:
-            pub = public_name(name)
-            if pub in out["bands"]:
-                continue
-            channel = name.split("_")[1]
-            comps = INDICATES.get(channel, ())
-            vals = sorted(feats[i][name] for i in pool_cycles if all(cycle_combo[i][COMPONENTS.index(c)] == HEALTHY[c] for c in comps))
-            out["bands"][pub] = {"low": rounded(percentile(vals, BAND[0])), "high": rounded(percentile(vals, BAND[1])), "cycles": len(vals),
-                                 "healthy": list(comps)}
-    # the additive effect model of the channel means: one fit per pool combination on the other pool combinations, and
-    # one on the whole pool for the combinations no fit has seen
-    feats3 = {i: tier_features(by_index[i], 3) for i in pool_cycles}
-    mean_names = sorted(n for n in next(iter(feats3.values())) if n.endswith("_mean"))
-    d_of = {h: design(h) for h in pool}
-    dim = len(d_of[pool[0]])
-    xtx = [[0.0] * dim for _ in range(dim)]
-    xty = {n: [0.0] * dim for n in mean_names}
-    ysum = {h: {n: sum(feats3[i][n] for i in blocks[h]) for n in mean_names} for h in pool}
-    for h in pool:
-        d, n_h = d_of[h], len(blocks[h])
-        for a in range(dim):
-            for b in range(dim):
-                xtx[a][b] += n_h * d[a] * d[b]
-            for n in mean_names:
-                xty[n][a] += d[a] * ysum[h][n]
-
-    def betas(exclude):
-        """Coefficients per channel of the fit on the pool without `exclude` (None for the whole pool)."""
-        if exclude is None:
-            a, rhs = xtx, [xty[n] for n in mean_names]
-        else:
-            d_s, n_s = d_of[exclude], len(blocks[exclude])
-            a = [[xtx[r][c] - n_s * d_s[r] * d_s[c] for c in range(dim)] for r in range(dim)]
-            rhs = [[xty[n][r] - d_s[r] * ysum[exclude][n] for r in range(dim)] for n in mean_names]
-        return dict(zip(mean_names, solve_spd(a, rhs)))
-
-    def residual_quantiles(beta, exclude):
-        quantiles = {}
-        for n in mean_names:
-            fitted = {h: sum(b * v for b, v in zip(beta[n], d_of[h])) for h in pool if h != exclude}
-            resid = sorted(feats3[i][n] - fitted[h] for h in fitted for i in blocks[h])
-            quantiles[n] = [rounded(percentile(resid, q)) for q in EFFECT_GRID]
-        return quantiles
-
-    out["effect_grid"] = list(EFFECT_GRID)
-    out["effect"] = {}
-    for h_star in pool:
-        beta = betas(h_star)
-        quantiles = residual_quantiles(beta, h_star)
-        out["effect"][combo_key(h_star)] = {public_name(n): [rounded(sum(b * v for b, v in zip(beta[n], d_of[h_star])))] + quantiles[n]
-                                            for n in mean_names}
-    beta = betas(None)
-    quantiles = residual_quantiles(beta, None)
-    out["effect_pool"] = {public_name(n): {"beta": beta[n], "q": quantiles[n]} for n in mean_names}
-    return out
 
 
-def write_models(path=MODELS_PATH):
-    out = fit(default_facts_path())
+def write_models(path=MODELS_PATH, **options):
+    out = fit(default_facts_path(), **options)
     write_json_atomically(path, out)
     return out
 
 
 def ensure_models(path=MODELS_PATH):
-    if not path.exists():
+    """Fit the models when the file is missing or in an older format."""
+    if not path.exists() or json.loads(path.read_text(encoding="utf-8")).get("format") != MODELS_FORMAT:
         write_models(path)
     return path
 
 
-def main():
-    out = write_models()
-    print(f"wrote {MODELS_PATH.name}: {out['records']} records, pool {len(out['pool']['combinations'])} combinations and {out['pool']['cycles']} cycles, "
-          f"{len(out['bands'])} bands, {len(out['effect'])} effect models, {MODELS_PATH.stat().st_size} bytes")
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="fit models.json of the diagnostics server from the rig data")
+    parser.add_argument("--interactions", choices=("select", "none"), default="select")
+    parser.add_argument("--resamples", type=int, default=RESAMPLES)
+    parser.add_argument("--seed", type=int, default=RESAMPLE_SEED)
+    parser.add_argument("--out", type=Path, default=MODELS_PATH)
+    args = parser.parse_args(argv)
+    out = write_models(args.out, interactions=args.interactions, resamples=args.resamples, seed=args.seed)
+    effect = out["effect"]
+    print(f"wrote {args.out}: format {out['format']}, pool of {len(out['pool']['combinations'])} combinations, "
+          f"{len(effect['interactions'])} interaction pair(s) selected, {len(effect['resampled'])} resampled fits, "
+          f"{args.out.stat().st_size} bytes")
 
 
 if __name__ == "__main__":

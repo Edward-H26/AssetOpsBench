@@ -1,0 +1,22 @@
+{
+  "name": "sme",
+  "source": "template: the values the subject matter experts give in the session the mentor offered; every null is filled after that session, and run_episodes.py refuses the table while a null remains",
+  "prices": {
+    "read": {"tier1": null, "tier2": null, "tier3": null},
+    "parts": {"cooler": null, "valve": null, "pump": null, "accumulator": null},
+    "repair_charge": null
+  },
+  "durations": {
+    "read_per_cycle": null,
+    "advance_per_cycle": null,
+    "lead_time": {"cooler": null, "valve": null, "pump": null, "accumulator": null},
+    "repair_downtime": {"cooler": null, "valve": null, "pump": null, "accumulator": null}
+  },
+  "downtime_rate": {
+    "cooler": {"100": null, "20": null, "3": null},
+    "valve": {"100": null, "90": null, "80": null, "73": null},
+    "pump": {"0": null, "1": null, "2": null},
+    "accumulator": {"130": null, "115": null, "100": null, "90": null},
+    "stopped": null
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "static",
+  "description": "Static episodes: the hidden combination of the start is the only condition of the episode. No degradation schedule, no external replacement. Every other parameter is the default of EpisodeConfig (src/envs/hydraulic_rig/config.py), recorded in full by run.json.",
+  "schedule": {"mode": "none", "components": 1, "first_drop": [5, 40], "interval": 10},
+  "external_events": {"mode": "none", "probability": 0.3, "window": [5, 50]},
+  "clock_mode": "declared",
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

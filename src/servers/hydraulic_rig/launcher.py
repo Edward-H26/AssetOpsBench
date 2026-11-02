@@ -1,4 +1,4 @@
-"""Per-episode entry point of the tiny world MCP server.
+"""Per-episode entry point of the hydraulic rig action server.
 
 A copy of this file beside an episode's state file binds one server process to that episode, as the server tests use it;
 the benchmark drivers write an equivalent launcher that also puts the fork's src on the import path

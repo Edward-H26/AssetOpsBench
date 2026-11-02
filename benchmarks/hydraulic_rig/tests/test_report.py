@@ -1,123 +1,110 @@
-"""The audit report of an episode built in process, the one-line tool summaries, the heuristic reading of a closing answer
-and the run summary."""
-import csv
+"""The audit report of an episode built from synthetic public files, the one line tool summaries, and the run summary;
+none of them reads a hidden file, and the report never shows a hidden value."""
 import json
-from pathlib import Path
 
-import pytest
+from common import COLUMNS, write_rows
+from report import episode_report, run_summary, summarize_response
 
-from common import ROOT, answer_claims_recovery, scenario_env_kwargs, scenario_task_text, start_episode
-from envs.hydraulic_rig.data import default_facts_path
-from envs.hydraulic_rig.scoring import score
-from report import episode_report, run_summary, summarise_response
-from servers.causal_diagnosis.adapter import CausalTools, load_models
-from servers.hydraulic_rig import episode
-
-if not Path(default_facts_path()).exists():
-    pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH", allow_module_level=True)
-
-SEED = 268  # the S1 start state (100, 100, 1, 130): the pump at level 1
+HIDDEN_COMBINATION = [3, 100, 2, 90]
 
 
-def _call(path, tool, arguments, action):
-    return json.loads(episode.call(path, tool, arguments, action))
+def _envelope(result, **status):
+    base = {"time": 4, "day": None, "budget_left": 290, "steps_left": 55, "open_work_orders": [], "episode_over": False}
+    base.update(status)
+    return json.dumps({**base, "result": result})
 
 
-def _episode_folder(tmp_path, answer):
-    """An S1 episode played in process with both servers' logic: three readings, a ranking, a prediction, the diagnosis,
-    the pump replaced (which recovers the rig) and the verification, plus the files a Plan-Execute run would add."""
-    ep_dir = tmp_path / "seed000268"
-    path = start_episode(ep_dir, SEED, scenario_env_kwargs("S1"), default_facts_path(), task_text=scenario_task_text("S1"))
-    tools = CausalTools(load_models(), episode.released_path(path))
-    for tier in (1, 2, 3):
-        _call(path, "measure", {"tier": tier}, {"type": "measure", "tier": tier})
-    ranked = tools.rank_root_causes(2)
-    effect = tools.estimate_intervention_effect("replace:pump")
-    diagnosis = {"cooler": 100, "valve": 100, "pump": 1, "accumulator": 130}
-    _call(path, "submit", diagnosis, {"type": "submit", "diagnosis": diagnosis})
-    _call(path, "replace", {"component": "pump"}, {"type": "replace", "component": "pump"})
-    verification = tools.verify_outcome(effect.prediction_id)
-    env = episode.replay(episode.load_state(path))
-    (ep_dir / "log.json").write_text(json.dumps(env.log, default=str), encoding="utf-8")
-    (ep_dir / "score.json").write_text(json.dumps(score(env.log), default=str), encoding="utf-8")
-    (ep_dir / "trajectory.json").write_text(json.dumps([
-        {"step": 1, "task": "rank", "server": "causal_diagnosis", "tool": "rank_root_causes", "tool_args": {"top_k": 2}, "response": ranked.model_dump_json(), "error": None},
-        {"step": 2, "task": "replace", "server": "hydraulic_rig", "tool": "replace", "tool_args": {"component": "pump"},
-         "response": json.dumps({"event": env.observation()["history"][-1], "cost": 50, "budget_left": 86, "repairs_left": 1, "steps_left": 195, "episode_over": True}), "error": None},
-        {"step": 3, "task": "verify", "server": "causal_diagnosis", "tool": "verify_outcome", "tool_args": {"prediction_id": "pred/1"}, "response": verification.model_dump_json(), "error": None},
-        {"step": 4, "task": "broken", "server": "hydraulic_rig", "tool": "finish", "tool_args": {}, "response": "", "error": "Unknown tool"},
-    ]), encoding="utf-8")
-    (ep_dir / "plan.txt").write_text("#Task1: rank\n#Server1: causal_diagnosis\n#Tool1: rank_root_causes\n", encoding="utf-8")
-    (ep_dir / "answer.txt").write_text(answer, encoding="utf-8")
-    (ep_dir / "llm_calls.json").write_text(json.dumps([{"prompt": "p", "reply": "r", "input_tokens": 10, "output_tokens": 2, "seconds": 0.5}]), encoding="utf-8")
-    return ep_dir
+def _episode_folder(tmp_path):
+    ep = tmp_path / "seed000007"
+    ep.mkdir()
+    (ep / "episode.json").write_text(json.dumps({"format": 2, "seed": 7, "actions": [], "think_cycles": [], "tool_calls": [
+        {"tool": "read_sensors", "arguments": {"sensor_group": "tier1", "cycles": 2},
+         "response": _envelope({"sensor_group": "tier1", "served": [{"n": 1}, {"n": 2}], "repeated": False})},
+        {"tool": "create_work_order", "arguments": {"component": "pump", "prediction_id": "", "evidence_ids": ""},
+         "response": json.dumps({"refused": "a diagnosis or a declaration precedes a work order", "time": 2, "budget_left": 298, "steps_left": 58,
+                                 "open_work_orders": [], "episode_over": False})}]}), encoding="utf-8")
+    (ep / "released.json").write_text(json.dumps({
+        "format": 2, "asset_id": "hyd_1", "task_text": "Asset hyd_1 was flagged.", "guidance_level": 2,
+        "status": {"time": 9, "budget_left": 240, "steps_left": 50, "open_work_orders": [], "episode_over": True},
+        "events": [{"event": "read", "t_start": 0, "t_end": 2, "class": "read"},
+                   {"event": "refused", "action": {"type": "create_work_order", "component": "pump"}, "reason": "a diagnosis or a declaration precedes a work order", "class": "write"},
+                   {"event": "work_order_created", "id": "wo-1", "component": "pump", "class": "write"},
+                   {"event": "work_order_closed", "id": "wo-1", "component": "pump", "source": "agent", "class": "system"},
+                   {"event": "finish", "summary": "The pump was replaced and the rig recovered.", "class": "write"},
+                   {"event": "end", "reason": "finish", "time": 9, "cost": 60, "downtime_total": 4, "class": "system"}],
+        "observations": []}), encoding="utf-8")
+    (ep / "predictions.json").write_text(json.dumps([{"id": "pred/1", "action": "replace:pump", "recovery": 0.5}]), encoding="utf-8")
+    (ep / "llm_calls.json").write_text(json.dumps([{"prompt": "p", "reply": "r", "input_tokens": 10, "output_tokens": 2, "seconds": 0.5}]), encoding="utf-8")
+    (ep / "plan.txt").write_text("#Task1: read\n#Server1: hydraulic_rig\n#Tool1: read_sensors\n", encoding="utf-8")
+    (ep / "trajectory.json").write_text(json.dumps([
+        {"step": 1, "task": "read", "server": "hydraulic_rig", "tool": "read_sensors", "tool_args": {"sensor_group": "tier1", "cycles": 2},
+         "response": _envelope({"sensor_group": "tier1", "served": [{"n": 1}, {"n": 2}], "repeated": False}), "error": None},
+        {"step": 2, "task": "rank", "server": "causal_diagnosis", "tool": "rank_root_causes", "tool_args": {"top_k": 2},
+         "response": json.dumps({"message": "two candidates ranked", "candidates": []}), "error": None},
+        {"step": 3, "task": "broken", "server": "hydraulic_rig", "tool": "finish", "tool_args": {}, "response": "", "error": "Unknown tool"}]), encoding="utf-8")
+    hidden = ep / "hidden"
+    hidden.mkdir()
+    (hidden / "oracle.json").write_text(json.dumps({"diagnosis": dict(zip(("cooler", "valve", "pump", "accumulator"), HIDDEN_COMBINATION))}), encoding="utf-8")
+    (hidden / "verdict.json").write_text(json.dumps({"pass": True, "failure_class": "none"}), encoding="utf-8")
+    return ep
 
 
-def test_episode_report_shows_truth_tool_calls_predictions_outcome_and_answer(tmp_path):
-    ep_dir = _episode_folder(tmp_path, "The pump was replaced and the rig is restored.")
-    report = episode_report(ep_dir, {"scenario": "S1", "agent": "test", "servers": ["hydraulic_rig", "causal_diagnosis"]})
-    assert "Hidden start combination, revealed by the scorer after the episode: (cooler 100, valve 100, pump 1, accumulator 130)." in report
-    assert "Task text: Hydraulic unit hyd_1 was flagged" in report
-    assert "| 1 | causal_diagnosis.rank_root_causes | `{\"top_k\":2}` | 10 candidate combination(s); top (cooler 100, valve 100, pump 1, accumulator 130)" in report
-    assert "| 2 | hydraulic_rig.replace | `{\"component\":\"pump\"}` | replaced pump for 50; budget left 86, repairs left 1, over True |" in report
-    assert "| 3 | causal_diagnosis.verify_outcome" in report and "| 4 | hydraulic_rig.finish | `{}` | error: Unknown tool |" in report
-    assert "| pred/1 | replace:pump | 3 | 1.000 | 1.000 |" in report
-    assert "| pump | 1 | 1 | yes |" in report and "Whole combination right: yes." in report
-    assert "| 1 | pump | yes | (cooler 100, valve 100, pump 0, accumulator 130) | 50 |" in report
-    assert "Recovered: yes; end reason 'recovered'; cost 64 (before the submission 14); steps 5" in report
-    assert "> The pump was replaced and the rig is restored." in report
-    assert "claims a recovery; the log says recovered: agreement." in report
+def test_episode_report_shows_the_public_record_and_no_hidden_value(tmp_path):
+    ep = _episode_folder(tmp_path)
+    meta = {"config_name": "static", "agent": "plan_execute", "model": "m", "servers": ["hydraulic_rig", "causal_diagnosis"], "clock_mode": "declared",
+            "pilot": {"assumptions": ["A1 (mapping): one cycle per day", "A2 (dates): four of ten"], "date0": "2022-07-01",
+                      "anchors": {"seed000007": {"date": "2023-01-28", "cycle_index": 211, "stable": False, "anchored_cycle_index": 210, "block_offset": 3}}}}
+    report = episode_report(ep, meta)
+    assert "Config static, agent plan_execute (m), servers hydraulic_rig, causal_diagnosis, seed 7, clock mode declared, guidance level 2." in report
+    assert "Task text: Asset hyd_1 was flagged." in report
+    assert "- A1 (mapping): one cycle per day" in report and "anchored at 2023-01-28 (cycle 211 from 2022-07-01, an unstable cycle, so the nearest stable cycle 210" in report
+    assert "| 1 | hydraulic_rig.read_sensors | `{\"sensor_group\":\"tier1\",\"cycles\":2}` | served 2 cycle(s) of tier1; time 4, budget left 290, steps left 55, open work orders 0, over False |" in report
+    assert "| 2 | causal_diagnosis.rank_root_causes | `{\"top_k\":2}` | two candidates ranked |" in report
+    assert "| 3 | hydraulic_rig.finish | `{}` | error: Unknown tool |" in report
+    assert "| pred/1 | replace:pump | recovery |" in report
+    assert "1 work order(s) created, 1 closed; 1 refused call(s)." in report and "End reason 'finish' at cycle 9, cost 60, downtime 4." in report
+    assert "> The pump was replaced and the rig recovered." in report
     assert "1 calls, 10 input tokens, 2 output tokens, 0.5 s in the model." in report
-    assert (ROOT / "src").exists()
+    assert "are under hidden/ and are not shown here" in report
+    assert json.dumps(HIDDEN_COMBINATION) not in report and "pass" not in report.lower().replace("passes", "") and "verdict" not in report.replace("the verdict and the scores", "")
 
 
-def test_episode_report_flags_an_answer_that_contradicts_the_log(tmp_path):
-    ep_dir = _episode_folder(tmp_path, "The pump could not be repaired and the rig is not restored.")
-    report = episode_report(ep_dir, {})
-    assert "claims no recovery; the log says recovered: DISAGREEMENT, read the answer." in report
+def test_episode_report_without_a_trajectory_reads_the_servers_own_record(tmp_path):
+    ep = _episode_folder(tmp_path)
+    (ep / "trajectory.json").unlink()
+    (ep / "plan.txt").unlink()
+    report = episode_report(ep, {"config_name": "static", "agent": "oracle", "servers": ["hydraulic_rig"]})
+    assert "## Plan" not in report
+    assert "| 1 | hydraulic_rig.read_sensors |" in report
+    assert "| 2 | hydraulic_rig.create_work_order | `{\"component\":\"pump\",\"prediction_id\":\"\",\"evidence_ids\":\"\"}` | refused: a diagnosis or a declaration precedes a work order; time 2" in report
 
 
-@pytest.mark.parametrize("answer, claims", [
-    ("The rig has been restored to healthy operation.", True),
-    ("After replacing the valve the unit is now healthy.", True),
-    ("The rig was not restored; the valve remains faulty.", False),
-    ("Replacements were made; the valve remains faulty.", False),
-    ("scripted run complete", False),
-    ("", False),
-])
-def test_answer_heuristic(answer, claims):
-    assert answer_claims_recovery(answer) is claims
+def test_summarize_response_reads_envelopes_messages_and_errors():
+    assert summarize_response("hydraulic_rig", "advance_time", _envelope({"time": 9})) == "advanced to cycle 9; time 4, budget left 290, steps left 55, open work orders 0, over False"
+    assert summarize_response("hydraulic_rig", "summarize_changes_since", _envelope({"since": 0, "alarms": [{"channel": "x", "first_t": 3}], "work_orders_closed": []})).startswith("1 alarm(s) and 0 work order(s) closed since cycle 0;")
+    assert summarize_response("hydraulic_rig", "create_work_order", _envelope({"work_order": {"id": "wo-1", "component": "pump", "expected_close_t": 9}})).startswith("work order wo-1 on pump, expected to close at cycle 9;")
+    assert summarize_response("hydraulic_rig", "submit_diagnosis", _envelope({"diagnosis": {"pump": 1}})).startswith("diagnosis {'pump': 1};")
+    assert summarize_response("hydraulic_rig", "declare_insufficient_evidence", _envelope({"separating_test": {"sensor_group": "tier3", "cycles": 1}})).startswith("declared insufficient evidence, separating test")
+    assert summarize_response("hydraulic_rig", "get_asset_profile", _envelope({"components": ["a", "b"]})).startswith("profile of 2 components;")
+    assert summarize_response("hydraulic_rig", "finish", _envelope({"ended": True}, episode_over=True)).endswith("over True")
+    assert summarize_response("hydraulic_rig", "get_failure_modes", _envelope([{"code": "x"}])).startswith("[{'code': 'x'}];")
+    assert summarize_response("causal_diagnosis", "verify_outcome", json.dumps({"error": "unknown prediction_id"})) == "error: unknown prediction_id"
+    assert summarize_response("causal_diagnosis", "verify_outcome", "", "boom") == "error: boom"
+    assert summarize_response("hydraulic_rig", "read_sensors", "not json") == "not json"
 
 
-def test_summarise_response_reads_rig_events_causal_messages_and_errors():
-    measured = json.dumps({"event": {"event": "measure", "tier": 1, "cost": 1, "result": {"a": 1.0, "b": 2.0}, "repeated": False},
-                           "cost": 1, "budget_left": 149, "repairs_left": 2, "steps_left": 199, "episode_over": False})
-    assert summarise_response("hydraulic_rig", "measure", measured) == "measured tier 1 for 1 (2 values); budget left 149, repairs left 2, over False"
-    refused = json.dumps({"event": {"event": "refused", "action": {"type": "replace"}, "reason": "diagnosis must be submitted before the first repair"},
-                          "cost": 0, "budget_left": 149, "repairs_left": 2, "steps_left": 198, "episode_over": False})
-    assert summarise_response("hydraulic_rig", "replace", refused).startswith("refused: diagnosis must be submitted")
-    assert summarise_response("hydraulic_rig", "finish", json.dumps({"note": "over", "episode_over": True})) == "the episode was over; the call changed nothing"
-    assert summarise_response("causal_diagnosis", "rank_root_causes", json.dumps({"message": "10 candidates", "candidates": []})) == "10 candidates"
-    assert summarise_response("causal_diagnosis", "verify_outcome", json.dumps({"error": "unknown prediction_id"})) == "error: unknown prediction_id"
-    assert summarise_response("causal_diagnosis", "verify_outcome", "", "boom") == "error: boom"
-    assert summarise_response("hydraulic_rig", "measure", "not json") == "not json"
-
-
-def test_run_summary_aggregates_per_agent_and_links_reports(tmp_path):
-    (tmp_path / "run.json").write_text(json.dumps({"scenario": "S1", "agent": "scripted", "servers": ["hydraulic_rig"], "started": "t0", "ended": "t1"}), encoding="utf-8")
-    rows = [
-        {"seed": 1, "scenario": "S1", "record": "[3, 100, 0, 130]", "agent": "scripted", "error": "", "submitted": True, "diagnosis_all_correct": True,
-         "recovered": True, "cost": 64, "unnecessary_replacements": 0, "insufficient_evidence": False, "steps": 5, "end_reason": "recovered",
-         "answer_claims_recovery": True, "causal_calls": 5, "llm_calls": 14, "input_tokens": 0},
-        {"seed": 2, "scenario": "S1", "record": "[20, 100, 0, 130]", "agent": "scripted", "error": "", "submitted": True, "diagnosis_all_correct": False,
-         "recovered": False, "cost": 65, "unnecessary_replacements": 1, "insufficient_evidence": False, "steps": 7, "end_reason": "finish",
-         "answer_claims_recovery": True, "causal_calls": 5, "llm_calls": 14, "input_tokens": 0},
-    ]
-    with open(tmp_path / "scores.csv", "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
+def test_run_summary_counts_episodes_and_files_and_states_no_score(tmp_path):
+    ep = _episode_folder(tmp_path)
+    (tmp_path / "run.json").write_text(json.dumps({"config_name": "static", "agent": "plan_execute", "model": "m", "servers": ["hydraulic_rig"], "clock_mode": "declared",
+                                                   "guidance_level": 2, "prices": "placeholder", "verifier_scope": "writes", "judge": "none", "episodes_planned": 1,
+                                                   "started": "t0", "ended": "t1", "pilot": {"assumptions": ["A1 (mapping): one cycle per day"]}}), encoding="utf-8")
+    row = {c: "" for c in COLUMNS}
+    row.update({"seed": 7, "scenario_id": "", "pass": True, "cost": 60, "error": ""})
+    write_rows(tmp_path / "scores.csv", [row], COLUMNS)
     summary = run_summary(tmp_path)
-    assert "| scripted | 2 | 1.00 | 0.50 | 0.50 | 64.5 | 1 | 0.00 | 6.0 | 0 |" in summary
-    assert "2 of 2 answers claim a recovery; 1 of those episodes did not recover; 0 recovered episodes have an answer that claims none." in summary
-    assert "[seed000002](seed000002/report.md)" in summary
+    assert "Episodes planned 1, episode folders 1, rows in scores.csv 1, rows with an error 0." in summary
+    assert "| episode.json | 1 |" in summary and "| hidden/oracle.json | 1 |" in summary and "| hidden/log.json | 0 |" in summary
+    assert "- A1 (mapping): one cycle per day" in summary
+    assert "[seed000007](seed000007/report.md)" in summary
+    assert "60" not in summary.replace("t0", "").replace("t1", "") and "True" not in summary
+    assert ep.exists()

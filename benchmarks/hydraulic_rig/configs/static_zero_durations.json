@@ -1,0 +1,16 @@
+{
+  "name": "static_zero_durations",
+  "description": "Ablation A6, the arm with every declared duration set to zero: reads and advances take no time, work orders close in the cycle they are created, so the clock advances only through advance_time. Every other parameter as in static.json.",
+  "schedule": {"mode": "none", "components": 1, "first_drop": [5, 40], "interval": 10},
+  "external_events": {"mode": "none", "probability": 0.3, "window": [5, 50]},
+  "durations": {"read_per_cycle": 0, "advance_per_cycle": 1,
+                "lead_time": {"cooler": 0, "valve": 0, "pump": 0, "accumulator": 0},
+                "repair_downtime": {"cooler": 0, "valve": 0, "pump": 0, "accumulator": 0}},
+  "clock_mode": "declared",
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

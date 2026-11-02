@@ -1,0 +1,9 @@
+{
+  "name": "placeholder",
+  "source": "the placeholder prices of design v2 (BUILD_PLAN.md section 2), stated as design parameters until the session with the subject matter experts",
+  "prices": {
+    "read": {"tier1": 1, "tier2": 3, "tier3": 10},
+    "parts": {"cooler": 20, "valve": 20, "pump": 30, "accumulator": 20},
+    "repair_charge": 20
+  }
+}

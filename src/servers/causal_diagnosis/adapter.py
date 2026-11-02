@@ -1,91 +1,95 @@
-"""The seven tools of the causal-diagnosis server as plain methods over the released answers of one episode and the fitted
+"""The four tools of the diagnostics server as plain methods over the released evidence of one episode and the fitted
 models of models.json (docs/hydraulic_rig/causal-diagnosis-server.md), testable without the mcp package.
 
-No belief is stored between calls: every call replays the released events, which are few, so that a server process
-started per tool call, as the Plan-Execute runner does, answers exactly as a long-lived one would. The only file the
-tools write is predictions.json beside the released answers, which verify_outcome reads back.
+No belief is stored between calls: every call replays the released observations and closed work orders into a fresh
+posterior, so that a server process started per tool call, as the Plan-Execute runner does, answers exactly as a long
+lived one would. The only file the tools write is predictions.json beside the released evidence, which verify_outcome
+reads back. Every threshold in a result traces to a price, a duration, a downtime rate or the declared error level, and
+the assumptions of the result say how.
 """
 import json
 from collections import namedtuple
-from math import comb
 from functools import lru_cache
 from pathlib import Path
 
-from envs.hydraulic_rig.classifiers import COMBOS, TIERS, lda_predict, signature
-from envs.hydraulic_rig.data import COMPONENTS, HEALTHY, LEVELS, SENSORS
-from envs.hydraulic_rig.env import HEALTHY_COMBO, n_faulty
-from servers.hydraulic_rig.names import ASSET_ID, HYD1_FIELDS, tier_fields
+import numpy as np
+
+from envs.hydraulic_rig import knowledge as kb
+from envs.hydraulic_rig.data import COMPONENTS, HEALTHY, LEVELS
 from servers.json_files import write_json_atomically
 
-from . import knowledge as kb
-from .effect import BAND, combo_key, design, mixture
-from .models import (AssetContext, Candidate, ChannelContext, ComponentContext, EpisodeEvidence, ErrorResult, EvidenceItem, Fault,
-                     FmeaPath, FmeaPaths, IndicatingChannel, InterventionEffect, OutcomeVerification, PredictedSummary, Residual,
-                     RootCauses, SymptomReport, TimeWindow, Uncertainty)
+from .conformal import DEFAULT_ALPHA, Calibration, interval, verdict
+from .decision import MONTE_CARLO_SAMPLES, MONTE_CARLO_SEED, costs, decide, expected_downtime_rate, unseparated
+from .discriminant_urn import urn_probabilities
+from .effect_model import FIELD_INDEX, GROUP_FIELDS, HEALTHY_COMBO, SUMMARY_FIELDS, EffectModel, channel_field, combo_key, statistic_of
+from .models import (Candidate, ChannelCheck, ChannelShare, ClosedWorkOrder, ComponentAttribution, EpisodeEvidence, ErrorResult, EvidenceItem,
+                     Fault, InterventionEffect, MonteCarlo, OutcomeVerification, PredictedSummary, RootCauses, SeparatingTest, Stability,
+                     TimeWindow, Uncertainty)
+from .posterior import DEFAULT_RANKING_MODEL, RANKING_MODELS, ClosedOrder, Posterior, Reading, apply_orders
 
 MODELS_PATH = Path(__file__).resolve().with_name("models.json")
-RELEASED_FORMAT = 1
+MODELS_FORMAT = 2
+RELEASED_FORMAT = 2
 PREDICTIONS_NAME = "predictions.json"
-CONFIDENCE = 0.95  # below this top posterior the ranking reports insufficient evidence, as the greedy reference policy does
-BAND_COVERAGE = BAND[1] - BAND[0]
-MISS_RATE = 1 - BAND_COVERAGE  # the share of a calibrated prediction's summaries expected outside their bands
-FALSE_ALARM = 0.05  # the largest probability with which a calibrated prediction may be called inconsistent
-NUMBER_WORDS = {1: "one", 2: "two", 3: "three", 4: "four"}
-TIER_GROUPS = tuple(f"tier{t}" for t in TIERS)
+UNIT = "cycle"
+MONITOR = "monitor"
+REPLACE = "replace:"
+ABSTENTION_RULES = ("decision", "fixed_cut")  # E10, or the v1 posterior cut kept for ablation A8
+DEFAULT_ABSTENTION_CUT = 0.95  # the v1 cut, used only under abstention_rule fixed_cut and named in the result
+Episode = namedtuple("Episode", "released rules status events readings closed_orders")
 
-Measurement = namedtuple("Measurement", "number tier result repeated")
-
-A_CLASSIFIER = ("a measurement is read by one linear discriminant per component, fitted on the pool and applied to the released values; "
-                "the confusion rows come from a cross-fit within the pool, counted on its one- and three-fault combinations")
-A_URN = ("repeated readings of one served block combine by a Polya urn whose counts restart under the hypotheses in which a replaced "
-         "component was faulty; a cycle read again at the same tier adds nothing")
-A_REPLACED = "a replaced component is at its healthy level by the replacement rule, whatever the classifiers read afterwards"
-A_BAND = ("a healthy band is the 1st to 99th percentile over the pool cycles in which every component the channel indicates is healthy; "
-          "a channel that indicates no component takes all pool cycles")
-A_TIME = "time counts accepted measurements; refused calls are not counted, and no cycle number or timestamp is released"
+A_POOL = ("every model is fitted once on the fixed pool, the stable cycles of every combination outside the evaluation split of the "
+          "default fault rule, so no model has seen a combination an episode can start from and no model depends on the episode")
+A_E1 = ("E1: the mean of each of the 34 summaries (mean and standard deviation of the 17 channels) under a combination is an intercept plus "
+        "one main effect per non healthy level of each component plus the pairwise interactions that lowered the cross fitted log "
+        "likelihood over the pool, with the pooled within combination covariance shrunk toward its diagonal by the Ledoit and Wolf rule")
+A_E2 = ("E2: the posterior over the start combinations the public fault rule allows is proportional to a uniform prior times the product "
+        "over readings of the Gaussian density of the read summaries under the combination current at the reading; the current combination "
+        "is the start combination with every component replaced by a work order closed at or before the reading's cycle set to its healthy "
+        "level; a scheduled drop of a component is not modeled")
+A_BLOCK = ("joint_block: the cycles of one recorded block share a latent offset from the model mean with the covariance of the cross "
+           "fitted block misfits, so repeated readings of one block add less than independent draws would; the default ranking model")
+A_URN = ("discriminant_urn: the v1 ranking model, one linear discriminant per sensor group and component read on the same 34 summaries, "
+         "repeated readings combined by a Polya urn around the confusion row of the cross fit within the pool; the lookahead and the "
+         "predictions keep the joint model's Gaussian predictive around this posterior")
+A_DEDUPE = ("a cycle served twice between two work order closures, because the recording window wrapped or two groups read the same "
+            "cycle, enters once with the union of its summaries")
+A_E3 = "E3: the anomaly score of a summary is its absolute deviation from the median of the healthy recordings over their median absolute deviation; it enters no decision"
+A_E4 = ("E4: a summary's predicted deviation under the top candidate splits into the main effects of its faulty components and halves of "
+        "their interactions, and a component's explained anomaly is the sum over summaries of the anomaly score times its share")
+A_E6 = ("E6: the effect model is refit on resamples of the pool drawn by recorded block, and the interval of the top marginal is its "
+        "range over the resampled fits; no band constant is used")
+A_E14 = ("E14: the predicted mean of a summary after the action is the posterior weighted mean of the model means, and its interval is the "
+         "split conformal interval mean plus or minus q times the within standard deviation, with q the smallest held out calibration "
+         "score such that at least (1 - alpha)(n + 1) units of block weight lie at or below it, n the number of pool blocks; the interval "
+         "is calibrated for a known combination, so a spread posterior adds spread the interval does not carry")
+A_E16 = ("E16 and E17: the p value of a channel is (1 + weight of calibration scores at or above its score) / (n + 1); the outcome is "
+         "inconsistent when the smallest p value is at or below alpha / K with K channels read (Bonferroni, valid under any dependence), "
+         "and the Holm step down is reported beside it; the recovery check compares the predicted recovery with the posterior of the "
+         "healthy combination from the post repair readings alone under a uniform prior over the combinations the repair can reach")
+A_TIME = "time counts rig cycles from the start of the episode; refused calls release nothing and no cycle index of the recording is released"
 A_SIX_DIGITS = "values are the released ones, at six significant digits"
-A_ASSOC = "an association between a channel and a component is diagnostic evidence, not a causal edge"
-A_GROUPS = "the measurement groups are nested, tier2 adds channels to tier1 and tier3 to tier2; a channel's group is the cheapest tier that serves it"
-A_CORR = ("the correlations are those of Helwig et al. 2015, Table II, on interval features of the fixed working cycle, "
-          "not on the served cycle statistics")
-A_ACCURACY = ("held-out accuracy per group is the share of the pool's one- and three-fault cycles whose predicted level equals the true level "
-              "in the cross-fit within the pool")
-A_CODES = ("the failure-mode codes, severities and recommended actions are the 16 distinct entries of the IndustryAssetEQA hydraulic facts, "
-           "extracted without their cycles; the level that carries a code is the component's condition level")
-A_TEXT = "the task text names no component, level or physical effect; it is composed from the public rule when the scenario carries none"
-A_EFFECT = ("predicted summaries come from an additive model of the component levels fitted once per combination on the pool without that "
-            "combination's own recordings; a combination outside the pool takes the fit on the whole pool; the band is the 1st to 99th "
-            "percentile of the posterior-weighted mixture, from residual quantiles stored on a grid")
-A_NEW_BLOCK = ("where the replaced component was faulty the environment serves recordings of the new combination after the repair, "
-               "which restart the urn")
-A_PRICE = "the price is the part plus the downtime charge of the public price list"
-A_RECOVERY = ("recovery ends the episode at once, so an episode that continues after a repair did not recover; an episode that ends with "
-              "the repair reports only that it is over, which a recovery, a used-up repair limit and the step cap share")
-A_CONSISTENT = ("consistent means that no more observed summaries lie outside their bands than n_outside_tolerated, the smallest count "
-                "that a calibrated prediction exceeds with probability at most 0.05 under a binomial model of independent summaries "
-                "that each miss their band with probability 0.02, and, where recovery is observable, that the outcome matches the "
-                "predicted recovery probability rounded to the nearer of 0 and 1; p_value_outside is the probability under that model "
-                "of at least as many summaries outside as observed")
-
-
-def binomial_tail(n, k, p=MISS_RATE):
-    """P(X >= k) for X ~ Binomial(n, p)."""
-    return sum(comb(n, j) * p ** j * (1 - p) ** (n - j) for j in range(max(k, 0), n + 1))
-
-
-def misses_tolerated(n, p=MISS_RATE, level=FALSE_ALARM):
-    """The smallest number of band misses to tolerate so that a calibrated prediction of n summaries is called
-    inconsistent with probability at most level; requiring every summary inside its band would reject a calibrated
-    prediction of 17 summaries with probability 1 - 0.98 ** 17, about 0.29."""
-    return next(k for k in range(n + 1) if binomial_tail(n, k + 1, p) <= level)
-
-
-def outcome_consistent(n_outside, n, recovered, recovery_predicted):
-    return n_outside <= misses_tolerated(n) and (recovered is None or recovered == (recovery_predicted >= 0.5))
+A_BANDS = "the healthy band of a channel mean is the public band of the asset profile, served by the action server, not a fitted threshold"
 
 
 class NoEpisode(Exception):
-    """A tool needs released answers that this server does not have."""
+    """A tool needs released evidence that this server does not have."""
+
+
+class Models:
+    """models.json parsed once per process: the effect model, its conformal calibration and the v1 ranking model."""
+
+    def __init__(self, raw):
+        if raw.get("format") != MODELS_FORMAT:
+            raise ValueError(f"models.json has format {raw.get('format')}, this server reads format {MODELS_FORMAT}; refit with "
+                             "`python -m servers.causal_diagnosis.fit`")
+        self.raw = raw
+        self.effect = EffectModel.from_json(raw["effect"])
+        calibration = raw["effect"]["calibration"]
+        self.calibration = Calibration(calibration["scores"], calibration["weights"], calibration["n_blocks"])
+        self.sigma = np.sqrt(np.diag(self.effect.sigma_within))
+        self.urn = raw["discriminant_urn"]
+        self.pool = raw["pool"]
 
 
 @lru_cache(maxsize=1)
@@ -93,164 +97,92 @@ def load_models(path=MODELS_PATH):
     if not Path(path).exists():
         raise FileNotFoundError(f"{Path(path).name} is generated from the rig data and not part of the repository: run "
                                 "`python -m servers.causal_diagnosis.fit` with HYD_FACTS_PATH set")
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return Models(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
-def level_index(combo):
-    return tuple(LEVELS[c].index(v) for c, v in zip(COMPONENTS, combo))
-
-
-def classify(models, tier, result):
-    """The level index per component that the fixed-pool classifiers of the tier read from a released measurement."""
-    tier_model = models["tiers"][str(tier)]
-    x = [result[name] for name in tier_model["public_names"]]
-    return tuple(lda_predict((m["mean"], m["scale"], m["coef"], m["bias"]), x) for m in tier_model["lda"])
-
-
-def task_text(low, high):
-    """The task text of a scenario class, worded as docs/hydraulic_rig/environment.md words S1 and S2, from the public rule."""
-    opening = f"Hydraulic unit {ASSET_ID} was flagged by the performance monitor."
-    if low == high == 1:
-        rule = "Exactly one component is off its healthy level. Find it"
-    elif low == high:
-        rule = f"Exactly {NUMBER_WORDS[low]} components are off their healthy levels. Find them"
-    else:
-        rule = f"Between {NUMBER_WORDS[low]} and {NUMBER_WORDS[high]} components are off their healthy levels. Find them"
-    return f"{opening} {rule} and restore the unit within the budget."
-
-
-def pool_text(models):
-    pool = models["pool"]
-    return (f"every model is fitted once on the fixed pool, the stable cycles of the {len(pool['combinations'])} combinations outside "
-            f"the evaluation class S2 ({pool['cycles']} cycles), so no model depends on the episode")
-
-
-def rule_text(rules, n_candidates):
-    return (f"the candidates are the {n_candidates} combinations the public rule allows: between {rules['min_faulty']} and "
-            f"{rules['max_faulty']} components off their healthy level")
-
-
-def static_window():
-    return TimeWindow(start=0, end=0, unit="static")
-
-
-def measurement_window(measurements):
-    return TimeWindow(start=1 if measurements else 0, end=len(measurements), unit="measurement")
-
-
-def observation_ids(measurements):
-    return [f"obs/{m.number}/{field}" for m in measurements for field in sorted(m.result)]
+def parse_episode(released):
+    """The released evidence as the posterior reads it: readings and closed work orders in time order."""
+    readings = [Reading(o["n"], o["t"], o["sensor_group"], dict(o["values"])) for o in released["observations"]]
+    closed = [ClosedOrder(e["t_end"], e["component"], e.get("source", "agent"), e["id"])
+              for e in released["events"] if e.get("event") == "work_order_closed"]
+    return Episode(released, released["rules"], released["status"], released["events"], readings, closed)
 
 
 def combo_text(combo):
     return "(" + ", ".join(f"{c} {v}" for c, v in zip(COMPONENTS, combo)) + ")"
 
 
-class Belief:
-    """Posterior over the start combinations the public rule allows, replayed from the released answers.
+def rule_text(rules, n_candidates):
+    rule = rules["fault_rule"]
+    return (f"the candidates are the {n_candidates} combinations the public rule allows: between {rule['min_faulty']} and "
+            f"{rule['max_faulty']} components off their healthy level at the start")
 
-    Hypotheses are kept per start combination, each with its current combination (after repairs), its urn counts per
-    tier and the readings it has absorbed, so that under a range of fault counts two start combinations brought to one
-    combination by a repair keep their different blocks."""
 
-    def __init__(self, candidates, models):
-        self.models = models
-        self.hypotheses = {h: self._fresh(h, 1.0 / len(candidates)) for h in candidates}
+def observation_ids(readings):
+    return [f"obs/{r.n}/{field}" for r in readings for field in sorted(r.values)]
 
-    @staticmethod
-    def _fresh(current, weight):
-        return {"current": current, "weight": weight,
-                "counts": {t: [[0] * len(LEVELS[c]) for c in COMPONENTS] for t in TIERS},
-                "seen": {t: set() for t in TIERS}}
 
-    def measure(self, tier, result):
-        """Bayes update by the urn of the greedy reference policy: the next reading of a block follows its confusion row
-        pulled towards the block's earlier readings at that tier; a cycle read again at the same tier adds nothing."""
-        read = classify(self.models, tier, result)
-        key = signature(result)
-        tier_model = self.models["tiers"][str(tier)]
-        rows, alpha = tier_model["rows"], tier_model["alpha"]
-        for s in self.hypotheses.values():
-            if key in s["seen"][tier]:
-                continue
-            idx = level_index(s["current"])
-            like = 1.0
-            for j in range(len(COMPONENTS)):
-                n = s["counts"][tier][j]
-                like *= (alpha[j] * rows[j][idx[j]][read[j]] + n[read[j]]) / (alpha[j] + sum(n))
-            s["weight"] *= like
-            s["seen"][tier].add(key)
-            for j in range(len(COMPONENTS)):
-                s["counts"][tier][j][read[j]] += 1
-        total = sum(s["weight"] for s in self.hypotheses.values())
-        for s in self.hypotheses.values():
-            s["weight"] /= total
-        return read
+def order_ids(closed_orders):
+    return [f"wo/{o.id}" for o in closed_orders]
 
-    def replace(self, component, continued):
-        """Move every hypothesis through the replacement; where the component was faulty the environment serves a new
-        block, so the urn starts again, and where it was healthy the block and its readings stay. The environment ends
-        an episode at once when every component is healthy, a public rule of the briefing, so when the episode continued
-        after the replacement, the hypotheses that it brought to the healthy combination drop out."""
-        j = COMPONENTS.index(component)
-        for s in self.hypotheses.values():
-            if s["current"][j] != HEALTHY[component]:
-                after = s["current"][:j] + (HEALTHY[component],) + s["current"][j + 1:]
-                s.update(self._fresh(after, s["weight"]))
-        if continued:
-            self.hypotheses = {h: s for h, s in self.hypotheses.items() if s["current"] != HEALTHY_COMBO}
-            total = sum(s["weight"] for s in self.hypotheses.values())
-            for s in self.hypotheses.values():
-                s["weight"] /= total
 
-    def posterior(self):
-        """Posterior over the current combinations, summed over the start hypotheses that lead to each."""
-        out = {}
-        for s in self.hypotheses.values():
-            out[s["current"]] = out.get(s["current"], 0.0) + s["weight"]
-        return out
-
-    def level_probability(self):
-        post = self.posterior()
-        return {c: {lv: sum(w for h, w in post.items() if h[j] == lv) for lv in LEVELS[c]} for j, c in enumerate(COMPONENTS)}
-
-    def fault_probability(self):
-        levels = self.level_probability()
-        return {c: sum(p for lv, p in levels[c].items() if lv != HEALTHY[c]) for c in COMPONENTS}
+def band_of(rules, field):
+    """The public healthy band of a channel mean, keyed by the summary field or by the channel field."""
+    bands = rules.get("healthy_bands") or {}
+    band = bands.get(field)
+    if band is None and statistic_of(field) == "mean":
+        band = bands.get(channel_field(field))
+    return band
 
 
 class CausalTools:
-    """The seven tools. With released_path None the server serves no episode and only the two static tools answer."""
+    """The four tools. With released_path None the server serves no episode and every tool answers with an error."""
 
-    def __init__(self, models, released_path=None):
+    def __init__(self, models, released_path=None, ranking_model=DEFAULT_RANKING_MODEL, abstention_rule="decision", abstention_cut=DEFAULT_ABSTENTION_CUT,
+                 alpha=DEFAULT_ALPHA, samples=MONTE_CARLO_SAMPLES, seed=MONTE_CARLO_SEED):
+        if ranking_model not in RANKING_MODELS:
+            raise ValueError(f"ranking_model must be one of {RANKING_MODELS}")
+        if abstention_rule not in ABSTENTION_RULES:
+            raise ValueError(f"abstention_rule must be one of {ABSTENTION_RULES}")
+        if not 0 < float(abstention_cut) <= 1:
+            raise ValueError("abstention_cut must be a probability in (0, 1]")
         self.models = models
         self.released_path = None if released_path is None else Path(released_path)
+        self.ranking_model = ranking_model
+        self.abstention_rule = abstention_rule
+        self.abstention_cut = float(abstention_cut)
+        self.alpha = alpha
+        self.samples = samples
+        self.seed = seed
 
     # ----- the episode -----
     def _released(self):
         if self.released_path is None:
-            raise NoEpisode("this server serves no episode; only get_asset_context and query_fmea_paths are available")
+            raise NoEpisode("this server serves no episode; start one through the hydraulic_rig server")
         if not self.released_path.exists():
-            raise NoEpisode("no released answers yet; the episode has not been started")
+            raise NoEpisode("no released evidence yet; the episode has not been started")
         released = json.loads(self.released_path.read_text(encoding="utf-8"))
         if released.get("format") != RELEASED_FORMAT:
-            raise NoEpisode("unknown format of the released answers")
-        return released
+            raise NoEpisode(f"the released evidence has format {released.get('format')}; this server reads format {RELEASED_FORMAT}")
+        return parse_episode(released)
 
-    def _replay(self, released):
-        """The candidates of the public rule, the belief after every released event and the accepted measurements."""
-        rules = released["rules"]
-        candidates = [h for h in COMBOS if rules["min_faulty"] <= n_faulty(h) <= rules["max_faulty"]]
-        belief = Belief(candidates, self.models)
-        measurements = []
-        events = released["events"]
-        for i, event in enumerate(events):
-            if event["event"] == "measure":
-                measurements.append(Measurement(len(measurements) + 1, event["tier"], event["result"], event["repeated"]))
-                belief.measure(event["tier"], event["result"])
-            elif event["event"] == "replace":
-                belief.replace(event["component"], continued=i + 1 < len(events) or not released["status"]["episode_over"])
-        return candidates, belief, measurements
+    def _posterior(self, episode, resampled=True, readings=None, closed_orders=None, time=None, starts=None):
+        readings = episode.readings if readings is None else readings
+        closed_orders = episode.closed_orders if closed_orders is None else closed_orders
+        time = episode.status["time"] if time is None else time
+        post = Posterior(self.models.effect, episode.rules, readings, closed_orders, time,
+                         block_variance=self.ranking_model == "joint_block", resampled=resampled, starts=starts)
+        if self.ranking_model == "discriminant_urn" and starts is None:
+            post.override(urn_probabilities(self.models.urn, episode.rules, readings, closed_orders))
+        return post
+
+    def _model_assumptions(self):
+        notes = [A_POOL, A_E1, A_E2, A_DEDUPE]
+        if self.ranking_model == "joint_block":
+            notes.append(A_BLOCK)
+        if self.ranking_model == "discriminant_urn":
+            notes.append(A_URN)
+        return notes
 
     def _predictions_path(self):
         return self.released_path.with_name(PREDICTIONS_NAME)
@@ -259,266 +191,310 @@ class CausalTools:
         path = self._predictions_path()
         return json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
 
-    # ----- static knowledge -----
-    def get_asset_context(self, asset_id):
-        profile = kb.asset_profile(asset_id)
-        if profile is None:
-            return ErrorResult(error=f"unknown asset_id {asset_id}; this server knows {ASSET_ID}")
-        components = [ComponentContext(name=c, levels=list(LEVELS[c]), healthy=HEALTHY[c], n_fault_codes=len(kb.fault_codes_of(c)))
-                      for c in COMPONENTS]
-        channels = []
-        for s in SENSORS:
-            unit, rate = kb.unit_and_rate(s)
-            channels.append(ChannelContext(channel=s, field=HYD1_FIELDS[s], unit=unit, rate=rate, group=kb.group_of(s),
-                                           statistics=list(kb.STATISTICS), indicates=list(kb.INDICATES.get(s, ()))))
-        evidence = [f"assoc/{kb.ASSOCIATION_SOURCE}/{s}_{c}" for s in SENSORS for c in kb.INDICATES.get(s, ())]
-        return AssetContext(
-            asset_id=profile["asset_id"], asset_type=profile["asset_type"], description=profile["description"], site=profile["site"],
-            components=components, channels=channels, n_failure_codes=len(kb.FAILURE_CODES), n_fault_codes=len(kb.FAULT_CODES),
-            evidence_ids=evidence, time_window=static_window(), assumptions=[A_ASSOC, A_GROUPS, A_CODES],
-            uncertainty=Uncertainty(kind="none", value=0.0),
-            message=(f"{profile['asset_type']} {asset_id}: {len(components)} components, {len(channels)} channels in three nested groups, "
-                     f"{len(kb.FAILURE_CODES)} failure-mode codes of which {len(kb.FAULT_CODES)} are faults"))
+    @staticmethod
+    def _window(episode, readings=None):
+        readings = episode.readings if readings is None else readings
+        start = min((r.t for r in readings), default=episode.status["time"])
+        return TimeWindow(start=start, end=episode.status["time"], unit=UNIT)
 
-    def query_fmea_paths(self, asset_id, node):
-        if asset_id != ASSET_ID:
-            return ErrorResult(error=f"unknown asset_id {asset_id}; this server knows {ASSET_ID}")
-        node = node.strip()
-        sensor = kb.sensor_of(node)
-        if node in COMPONENTS:
-            kind, entries = "component", kb.fault_codes_of(node)
-        elif node in kb.CODES:
-            kind, entries = "failure_mode", [kb.CODES[node]]
-        elif sensor is not None:
-            kind, entries = "channel", [e for c in kb.INDICATES.get(sensor, ()) for e in kb.fault_codes_of(c)]
-        else:
-            return ErrorResult(error=(f"unknown node {node}: give a component (cooler, valve, pump, accumulator), a failure-mode code "
-                                      "such as valve_switching_critical, or a channel such as PS1"))
-        paths = [self._path(e) for e in entries]
-        accuracies = {f"{p.component}/{group}": a for p in paths for group, a in p.held_out_accuracy.items()}
-        lowest = min((p.held_out_accuracy["tier3"] for p in paths if p.held_out_accuracy), default=0.0)
-        if kind == "channel" and not paths:
-            message = f"channel {sensor} indicates no component in the association table"
-        else:
-            message = f"{len(paths)} path(s) for {kind} {node}: " + "; ".join(f"{p.component} {p.code} ({p.severity}, {p.recommended_action})" for p in paths)
-        return FmeaPaths(asset_id=asset_id, node=node, node_kind=kind, paths=paths, evidence_ids=[i for p in paths for i in p.evidence_ids],
-                         time_window=static_window(), assumptions=[A_ASSOC, A_CORR, A_ACCURACY, A_CODES],
-                         uncertainty=Uncertainty(kind="held_out_accuracy_tier3", value=lowest, detail=accuracies or None), message=message)
-
-    def _path(self, entry):
-        comp = entry["component"]
-        channels = [IndicatingChannel(channel=s, field=HYD1_FIELDS[s], correlation=kb.HELWIG_CORRELATIONS.get(comp, {}).get(s), group=kb.group_of(s))
-                    for s in SENSORS if comp in kb.INDICATES.get(s, ())]
-        accuracy = ({f"tier{t}": self.models["tiers"][str(t)]["accuracy"][COMPONENTS.index(comp)] for t in TIERS}
-                    if comp in COMPONENTS else {})
-        ids = [f"fmea/{kb.FMEA_SOURCE}/{entry['code']}"] + [f"assoc/{kb.ASSOCIATION_SOURCE}/{c.channel}_{comp}" for c in channels]
-        return FmeaPath(component=comp, level=entry["level"], code=entry["code"], severity=entry["severity"], recommended_action=entry["action"],
-                        channels=channels, held_out_accuracy=accuracy, evidence_ids=ids)
-
-    # ----- the episode's tools -----
-    def get_symptom_report(self):
-        try:
-            released = self._released()
-        except NoEpisode as e:
-            return ErrorResult(error=str(e))
-        rules = released["rules"]
-        n_candidates = sum(1 for h in COMBOS if rules["min_faulty"] <= n_faulty(h) <= rules["max_faulty"])
-        text = released.get("task_text") or task_text(rules["min_faulty"], rules["max_faulty"])
-        return SymptomReport(
-            asset_id=released["asset_id"], task_text=text, report_time=0, fault_count_min=rules["min_faulty"], fault_count_max=rules["max_faulty"],
-            n_candidates=n_candidates, budget=rules["budget"], step_cap=rules["max_steps"], repairs=rules["max_repairs"], prices=rules["prices"],
-            status=released["status"], evidence_ids=[], time_window=TimeWindow(start=0, end=0, unit="measurement"),
-            assumptions=[A_TEXT, rule_text(rules, n_candidates), A_TIME], uncertainty=Uncertainty(kind="candidates", value=float(n_candidates)),
-            message=f"{text} Reported at measurement 0 with {n_candidates} candidate combinations under the rule.")
-
+    # ----- get_episode_evidence -----
     def get_episode_evidence(self, sensor_group):
         try:
-            released = self._released()
+            episode = self._released()
         except NoEpisode as e:
             return ErrorResult(error=str(e))
         group = sensor_group.strip()
+        groups = episode.rules["sensor_groups"]
         if group == "all":
-            fields = None
-        elif group in TIER_GROUPS:
-            fields = set(tier_fields(int(group[len("tier"):])))
+            channels = None
+        elif group in groups:
+            channels = set(groups[group])
         else:
             sensor = kb.sensor_of(group)
             if sensor is None:
-                return ErrorResult(error=(f"unknown sensor_group {group}: use all, tier1, tier2, tier3, a channel such as PS1 or a field "
-                                          "such as PS1_Pressure_bar_100Hz"))
-            fields = {HYD1_FIELDS[sensor]}
-        _candidates, _belief, measurements = self._replay(released)
+                return ErrorResult(error=f"unknown sensor_group {group}: use all, {', '.join(sorted(groups))}, a channel such as PS1 or a field "
+                                         "such as PS1_Pressure_bar_100Hz")
+            channels = {kb.HYD1_FIELDS[sensor]}
         items = []
-        for m in measurements:
-            for field, value in sorted(m.result.items()):
-                if fields is not None and field.rsplit("_", 1)[0] not in fields:
+        for reading in episode.readings:
+            anomaly = self.models.effect.anomaly_scores(reading.values)
+            for field, value in sorted(reading.values.items()):
+                if channels is not None and channel_field(field) not in channels:
                     continue
                 sensor = kb.sensor_of(field)
                 unit, rate = kb.unit_and_rate(sensor)
-                band = self.models["bands"][field]
-                items.append(EvidenceItem(evidence_id=f"obs/{m.number}/{field}", field=field, channel=sensor, statistic=kb.statistic_of(field),
-                                          value=value, unit=unit, rate=rate, release_time=m.number, repeated=m.repeated, band_low=band["low"],
-                                          band_high=band["high"], inside_band=band["low"] <= value <= band["high"], band_cycles=band["cycles"],
-                                          band_healthy=list(band["healthy"])))
-        outside = sum(1 for i in items if not i.inside_band)
+                band = band_of(episode.rules, field)
+                items.append(EvidenceItem(evidence_id=f"obs/{reading.n}/{field}", field=field, channel=sensor, statistic=statistic_of(field),
+                                          value=value, unit=unit, rate=rate, n=reading.n, t=reading.t, sensor_group=reading.group,
+                                          band_low=None if band is None else band["low"], band_high=None if band is None else band["high"],
+                                          inside_band=None if band is None else bool(band["low"] <= value <= band["high"]),
+                                          anomaly_score=anomaly.get(field)))
+        closed = [ClosedWorkOrder(id=o.id, component=o.component, source=o.source, t=o.t) for o in episode.closed_orders]
+        outside = sum(1 for i in items if i.inside_band is False)
+        scored = [i.anomaly_score for i in items if i.anomaly_score is not None]
         return EpisodeEvidence(
-            sensor_group=group, n_measurements=len(measurements), items=items, evidence_ids=[i.evidence_id for i in items],
-            time_window=measurement_window(measurements), assumptions=[A_BAND, A_TIME, A_SIX_DIGITS],
-            uncertainty=Uncertainty(kind="band_coverage", value=BAND_COVERAGE),
-            message=f"{len(items)} items from {len(measurements)} measurement(s); {outside} outside their healthy band")
+            sensor_group=group, n_observations=len(episode.readings), items=items, work_orders_closed=closed,
+            evidence_ids=[i.evidence_id for i in items] + order_ids(episode.closed_orders), time_window=self._window(episode),
+            assumptions=[A_BANDS, A_E3, A_TIME, A_SIX_DIGITS],
+            uncertainty=Uncertainty(kind="largest_anomaly_score", value=max(scored) if scored else 0.0),
+            message=(f"{len(items)} items from {len(episode.readings)} observation(s); {outside} channel means outside their public healthy band; "
+                     f"{len(closed)} work order(s) closed"))
 
+    # ----- rank_root_causes -----
     def rank_root_causes(self, top_k):
         if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1:
             return ErrorResult(error="top_k must be a positive integer")
         try:
-            released = self._released()
+            episode = self._released()
         except NoEpisode as e:
             return ErrorResult(error=str(e))
-        candidates, belief, measurements = self._replay(released)
-        post = belief.posterior()
-        order = sorted(post, key=lambda h: (-post[h], h))
-        levels = belief.level_probability()
-        fault = belief.fault_probability()
-        unseparated = [c for c in COMPONENTS if max(levels[c].values()) < CONFIDENCE]
-        separating = {c: [HYD1_FIELDS[s] for s in SENSORS if c in kb.INDICATES.get(s, ())] for c in unseparated}
-        top = post[order[0]]
-        ranked = [Candidate(rank=i + 1, combination=dict(zip(COMPONENTS, h)),
-                            faults=[Fault(component=c, level=v, code=kb.level_code(c, v)) for c, v in zip(COMPONENTS, h) if v != HEALTHY[c]],
-                            probability=post[h], evidence_ids=self._bearing_ids(h, measurements))
-                  for i, h in enumerate(order[:top_k])]
-        insufficient = top < CONFIDENCE
-        message = f"{len(post)} candidate combination(s); top {combo_text(order[0])} at {top:.3f}; " + (
-            "insufficient evidence, unseparated: " + ", ".join(unseparated) if insufficient else "evidence sufficient")
+        post = self._posterior(episode)
+        cost = costs(episode.rules, episode.status["time"])
+        decision = decide(post, cost, self.samples, self.seed)
+        order = post.order()
+        marginals, current = post.component_marginals(), post.current_marginals()
+        levels = post.level_probability()
+        insufficient, best, separating, abstention_text = self._abstention(post, cost, decision, order, levels)
+        attribution, _anomaly, _combo = post.attribution(order[0])
+        stability = post.stability()
+        ranked = [Candidate(rank=i + 1, combination=dict(zip(COMPONENTS, post.candidates[k])), current_combination=dict(zip(COMPONENTS, post.current[k])),
+                            faults=[Fault(component=c, level=v, code=kb.level_code(c, v)) for c, v in zip(COMPONENTS, post.candidates[k]) if v != HEALTHY[c]],
+                            probability=float(post.probabilities[k]), evidence_ids=self._bearing_ids(post.candidates[k], episode))
+                  for i, k in enumerate(order[:top_k])]
+        rate = expected_downtime_rate(post.current, post.probabilities, cost)
+        test = SeparatingTest(sensor_group=best, cycles=1, price=cost.test_price[best], duration=cost.test_duration[best], cost=decision.test_cost[best],
+                              expected_loss=decision.expected_loss_test[best]) if insufficient else None
+        top = post.candidates[order[0]]
+        if self.abstention_rule == "fixed_cut":
+            verdict_text = (f"insufficient evidence under the fixed cut {self.abstention_cut:g}: read one cycle of {best}" if insufficient else
+                            f"evidence sufficient under the fixed cut {self.abstention_cut:g}")
+        else:
+            verdict_text = (f"insufficient evidence: one cycle of {best} lowers the expected loss from {decision.expected_loss_act:.3g} to "
+                            f"{decision.expected_loss_test[best]:.3g}" if insufficient else
+                            f"evidence sufficient: no single reading lowers the expected loss of acting now ({decision.expected_loss_act:.3g})")
+        unsep_text = f"; unseparated: {', '.join(separating)}" if separating else ""
+        cost_text = (f"E7 to E10: an unnecessary replacement costs the part plus the repair charge plus the stopped downtime rate over the repair "
+                     f"downtime ({', '.join(f'{c} {v:g}' for c, v in cost.unnecessary.items())}); a missed fault costs its downtime rate over the "
+                     f"remaining horizon of {cost.remaining} cycles; a test costs one cycle of its read price plus one cycle of the expected "
+                     f"downtime rate {rate:.3g}; the flag, the separating test and the unseparated components follow from these costs and the "
+                     f"posterior through a one step lookahead with {decision.samples} Monte Carlo draws per test (seed {decision.seed}); no fixed "
+                     f"confidence cut is used")
         return RootCauses(
-            n_candidates=len(post), candidates=ranked, component_fault_probability=fault,
-            level_probability={c: {str(lv): p for lv, p in levels[c].items()} for c in COMPONENTS}, insufficient_evidence=insufficient,
-            unseparated=unseparated, separating_channels=separating, evidence_ids=observation_ids(measurements),
-            time_window=measurement_window(measurements),
-            assumptions=[rule_text(released["rules"], len(candidates)), pool_text(self.models), A_CLASSIFIER, A_URN, A_REPLACED, A_TIME],
-            uncertainty=Uncertainty(kind="posterior", value=top), message=message)
+            ranking_model=self.ranking_model, n_candidates=len(post.candidates), candidates=ranked, component_fault_probability=marginals,
+            current_fault_probability=current, level_probability={c: {str(lv): p for lv, p in levels[c].items()} for c in COMPONENTS},
+            attribution=[ComponentAttribution(component=c, fault_probability=marginals[c], current_fault_probability=current[c],
+                                              explained_anomaly=attribution[c]["explained_anomaly"],
+                                              channels=[ChannelShare(**item) for item in attribution[c]["channels"]]) for c in COMPONENTS],
+            stability=None if stability is None else Stability(**stability), insufficient_evidence=insufficient,
+            separating_test=test, expected_saving=decision.expected_saving, expected_loss_act=decision.expected_loss_act,
+            expected_loss_test=decision.expected_loss_test, unseparated=sorted(separating, key=COMPONENTS.index),
+            separating_channels={c: separating[c] for c in sorted(separating, key=COMPONENTS.index)},
+            monte_carlo=MonteCarlo(samples=decision.samples, seed=decision.seed, standard_error=decision.standard_error),
+            costs={"unnecessary_replacement": cost.unnecessary, "remaining_horizon": cost.remaining, "test_cost": decision.test_cost,
+                   "expected_downtime_rate": rate},
+            evidence_ids=observation_ids(episode.readings) + order_ids(episode.closed_orders), time_window=self._window(episode),
+            assumptions=[rule_text(episode.rules, len(post.candidates))] + self._model_assumptions() + [A_E3, A_E4, A_E6, cost_text, abstention_text, A_TIME],
+            uncertainty=Uncertainty(kind="top_marginal_resampling_interval", value=stability["top_marginal"] if stability else float(max(marginals.values())),
+                                    detail=None if stability is None else {"low": stability["interval_low"], "high": stability["interval_high"],
+                                                                           "top_share": stability["top_share"]}),
+            message=(f"{len(post.candidates)} candidate combination(s); top {combo_text(top)} at {post.probabilities[order[0]]:.3f}; fault probabilities "
+                     + ", ".join(f"{c} {marginals[c]:.3f}" for c in COMPONENTS) + f"; {verdict_text}{unsep_text}"))
+
+    def _abstention(self, post, cost, decision, order, levels):
+        """The abstention flag, the separating test and the unseparated components under the configured rule: E10 and E12
+        by default, or for ablation A8 the v1 rule, a fixed cut on the top posterior with the cheapest sensor group as the
+        test and the components whose most probable level is below the cut as unseparated."""
+        if self.abstention_rule == "decision":
+            separating = unseparated(post, cost, decision)
+            text = ("abstention_rule decision: the flag, the separating test and the unseparated components are E10 and E12, decided by "
+                    "the expected losses above")
+            return decision.insufficient_evidence, decision.separating_test, separating, text
+        cheapest = min(cost.test_price, key=lambda g: (cost.test_price[g], g))
+        insufficient = bool(post.probabilities[order[0]] < self.abstention_cut)
+        separating = {c: list(GROUP_FIELDS[cheapest]) for c in COMPONENTS if max(levels[c].values()) < self.abstention_cut}
+        text = (f"abstention_rule fixed_cut (ablation A8) with cut {self.abstention_cut:g}: insufficient_evidence is true when the top "
+                f"posterior is below the cut, the separating test is the cheapest sensor group ({cheapest}) and a component is unseparated "
+                f"when its most probable level is below the cut, as the v1 server did; the expected losses of E8 to E10 are reported beside "
+                f"it and decide nothing here")
+        return insufficient, cheapest, separating, text
 
     @staticmethod
-    def _bearing_ids(combo, measurements):
-        """The released fields whose channel indicates a faulty component of the combination."""
+    def _bearing_ids(combo, episode):
+        """The released summaries whose channel indicates a faulty component of the combination, and the closed orders."""
         faulty = {c for c, v in zip(COMPONENTS, combo) if v != HEALTHY[c]}
-        return [f"obs/{m.number}/{field}" for m in measurements for field in sorted(m.result)
-                if faulty & set(kb.INDICATES.get(kb.sensor_of(field), ()))]
+        ids = [f"obs/{r.n}/{field}" for r in episode.readings for field in sorted(r.values)
+               if faulty & set(kb.INDICATES.get(kb.sensor_of(field), ()))]
+        return ids + order_ids(episode.closed_orders)
 
+    # ----- estimate_intervention_effect -----
     def estimate_intervention_effect(self, action):
         try:
-            released = self._released()
+            episode = self._released()
         except NoEpisode as e:
             return ErrorResult(error=str(e))
         action = action.strip()
-        if action == "monitor":
+        if action == MONITOR:
             component = None
-        elif action.startswith("replace:") and action[len("replace:"):] in COMPONENTS:
-            component = action[len("replace:"):]
+        elif action.startswith(REPLACE) and action[len(REPLACE):] in COMPONENTS:
+            component = action[len(REPLACE):]
         else:
-            return ErrorResult(error="action must be monitor or replace:<component> with the component one of cooler, valve, pump, accumulator")
-        rules, status = released["rules"], released["status"]
-        _candidates, belief, measurements = self._replay(released)
-        post = belief.posterior()
+            return ErrorResult(error=f"action must be {MONITOR} or {REPLACE}<component> with the component one of {', '.join(COMPONENTS)}")
+        rules, status = episode.rules, episode.status
+        post = self._posterior(episode)
+        cost = costs(rules, status["time"])
+        rate = expected_downtime_rate(post.current, post.probabilities, cost)
         if component is None:
-            addresses, after, price = 0.0, dict(post), 0.0
+            after, addresses, recovery = post.current_posterior(), 0.0, post.current_posterior().get(HEALTHY_COMBO, 0.0)
+            price, duration, downtime = 0.0, rules["durations"]["advance_per_cycle"], rate * rules["durations"]["advance_per_cycle"]
+            resampled = post.resampled_recovery(None)
         else:
-            j = COMPONENTS.index(component)
-            addresses = sum(w for h, w in post.items() if h[j] != HEALTHY[component])
-            after = {}
-            for h, w in post.items():
-                moved = h[:j] + (HEALTHY[component],) + h[j + 1:]
-                after[moved] = after.get(moved, 0.0) + w
-            price = rules["prices"]["parts"][component] + rules["prices"]["downtime"]
-        recovery = after.get(HEALTHY_COMBO, 0.0)
-        predicted = [self._predict(field, after) for field in sorted(self.models["effect_pool"])]
+            after, addresses, recovery = post.post_repair(component)
+            price = rules["prices"]["parts"][component] + rules["prices"]["repair_charge"]
+            duration = rules["durations"]["lead_time"][component] + rules["durations"]["repair_downtime"][component]
+            downtime = rules["downtime_rate"]["stopped"] * rules["durations"]["repair_downtime"][component]
+            resampled = post.resampled_recovery(component)
+        low = high = band = None
+        if resampled is not None:
+            low, high = float(resampled.min()), float(resampled.max())
+            band = (high - low) / 2
+        predicted = self._predict(after)
+        risk_before = 1 - post.current_posterior().get(HEALTHY_COMBO, 0.0)
+        risk_after = 1 - recovery
+        if band is not None and risk_after < risk_before - band:
+            direction = "lower"
+        elif band is not None and risk_after > risk_before + band:
+            direction = "higher"
+        else:
+            direction = "no change" if band is not None else "undetermined"
         predictions = self._predictions()
         prediction_id = f"pred/{len(predictions) + 1}"
-        predictions.append({"id": prediction_id, "action": action, "component": component, "events": len(released["events"]),
-                            "measurements": len(measurements), "addresses": addresses, "recovery": recovery,
-                            "predicted": {p.field: [p.mean, p.band_low, p.band_high] for p in predicted}})
+        predictions.append({"id": prediction_id, "action": action, "component": component, "events": len(episode.events),
+                            "observations": len(episode.readings), "time": status["time"], "addresses": addresses, "recovery": recovery,
+                            "recovery_interval": None if band is None else [low, high], "alpha": self.alpha, "ranking_model": self.ranking_model,
+                            "after": {combo_key(h): p for h, p in after.items()},
+                            "predicted": {p.field: [p.mean, p.low, p.high, p.quantile] for p in predicted}})
         write_json_atomically(self._predictions_path(), predictions, indent=1)
-        notes = [A_EFFECT, A_REPLACED, A_NEW_BLOCK, A_PRICE, A_RECOVERY]
-        if component is not None and status["phase"] == "investigate":
-            notes.append("the environment accepts a repair only after the diagnosis has been submitted")
-        if component is not None and status["repairs_left"] == 0:
-            notes.append("no repair is left in this episode")
+        notes = self._model_assumptions() + [
+            "E13: the posterior after the action moves every candidate's current combination through the replacement; the recovery probability "
+            "is the moved probability of the healthy combination; a replaced component is at its healthy level by the replacement rule",
+            A_E14, A_E6,
+            "E15: risk is one minus the posterior of the healthy combination before and after the action, and the direction uses a dead band "
+            "equal to the half width of the resampling interval of the recovery probability",
+            f"the price is the part plus the repair charge of the public price list, the duration the lead time plus the repair downtime, and the "
+            f"downtime during the action the stopped rate over the repair downtime; for {MONITOR} the duration is one cycle at the expected downtime "
+            f"rate {rate:.3g}, since no observation is free",
+            f"alpha = {self.alpha:g} is the declared error level of the intervals"]
+        if component is not None and any(o.get("component") == component for o in status.get("open_work_orders", [])):
+            notes.append("a work order on this component is open; the environment refuses a second one")
+        if component is not None and not any(e.get("event") in ("submit_diagnosis", "declare_insufficient_evidence") for e in episode.events):
+            notes.append("the environment accepts a work order only after a diagnosis or a declaration of insufficient evidence")
         if status["episode_over"]:
             notes.append("the episode is over, so the action can no longer be taken")
         return InterventionEffect(
-            prediction_id=prediction_id, action=action, component=component, addresses_fault=addresses, recovery=recovery, price=price,
-            predicted=predicted, evidence_ids=observation_ids(measurements) + [prediction_id],
-            time_window=TimeWindow(start=len(measurements), end=len(measurements) + 1, unit="measurement"), assumptions=notes,
-            uncertainty=Uncertainty(kind="recovery_probability", value=recovery),
-            message=(f"{action}: addresses a fault with probability {addresses:.3f}, recovery {recovery:.3f}, price {price:g}; "
-                     f"{len(predicted)} summaries of measurement {len(measurements) + 1} predicted as {prediction_id}"))
+            prediction_id=prediction_id, action=action, component=component, addresses_fault=addresses, recovery=recovery,
+            recovery_interval_low=low, recovery_interval_high=high, price=price, duration=duration, downtime_during_action=downtime,
+            predicted=predicted, alpha=self.alpha, risk_before=risk_before, risk_after=risk_after, direction=direction, dead_band=band,
+            evidence_ids=observation_ids(episode.readings) + order_ids(episode.closed_orders) + [prediction_id],
+            time_window=TimeWindow(start=status["time"], end=status["time"] + duration, unit=UNIT), assumptions=notes,
+            uncertainty=Uncertainty(kind="recovery_probability", value=recovery, detail=None if band is None else {"low": low, "high": high}),
+            message=(f"{action}: addresses a fault with probability {addresses:.3f}, recovery {recovery:.3f}"
+                     + (f" (resampling interval {low:.3f} to {high:.3f})" if band is not None else "")
+                     + f", price {price:g}, duration {duration} cycle(s); risk {risk_before:.3f} to {risk_after:.3f}, {direction}; "
+                     f"{len(predicted)} summaries predicted with {1 - self.alpha:g} conformal intervals as {prediction_id}"))
 
-    def _predict(self, field, weights):
-        parts = []
-        for h, w in weights.items():
-            entry = self.models["effect"].get(combo_key(h))
-            if entry is not None:
-                values = entry[field]
-                parts.append((w, values[0], values[1:]))
-            else:
-                pool = self.models["effect_pool"][field]
-                parts.append((w, sum(b * v for b, v in zip(pool["beta"], design(h))), pool["q"]))
-        mean, low, high = mixture(parts, self.models["effect_grid"])
-        return PredictedSummary(field=field, mean=mean, band_low=low, band_high=high)
+    def _predict(self, after):
+        """E14 for every summary: the posterior weighted mean and the conformal interval at alpha."""
+        combos = list(after)
+        weights = np.array([after[h] for h in combos])
+        means = weights @ self.models.effect.mu_rows(combos)
+        out = []
+        for k, field in enumerate(SUMMARY_FIELDS):
+            q, _capped = self.models.calibration.quantile(k, self.alpha)
+            low, high = interval(float(means[k]), float(self.models.sigma[k]), q)
+            out.append(PredictedSummary(field=field, mean=float(means[k]), low=low, high=high, quantile=q))
+        return out
 
+    # ----- verify_outcome -----
     def verify_outcome(self, prediction_id):
         try:
-            released = self._released()
+            episode = self._released()
         except NoEpisode as e:
             return ErrorResult(error=str(e))
         prediction = next((p for p in self._predictions() if p["id"] == prediction_id.strip()), None)
         if prediction is None:
             return ErrorResult(error=f"unknown prediction_id {prediction_id}; estimate_intervention_effect returns one such as pred/1")
-        events = released["events"]
-        first = prediction["events"]  # the index of the first event released after the prediction
-        component = prediction["component"]
+        events, component, first = episode.events, prediction["component"], prediction["events"]
+        later = [r for r in episode.readings if r.n > prediction["observations"]]
         if component is None:
-            start, recovered, recovery_status = first, None, "not applicable: monitor repairs nothing"
-            measured_before = sum(1 for e in events[:first] if e["event"] == "measure")
+            since, status, recovered_text = prediction["time"], "", "not applicable: monitor repairs nothing"
+            closed_between = []
         else:
-            action_index = next((i for i in range(first, len(events)) if events[i]["event"] == "replace" and events[i]["component"] == component), None)
-            if action_index is None:
-                refusals = [e for e in events[first:] if e["event"] == "refused" and isinstance(e.get("action"), dict)
-                            and e["action"].get("type") == "replace" and e["action"].get("component") == component]
-                status = f"action refused: {refusals[-1]['reason']}" if refusals else "not yet observable: the action has not been taken"
-                return self._verification(prediction, status, None, [], None, "not observable: the action has not been taken", None)
-            start = action_index + 1
-            if start < len(events) or not released["status"]["episode_over"]:
-                recovered, recovery_status = False, "not recovered: the episode continued after the repair"
-            else:
-                recovered, recovery_status = None, ("not observable: the episode ended with the repair, which a recovery, a used-up repair "
-                                                    "limit and the step cap share")
-            measured_before = sum(1 for e in events[:action_index] if e["event"] == "measure")
-        observed_at = next((i for i in range(start, len(events)) if events[i]["event"] == "measure"), None)
-        if observed_at is None:
-            return self._verification(prediction, "not yet observable: no measurement since the action", None, [], recovered, recovery_status, None)
-        # another replacement changes the combination whose recordings the measurement reads, so the prediction no longer applies
-        others = [f"replace:{e['component']}" for e in events[first:observed_at] if e["event"] == "replace" and e["component"] != component]
-        if others:
-            return self._verification(prediction, f"not comparable: {', '.join(others)} came between the prediction and the measurement",
-                                      None, [], recovered, recovery_status, None)
-        observed = events[observed_at]
-        number = measured_before + 1
-        residuals = [Residual(field=field, predicted=mean, observed=observed["result"][field], residual=observed["result"][field] - mean,
-                              inside_band=low <= observed["result"][field] <= high)
-                     for field, (mean, low, high) in prediction["predicted"].items() if field in observed["result"]]
-        consistent = outcome_consistent(sum(1 for r in residuals if not r.inside_band), len(residuals), recovered, prediction["recovery"])
-        return self._verification(prediction, "verified", number, residuals, recovered, recovery_status, consistent)
+            closing = next((e for e in events[first:] if e.get("event") == "work_order_closed" and e.get("component") == component), None)
+            if closing is None:
+                refusals = [e for e in events[first:] if e.get("event") == "refused" and isinstance(e.get("action"), dict)
+                            and e["action"].get("type") == "create_work_order" and e["action"].get("component") == component]
+                if refusals:
+                    status = f"action refused: {refusals[-1].get('reason')}"
+                elif any(o.get("component") == component for o in episode.status.get("open_work_orders", [])):
+                    status = "not yet observable: the work order is open and has not closed"
+                else:
+                    status = "not yet observable: no work order on the component has closed since the prediction"
+                return self._verification(prediction, status, None, [], None, "not observable: the repair has not happened")
+            since = closing["t_end"]
+            later = [r for r in later if r.t >= since]
+            closed_between = [e for e in events[first:] if e.get("event") == "work_order_closed" and e.get("component") != component and e["t_end"] <= since]
+            recovered_text = ""
+        if not later:
+            return self._verification(prediction, "not yet observable: no reading since the action", None, [], None,
+                                      recovered_text or "not observable: no reading since the repair closed")
+        observed = min(later, key=lambda r: (r.t, r.n))
+        others = [e for e in events[first:] if e.get("event") == "work_order_closed" and e.get("component") != component and e["t_end"] <= observed.t]
+        if others or closed_between:
+            names = ", ".join(f"replace:{e['component']}" for e in others + closed_between)
+            return self._verification(prediction, f"not comparable: {names} closed between the prediction and the reading", None, [], None,
+                                      recovered_text or "not observable: another repair changed the combination")
+        checks, p_values = [], {}
+        for field, (mean, low, high, _q) in prediction["predicted"].items():
+            if field not in observed.values:
+                continue
+            k = FIELD_INDEX[field]
+            score = abs(observed.values[field] - mean) / float(self.models.sigma[k])
+            p_values[field] = self.models.calibration.p_value(k, score)
+            checks.append((field, mean, observed.values[field], low, high, score))
+        family = verdict(p_values, prediction["alpha"])
+        channels = [ChannelCheck(field=f, predicted=m, observed=o, low=lo, high=hi, score=s, p_value=p_values[f], bonferroni=family["bonferroni"][f], holm=family["holm"][f])
+                    for f, m, o, lo, hi, s in checks]
+        recovery_posterior = None
+        if component is not None:
+            support = [tuple(int(v) for v in key.split(",")) for key in prediction["after"]]
+            post = self._posterior(episode, resampled=False, readings=later, closed_orders=[], time=episode.status["time"], starts=support)
+            recovery_posterior = post.current_posterior().get(HEALTHY_COMBO, 0.0)
+            recovered_text = f"predicted recovery {prediction['recovery']:.3f}, posterior of the healthy combination from the post repair readings {recovery_posterior:.3f}"
+        return self._verification(prediction, "verified", observed, channels, family, recovered_text, recovery_posterior, since)
 
-    def _verification(self, prediction, status, number, residuals, recovered, recovery_status, consistent):
-        inside = sum(1 for r in residuals if r.inside_band)
-        tolerated = misses_tolerated(len(residuals)) if residuals else None
-        p_value = binomial_tail(len(residuals), len(residuals) - inside) if residuals else None
-        ids = [prediction["id"]] + ([f"obs/{number}/{r.field}" for r in residuals] if number else [])
+    def _verification(self, prediction, status, observed, channels, family, recovery_status, recovery_posterior=None, since=None):
+        interval_ = prediction.get("recovery_interval")
+        n = len(channels)
+        consistent = None if family is None else family["consistent"]
+        bonferroni = sum(1 for c in channels if c.bonferroni)
+        holm = sum(1 for c in channels if c.holm)
+        ids = [prediction["id"]] + ([f"obs/{observed.n}/{c.field}" for c in channels] if observed else [])
+        window = TimeWindow(start=since if since is not None else prediction["time"], end=observed.t if observed else prediction["time"], unit=UNIT)
+        if consistent is None:
+            verdict_text = ""
+        else:
+            verdict_text = (f"; {'consistent' if consistent else 'inconsistent'} at alpha {prediction['alpha']:g}: {bonferroni} of {n} channels rejected by "
+                            f"Bonferroni, {holm} by Holm")
         return OutcomeVerification(
-            prediction_id=prediction["id"], action=prediction["action"], status=status, observation=number, residuals=residuals, n_inside=inside,
-            n_outside=len(residuals) - inside, n_outside_tolerated=tolerated, p_value_outside=p_value,
-            recovery_predicted=prediction["recovery"], recovered=recovered, recovery_status=recovery_status,
-            consistent=consistent, evidence_ids=ids, time_window=TimeWindow(start=number or 0, end=number or 0, unit="measurement"),
-            assumptions=[A_RECOVERY, A_EFFECT, A_CONSISTENT], uncertainty=Uncertainty(kind="band_coverage", value=BAND_COVERAGE),
-            message=f"{prediction['id']} ({prediction['action']}): {status}; {inside} of {len(residuals)} observed summaries inside their band"
-                    f"{f', at most {tolerated} outside tolerated' if residuals else ''}; recovery {recovery_status}")
+            prediction_id=prediction["id"], action=prediction["action"], status=status, observation=observed.n if observed else None,
+            observed_t=observed.t if observed else None, channels=channels, n_channels=n, alpha=prediction["alpha"], consistent=consistent,
+            bonferroni_rejections=bonferroni, holm_rejections=holm, recovery_predicted=prediction["recovery"],
+            recovery_interval_low=None if interval_ is None else interval_[0], recovery_interval_high=None if interval_ is None else interval_[1],
+            recovery_posterior=recovery_posterior, recovery_status=recovery_status, evidence_ids=ids, time_window=window,
+            assumptions=self._model_assumptions() + [A_E14, A_E16, f"alpha = {prediction['alpha']:g} is the declared error level of the verdict", A_TIME],
+            uncertainty=Uncertainty(kind="smallest_p_value", value=min(p_values_of(channels), default=1.0)),
+            message=f"{prediction['id']} ({prediction['action']}): {status}{verdict_text}; recovery {recovery_status}")
+
+
+def p_values_of(channels):
+    return [c.p_value for c in channels]

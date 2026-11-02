@@ -1,0 +1,14 @@
+{
+  "name": "pilot",
+  "description": "The pilot of design v2 section 9: one episode per scenario of pilot/scenarios_17.json, anchored at the scenario's date under the assumption that hyd_1 is hp_1 with one recorded cycle per day from 2022-07-01, with the recorded condition of that day hidden and the scenario text as the question. The driver fills start and question per scenario from pilot/anchors.py. The fault rule admits any number of faulty components, since an anchored day is not drawn under a rule.",
+  "schedule": {"mode": "none", "components": 1, "first_drop": [5, 40], "interval": 10},
+  "external_events": {"mode": "none", "probability": 0.3, "window": [5, 50]},
+  "clock_mode": "declared",
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "fault_rule": {"min_faulty": 1, "max_faulty": 4},
+  "anchors": {"date0": "2022-07-01"},
+  "start": null,
+  "question": null
+}

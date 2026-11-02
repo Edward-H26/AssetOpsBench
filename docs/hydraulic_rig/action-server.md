@@ -1,23 +1,23 @@
 # Hydraulic Rig Action Server
 
-The action server in `src/servers/hydraulic_rig/` wraps one episode of the hydraulic rig environment as five Model Context Protocol (MCP) tools. `measure` reads sensors, `submit` gives a diagnosis, `submit_insufficient_evidence` declares the evidence insufficient, `replace` replaces a component, and `finish` ends the episode. The agent sees only the data it has paid to read. This page covers how the server keeps an episode between calls, how a runner starts it, the files it writes, the question that opens an episode, the tools with their answers and refusals, and the tests.
+The action server in `src/servers/hydraulic_rig/` wraps one episode of the hydraulic rig environment as nine Model Context Protocol (MCP) tools: five reads, `get_asset_profile`, `read_sensors`, `advance_time`, `summarize_changes_since` and `get_failure_modes`, and four writes, `submit_diagnosis`, `declare_insufficient_evidence`, `create_work_order` and `finish`. The agent sees the briefing, the asset profile and the answers to its own calls, and nothing else. This page covers how the server keeps an episode between calls, how a runner starts it, the state file and the released evidence, the briefing with its three guidance levels, the nine tools with their parameters, classes, prices and refusals, the tool contract, the clock modes as the server charges them, and the tests.
 
-Related docs: [README.md](README.md) for the index of these pages, [environment.md](environment.md) for the environment behind the tools, [causal-diagnosis-server.md](causal-diagnosis-server.md) for the server that reads the released answers, [benchmarks.md](benchmarks.md) for the drivers that start both servers, and [../mcp-servers.md](../mcp-servers.md) for every MCP server of the repository.
+Related docs: [README.md](README.md) for the index of these pages, [environment.md](environment.md) for the environment behind the tools, [causal-diagnosis-server.md](causal-diagnosis-server.md) for the server that reads the released evidence, [benchmarks.md](benchmarks.md) for the drivers that start both servers, and [../mcp-servers.md](../mcp-servers.md) for every MCP server of the repository.
 
 ---
 
 ## Overview
 
-Each tool builds the action that `TinyHydraulicEnv.step` takes, hands it to `episode.call` in `src/servers/hydraulic_rig/episode.py`, and returns the JSON text of the outcome, refusals included. The server checks no argument itself. A missing argument or one of the wrong type reaches the environment, which refuses, logs, and counts the call like any other bad action.
+Each tool builds the action that `HydraulicRigEnv.step` takes, hands it to `episode.call` in `src/servers/hydraulic_rig/episode.py`, and returns the JSON text of the answer envelope, refusals included. The server checks no argument itself. A missing argument or one of the wrong type reaches the environment, which refuses, logs and counts the call like any other bad action, so the planner loses a step and not the episode.
 
-The server keeps no episode state in memory, because the Plan-Execute executor of AssetOpsBench starts a new server process for every tool listing and every tool call (`_list_tools` and `_call_tool` in `src/agent/plan_execute/executor.py`). The episode lives in `episode.json` instead. Every call loads that file, builds the environment from the rig data file, calls `reset(seed)`, replays the stored actions, applies the new one, writes the episode files back, and answers. Replay is exact because the environment draws every random number from the generator it seeds at `reset`. The server takes no lock, since the executor runs one step at a time.
+The server keeps no episode state in memory, because the Plan-Execute executor of AssetOpsBench starts a new server process for every tool listing and every tool call (`_list_tools` and `_call_tool` in `src/agent/plan_execute/executor.py`). The episode lives in `episode.json` instead. Every call loads that file, builds the environment from the rig data file, calls `reset(seed)`, replays the stored actions with their stored thinking cycles, applies the new action, writes the episode files back and answers. Replay is exact because the environment draws every random number from the generator it seeds at `reset`. The server takes no lock, since the executor runs one step at a time.
 
 The server receives no argument and only a few environment variables, so it finds its episode through the location of its launcher. `src/servers/hydraulic_rig/launcher.py` starts the server on the `episode.json` in its own folder, so a copy of it beside the state file of an episode binds a server process to that episode. No tool takes an episode identifier, and `pyproject.toml` declares no entry point for this server.
 
-- **Seen by the agent.** The question that opens the episode and, for each call, the history entry the call added, its cost, the phase, the counters, and whether the episode is over.
-- **Hidden from the agent.** The seed, the hidden combination, cycle numbers, the combination after a replacement, whether a replacement was needed, the end event of the log, the data path, and the `info` dict of `TinyHydraulicEnv.step`, which carries the full log when an episode ends.
-- **Measurement names.** A field name is the column name of the `hyd_1` asset of AssetOpsBench with the statistic appended, such as `PS1_Pressure_bar_100Hz_std`, and the motor power channel EPS1 reads as `P1_MotorPower_W_100Hz`. Values are rounded to six significant digits, while the log of the environment keeps the full values (`public_result` in `src/servers/hydraulic_rig/names.py`).
-- **Files out of reach.** No tool reads a file that the agent names. A runner given only the launchers of an episode registers none of the six default AssetOpsBench servers, among them the utilities server, whose `json_reader` opens any JSON file. The episode folder holds the seed in `episode.json` and, after scoring, the hidden combination in `log.json` and `score.json`, so an agent with file or shell tools has to run without access to the episode and run folders.
+- **Seen by the agent.** The briefing, the asset profile with the public healthy bands and the tool table, and for each call the answer envelope: the clock, the counters, the open work orders and the result of an accepted action or the reason of a refusal.
+- **Hidden from the agent.** The seed, the configuration, the hidden combination, the recording indices, the combination after a repair, whether a work order was necessary, the schedule, the external event, the component of a failure, the final combination, the data path, and the `info` dict of `HydraulicRigEnv.step`, which carries the full log when an episode ends.
+- **Field names.** A served value is named after the column of the `hyd_1` asset of AssetOpsBench with the statistic appended, such as `PS1_Pressure_bar_100Hz_mean`, and the motor power channel EPS1 reads as `P1_MotorPower_W_100Hz`. Values are the mean and the standard deviation of a channel over one recorded cycle at six significant digits, rounded inside the environment, so the log, the answers and the released evidence agree (`public_result` in `src/servers/hydraulic_rig/names.py`).
+- **Files out of reach.** No tool reads a file that the agent names. A runner given only the launchers of an episode registers none of the default AssetOpsBench servers, among them the utilities server, whose `json_reader` opens any JSON file. The episode folder holds the seed in `episode.json`, and after verification the hidden state under `hidden/`, so an agent with file or shell tools has to run without access to the episode and run folders.
 
 ---
 
@@ -25,12 +25,13 @@ The server receives no argument and only a few environment variables, so it find
 
 ### Through the benchmark driver
 
-For every agent but the oracle, `benchmarks/hydraulic_rig/run_episodes.py` prepares each episode folder before a server starts:
+`EpisodeRunner.start` in `benchmarks/hydraulic_rig/run_episodes.py` prepares each episode folder before a server starts:
 
-1. `start_episode` in `benchmarks/hydraulic_rig/common.py` calls `episode.start`, which writes `episode.json` and the first `released.json`.
-2. `write_launchers` writes `hydraulic_rig_server.py` and, unless the agent is `plan_execute_rig_only`, `causal_diagnosis_server.py` from the template `_LAUNCHER`. Each launcher puts the fork's `src` at the front of the import path, turns off bytecode writing, and binds its server to the file it reads beside it.
-3. Before the first episode, `check_servers` lists the tools behind every launcher through the runner's own `_list_tools` and stops the run on an unexpected tool list.
-4. For a Plan-Execute agent, `PlanExecuteRunner` receives the launcher paths through its `server_paths` argument, under the server names `hydraulic_rig` and `causal_diagnosis`.
+1. `episode.start` writes `episode.json` and the first `released.json`, which holds the briefing and the rules and no event.
+2. `write_launchers` in `benchmarks/hydraulic_rig/common.py` writes `hydraulic_rig_server.py` and, unless the diagnostics server is switched off, `causal_diagnosis_server.py`. Each launcher puts the fork's `src` at the front of the import path, turns off bytecode writing, and binds its server to the file it reads beside it. The diagnostics launcher names the ranking model the server runs, and the abstention rule only when it differs from the default.
+3. The briefing of the released evidence is written to `question.txt`, the question the runner receives.
+4. Before the first episode, `check_servers` lists the tools behind every launcher through the runner's own `_list_tools` and stops the run when a server offers other tools than the contract names.
+5. For a Plan-Execute agent, `PlanExecuteRunner` receives the launcher paths through its `server_paths` argument, under the server names `hydraulic_rig` and `causal_diagnosis`.
 
 The runner turns each registered path into a command in `_make_stdio_params`:
 
@@ -39,7 +40,7 @@ The runner turns each registered path into a command in `_make_stdio_params`:
 | Inside the fork | `python -m <dotted module path>` | The fork root |
 | Outside the fork | `python <launcher path>` | The working directory of the driver |
 
-The command is the literal `python` found on `PATH`, so the driver has to run where `python` is an interpreter with the mcp package, as under `uv run` or `benchmarks/hydraulic_rig/run.sh`. Inside the fork the module path is built from folder names, so the driver turns the dots and slashes of a run label into underscores and refuses an `--out` folder inside the fork with a dot in its path.
+The command is the literal `python` found on `PATH`, so the driver has to run with the environment's `bin` first on `PATH`, where `python` is an interpreter with the mcp package. Inside the fork the module path is built from folder names, so the driver turns the dots and slashes of a run label into underscores and refuses an `--out` folder inside the fork with a dot in its path.
 
 ### Environment of the server process
 
@@ -54,46 +55,51 @@ The command is the literal `python` found on `PATH`, so the driver has to run wh
 
 ### By hand
 
-A test can start the server without the driver. From the fork root, in the project environment, create an episode and copy the launcher beside it. `HYD_FACTS_PATH` matters only to the process that creates the episode.
+A test can start the server without the driver. From the fork root, with `HYD_FACTS_PATH` set, create an episode and copy the launcher beside it. `HYD_FACTS_PATH` matters only to the process that creates the episode.
 
 ```bash
 export HYD_FACTS_PATH=~/rig-data/hyd_facts.jsonl   # the rig data file, see environment.md
 export EP=$(mktemp -d)                              # the episode folder
-uv run python - <<'EOF'
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python - <<'PY'
 import os
 from pathlib import Path
+from envs.hydraulic_rig.config import EpisodeConfig
 from envs.hydraulic_rig.data import default_facts_path
 from servers.hydraulic_rig import episode
-episode.start(Path(os.environ["EP"]) / "episode.json", 0, episode.default_env_kwargs(), default_facts_path())
-EOF
+episode.start(Path(os.environ["EP"]) / "episode.json", 0, EpisodeConfig(), default_facts_path())
+PY
 cp src/servers/hydraulic_rig/launcher.py "$EP/server.py"
 ```
 
-Any MCP client that starts `$EP/server.py` over stdio with the interpreter of the project environment now plays that episode. This one lists the tools and sends one call:
+Any MCP client that starts `$EP/server.py` over stdio with an interpreter that imports `servers` now plays that episode. The copied launcher imports the installed package, so the client passes `PYTHONPATH` with `src` when the fork is not installed. This client lists the tools with their read only hints and sends one call:
 
 ```bash
-uv run python - <<'EOF'
+PATH=$PWD/.venv/bin:$PATH PYTHONPATH=src python - <<'PY'
 import asyncio, os, sys
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 async def main():
-    server = StdioServerParameters(command=sys.executable, args=[os.path.join(os.environ["EP"], "server.py")])
+    server = StdioServerParameters(command=sys.executable, args=[os.path.join(os.environ["EP"], "server.py")],
+                                   env={**os.environ, "PYTHONPATH": "src"})
     async with stdio_client(server) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            print(sorted(t.name for t in (await session.list_tools()).tools))
-            print((await session.call_tool("measure", {"tier": 4})).content[0].text)
+            tools = (await session.list_tools()).tools
+            print(sorted(t.name for t in tools))
+            print({t.name: t.annotations.readOnlyHint for t in tools})
+            print((await session.call_tool("read_sensors", {"sensor_group": "tier4", "cycles": 1})).content[0].text)
 
 asyncio.run(main())
-EOF
+PY
 ```
 
-Tier 4 does not exist, so the answer is a refusal that costs nothing and counts as a step:
+The sensor group `tier4` does not exist, so the answer is a refusal that costs nothing, takes no time in the declared clock mode, and counts as a step:
 
 ```
-['finish', 'measure', 'replace', 'submit', 'submit_insufficient_evidence']
-{"event":{"event":"refused","action":{"type":"measure","tier":4},"reason":"unknown tier"},"cost":0,"phase":"investigate","budget_left":150,"repairs_left":2,"steps_left":199,"episode_over":false}
+['advance_time', 'create_work_order', 'declare_insufficient_evidence', 'finish', 'get_asset_profile', 'get_failure_modes', 'read_sensors', 'submit_diagnosis', 'summarize_changes_since']
+{'get_asset_profile': True, 'read_sensors': True, 'advance_time': True, 'summarize_changes_since': True, 'get_failure_modes': True, 'submit_diagnosis': False, 'declare_insufficient_evidence': False, 'create_work_order': False, 'finish': False}
+{"refused":"unknown sensor group","time":0,"budget_left":300,"steps_left":59,"open_work_orders":[],"episode_over":false}
 ```
 
 ---
@@ -105,146 +111,120 @@ The server reads and writes two files in the episode folder:
 | File | Written by | Read by | Content |
 | --- | --- | --- | --- |
 | `episode.json` | `episode.start` at creation, `episode.call` after every call | The action server and the driver | The state the server replays |
-| `released.json` | The same two functions, through `write_released` | The causal diagnosis server and the audit report of the driver | Everything the agent has been told |
+| `released.json` | The same two functions, through `write_released` | The diagnostics server, the verifier and the audit report of the driver | Everything the agent has been told |
 
-`episode.json` holds:
+`episode.json`, state format 2, holds:
 
 | Field | Content |
 | --- | --- |
-| `format` | The state format, `1`, checked on every load |
+| `format` | `2`, checked on every load |
 | `seed` | The seed of `reset` |
-| `env_params` | Every keyword argument of `TinyHydraulicEnv`, written out from its defaults by `default_env_kwargs` and the changes of the scenario: `prices`, `budget`, `max_repairs`, `min_faulty`, `max_faulty`, `max_steps`, `block_cap`, and `allowed` |
+| `config` | The whole `EpisodeConfig` as JSON, read back with `from_json` |
 | `facts_path` | The rig data file the server loads |
-| `task_text` | The task text of the scenario, present when the driver gives one |
-| `actions` | Every action passed to `TinyHydraulicEnv.step`, refused ones included, since refusals count toward the step cap |
-| `tool_calls` | Every call with its tool name, arguments, and answer text, including calls after the end, which never reach the environment |
+| `actions` | Every action passed to `HydraulicRigEnv.step`, refused ones included, since refusals count toward the step cap |
+| `think_cycles` | One entry per action, the thinking cycles charged before it, which replay passes to `step` again |
+| `tool_calls` | Every call with its tool name, arguments and answer text, including calls after the end, which never reach the environment |
+| `last_call_wall_time` | The wall clock of the last call, from which the next call's thinking time is measured |
 
-In JSON the tier keys of the prices are strings and the `allowed` combinations are lists, which `decode_params` turns back into integer keys and tuples.
-
-`released.json` holds:
+`released.json`, released format 2, holds:
 
 | Field | Content |
 | --- | --- |
-| `format` | The released format, `1` |
+| `format` | `2` |
 | `asset_id` | `hyd_1` |
-| `task_text` | The task text of the state file, or null |
-| `rules` | `min_faulty`, `max_faulty`, `budget`, `max_repairs`, `max_steps`, `prices`, `components`, `levels`, `healthy`, and `tiers` with the channel names of each tier |
-| `status` | `phase`, `budget_left`, `repairs_left`, `steps_left`, and `episode_over` |
-| `events` | The history as the agent saw it, with measurements as the tool answers showed them |
+| `task_text` | The briefing, composed at the configured guidance level |
+| `guidance_level` | 1, 2 or 3 |
+| `rules` | `components`, `levels`, `healthy`, `sensor_groups` with the public field names, `statistics`, `prices`, `durations`, `downtime_rate`, `budget`, `horizon`, `max_steps`, `fault_rule`, `clock_mode` and `healthy_bands`, keyed by the field of each channel mean |
+| `status` | `time`, `day` when the episode is anchored, `budget_left`, `steps_left`, `open_work_orders` and `episode_over` |
+| `events` | The public view of every log entry after the reset, in order, system events and the end entry included, each with `t_start`, `t_end` and `class`. A scheduled drop has no public view, and a failure carries its time but not its component |
+| `observations` | One entry per served cycle, `n`, `t`, `sensor_group` and `values`, the index the evidence identifiers of readings refer to |
 
-Both files go through `write_json_atomically` in `src/servers/json_files.py`, which writes a temporary file in the same folder and renames it over the target with `os.replace`, so a server stopped while writing never leaves a torn file. [benchmarks.md](benchmarks.md) describes the files that the driver adds to the folder, such as `question.txt`, `log.json`, and `score.json`.
+The released evidence never holds the seed, the configuration, the data path, a recording index, the hidden combination, the combination after a repair, whether a work order was necessary, the schedule, the external event or the final combination. `test_released_evidence_holds_only_what_the_agent_saw` in `src/servers/hydraulic_rig/tests/test_server.py` checks the file against the hidden fields.
+
+Both files go through `write_json_atomically` in `src/servers/json_files.py`, which writes a temporary file in the same folder and renames it over the target, so a server stopped while writing never leaves a torn file. [benchmarks.md](benchmarks.md) describes the files that the driver adds to the folder.
+
+### Evidence identifiers
+
+The agent cites evidence by identifiers that the verifier checks against the released evidence. The forms are stated in the briefing at guidance level 2:
+
+| Identifier | Refers to |
+| --- | --- |
+| `obs/<n>/<field>` | one served value: observation `n` of `released.json` and the field of a channel summary |
+| `wo/<id>` | a work order, such as `wo/wo-1`, or `wo/wo-ext-1` for the technician's order |
+| `alarm/<t>/<channel>` | an alarm of a change summary: the first cycle at which the channel mean left its public band, and the field of that mean |
+| `fmea/<source>/<code>` | a failure mode code served by `get_failure_modes`, with the source `industryasseteqa_hydraulic_facts` |
+| `pred/<n>` | a prediction stored by `estimate_intervention_effect` of the diagnostics server |
 
 ---
 
 ## The briefing
 
-The question that opens an episode is its briefing, composed by `briefing` in `src/servers/hydraulic_rig/briefing.py` from the observation that `reset(seed)` returns. In the Plan-Execute runner the question is the only text about the episode that the planner, the argument filler, and the summarizer all read. The argument filler in particular sees the question, the tool name, the parameter names with their JSON types and required flags, the task of the step, and the earlier answers, but no tool description. The question carries every legal value and every number of the episode, while the tool descriptions hold static guidance only.
+The question that opens an episode is its briefing, composed by `briefing(profile, config)` in `src/servers/hydraulic_rig/briefing.py` from the asset profile and the episode configuration. It is the `task_text` of the released evidence and the question that the planner, the argument filler and the summarizer of the Plan-Execute runner all read. The argument filler sees the question, the tool name, the parameter names with their JSON types and required flags, the task of the step and the earlier answers, but no tool description, so at guidance level 2 the question carries the legal value of every tool parameter, while the tool descriptions hold static guidance only and no number.
 
-The briefing states:
+| Level | What the briefing states |
+| --- | --- |
+| 1 | The asset (its identifier, type, description and site), the date of the start when the episode is anchored, the fact that the performance monitor flagged the unit, and the objective as one question in the form of an IndustryAssetEQA question: which condition level each component is at and which work orders restore the unit, within the budget and the horizon. `config.question` replaces that question when set. It ends with the rule of the answer: exactly one diagnosis or one declaration of insufficient evidence, the work orders that restore the unit, and a finish with a summary. The rules themselves are left to `get_asset_profile` |
+| 2 | Level 1 plus the public details: the condition levels with the healthy level of every component, the fault count rule in words, every tool of the action server with its class, duration and price, the sensor groups with their channels and read prices, the work order lifecycle with the parts, the lead times, the repair downtimes, the stopped rate and the repair charge, the rule that a diagnosis or a declaration precedes a work order, the evidence identifier forms, the downtime rates, the budget, the horizon, the step cap, the clock mode sentence, the ends of an episode with the failure rule, and the rule that a refused call counts as a step. When the diagnostics server is registered, a sentence names its four tools and the `pred/<n>` form |
+| 3 | Level 2 plus a numbered procedure: read sensors before diagnosing, rank the candidates after each reading and declare insufficient evidence with the separating test the ranking names when it reports the evidence as insufficient (both only with the diagnostics server), create one work order per diagnosed fault and advance time until the orders close, cite the evidence identifiers behind every diagnosis and work order, finish with a summary |
 
-- The four components and the public rule on the number of faulty components, such as "between 1 and 2 components start off their healthy level", worded with "exactly" when `min_faulty` equals `max_faulty`.
-- The condition levels of every component, with its healthy level.
-- Each tool with its arguments and price, the channel names that each tier returns, and the rule that a field is named after its channel and statistic.
-- The rules: one submission of either kind, no replacement before it, the repair limit, the ways an episode ends, the step cap, the budget, that a refused call counts as a step, and that a call with a missing argument or one of the wrong type is refused.
-
-The rules ask the agent to measure first, which the environment does not enforce, since it accepts a submission before any measurement.
-
-Nothing in the observation at reset depends on the seed, so episodes with the same parameters open with the same question. The wording carries a version, `BRIEFING_VERSION`, which the driver records in `run.json`. The driver writes each question to `question.txt` and, when the causal diagnosis server is registered, appends a paragraph on its seven tools (`TOOLS_NOTE` in `benchmarks/hydraulic_rig/run_episodes.py`).
-
-The task text is separate. The driver passes the task text of the scenario, a short complaint worded from the public rule, to `episode.start`, which stores it in `episode.json` and releases it in `released.json`. The agent reads it only through `get_symptom_report` of the causal diagnosis server.
+Nothing in the briefing depends on the seed, so episodes with the same configuration open with the same question. The wording carries a version, `BRIEFING_VERSION`, which the driver records in `run.json`, since the wording is part of the environment definition. The guidance level is ablation A10 of [benchmarks.md](benchmarks.md).
 
 ---
 
 ## Tools
 
-`build_server` in `src/servers/hydraulic_rig/main.py` registers the five tools:
+`build_server` in `src/servers/hydraulic_rig/main.py` registers the nine tools, each with the `readOnlyHint` annotation that the tool contract gives it:
 
-| Tool | Arguments | Phase | Price | An accepted call |
-| --- | --- | --- | --- | --- |
-| `measure` | `tier`, integer | Investigate or repair | 1, 3, or 10 for tier 1, 2, or 3 | Reads the next recorded cycle and returns the mean, std, min, and max of every channel of the tier |
-| `submit` | `cooler`, `valve`, `pump`, `accumulator`, integers | Investigate | Free | Records one condition level per component and opens the repair phase |
-| `submit_insufficient_evidence` | `next_action`, string | Investigate | Free | Records that the evidence cannot separate the remaining candidates, with the one action that would, and opens the repair phase without a diagnosis |
-| `replace` | `component`, string | Repair | The part plus 20 for downtime | Restores the component to its healthy level, and ends the episode when every component is healthy or the repair limit is used up |
-| `finish` | None | Repair | Free | Ends the episode |
+| Tool | Parameters | Class | Duration | Price | Scored | An accepted call |
+| --- | --- | --- | --- | --- | --- | --- |
+| `get_asset_profile` | none | read | 0 | free | no | returns the asset profile |
+| `read_sensors` | `sensor_group` string, `cycles` integer | read | `cycles` times `read_per_cycle` | `cycles` times the group's read price | no | runs the rig for the cycles and returns the mean and std of every channel of the group for each cycle the rig ran, with the observation number and the cycle time |
+| `advance_time` | `cycles` integer | read | `cycles` times `advance_per_cycle` | free, downtime accrues | no | lets the rig run and returns the new time |
+| `summarize_changes_since` | `cycle` integer | read | 0 | free | no | returns the cycles elapsed, the channel means that left their healthy band since that cycle with the first such cycle, and the work orders closed since then |
+| `get_failure_modes` | `component` string, empty for all | read | 0 | free | no | returns the failure mode codes with severity, recommended action, indicating channels and evidence identifier |
+| `submit_diagnosis` | `cooler`, `valve`, `pump`, `accumulator` integers, `evidence_ids` string | write | 0 | free | yes | records one condition level per component, once per episode and never after a declaration |
+| `declare_insufficient_evidence` | `sensor_group` string, `cycles` integer, `evidence_ids` string | write | 0 | free | yes | records that the evidence cannot separate the remaining candidates and the reading that would, once per episode and never after a diagnosis |
+| `create_work_order` | `component`, `prediction_id`, `evidence_ids` strings | write | the order closes after the lead time and the repair downtime | the part plus the repair charge, at creation | yes | asks a technician to restore the component, after a diagnosis or a declaration and while no order on the component is open |
+| `finish` | `summary` string | write | 0 | free | yes | ends the episode, open work orders stay open |
 
-With the default price list, `DEFAULT_PRICES` in `src/envs/hydraulic_rig/env.py`, the parts cost 20 for the cooler, the valve, and the accumulator, and 30 for the pump. By default the budget is 150, the repair limit 2 replacements, and the step cap 200 steps. Every step counts toward the cap, refused calls and an accepted `finish` included, and an action that would exceed the budget ends the episode. Each measurement reads the next cycle of a window of 10 recorded cycles (`block_cap`), whatever its tier, and `repeated` turns true once the reads have gone through the whole window and start over. [environment.md](environment.md) describes the windows, the phases, and the scoring.
+Every parameter is flat, typed and required in the advertised schema, with no default, since the planner and the argument filler see each parameter only as a name, a JSON type and a required flag. Each parameter is annotated as `str` with a plain validator that returns the value unchanged (`_as_sent`), so that FastMCP does not decode a string that looks like JSON and a value arrives exactly as the client sent it: a cycle count sent as `"2"` or `2.0` is refused by the environment. `_advertised` drops from the schema the null defaults that let an incomplete call through and marks every parameter required. `evidence_ids` is a comma separated string, possibly empty, that `evidence_list` turns into the list the environment stores. `submit_diagnosis` takes the four levels as flat parameters and builds the diagnosis dict, and `declare_insufficient_evidence` takes the separating test as `sensor_group` and `cycles`.
 
-Every parameter is flat, typed, and required in the advertised schema, with no default, since the planner and the argument filler see each parameter only as a name, a JSON type, and a required flag. Each parameter is annotated as `str`, so that FastMCP does not decode a string that looks like JSON, such as `"[2]"`, and a validator that returns the value unchanged replaces the string check (`_as_sent`). A value arrives exactly as the client sent it, so a tier sent as `"2"` or `2.0` is refused. `_advertised_as_required` drops from the schema the null defaults that let an incomplete call through.
+Every answer is one JSON object, the envelope of [environment.md](environment.md): `time`, `day` when the episode is anchored, `budget_left`, `steps_left`, `open_work_orders`, `episode_over`, and `result` for an accepted call or `refused` with the reason for a refused one. A refused call costs nothing and counts as one step, and in the `instant` clock mode it advances the clock by one cycle like every other step. The refusal reasons are those of the environment, listed in [environment.md](environment.md). A call after the episode has ended is answered by the server itself with the refusal `the episode is over; this call changed nothing` and recorded in `tool_calls` only, since the environment is not called.
 
-Every answer is one JSON object, such as the refusal that the client above prints:
+| Failure | What the agent gets | What is recorded |
+| --- | --- | --- |
+| A malformed call, a call out of order, or a second commitment | A `refused` envelope with the reason | The action in `actions`, the call in `tool_calls`, and a `refused` entry in the log, counted as a step |
+| A read or a work order the budget cannot cover | A `refused` envelope with the reason `budget` and `episode_over` true | The same, followed by the end entry of the log with the reason `budget` |
+| A call after the episode has ended | A `refused` envelope with the counters and `episode_over` true | The call in `tool_calls` only |
+| A call to a tool the server does not offer | The error result `Unknown tool: <name>` from FastMCP | Nothing |
+| An argument outside the signature of the tool | The answer to the call without that argument | Nothing, since FastMCP drops the key before the tool runs |
 
-| Field | Content |
-| --- | --- |
-| `event` | The history entry the call added, as the agent sees it, or null when the call added none, as for an accepted `finish` |
-| `cost` | What the call was charged |
-| `phase` | `investigate` before the submission and `repair` after it |
-| `budget_left`, `repairs_left`, `steps_left` | The counters after the call |
-| `episode_over` | Whether the episode has ended |
-| `note` | Present only on a call after the end, which changes nothing and carries the counters and `episode_over` without `event` or `cost` |
-
-The `event` of an answer takes one of four forms:
-
-| `event` | Other keys |
-| --- | --- |
-| `measure` | `tier`, `cost`, `result` with one value per field name, and `repeated` |
-| `submit` | `diagnosis`, `insufficient_evidence`, and `next_action` |
-| `replace` | `component` and `cost` |
-| `refused` | `action` as the environment received it, and `reason` |
-
-A refused call costs nothing and counts as one step. A refused submission leaves the investigate phase open for another attempt.
-
-| Reason | Cause |
-| --- | --- |
-| `unknown tier` | A tier other than the integers 1, 2, and 3, a missing tier included |
-| `diagnosis level not in the component's levels` | A level that is not an integer among the levels of the component, a missing level included |
-| `insufficient_evidence needs next_action` | A `next_action` that is empty, missing, or not a string |
-| `already submitted` | A second submission of either kind |
-| `diagnosis must be submitted before the first repair` | `replace` before the submission |
-| `unknown component` | A component other than `cooler`, `valve`, `pump`, and `accumulator` |
-| `finish is allowed after the diagnosis` | `finish` before the submission |
-| `budget` | A measurement or replacement that costs more than the budget left, which also ends the episode |
+The Plan-Execute executor ignores the error flag of a result, so a call to an unknown tool counts as a successful step of the plan. The driver counts such steps from the trajectory of the runner.
 
 ---
 
-## Failure records
+## The tool contract
 
-Every call that reaches one of the five tools is recorded in `episode.json`, and the environment logs each refusal with its reason. Calls that never reach a tool leave no trace in the episode files, so the driver counts them from the trajectory of the runner.
+`src/servers/tool_contract_v2.json` declares every tool of both servers, format 2. Each entry holds the `server` (`hydraulic_rig` or `causal_diagnosis`), the `class` (`read` or `write`), the `parameters` with their JSON types, the `duration` as a rule in words with `cycles_per_unit`, the `price` as a rule in words, whether the verifier scores the tool, and the `aliases` the proof of concept used for it (`inspect` for `read_sensors`, `diagnose` for `submit_diagnosis`, `replace` for `create_work_order`, and `advance_time`). The four tools of the diagnostics server are reads with no duration and no price, unscored.
 
-| Failure | What the agent gets | What is recorded | Column of `scores.csv` |
-| --- | --- | --- | --- |
-| A malformed call, a call out of order, or a second submission | A `refused` event with the action as sent and the reason | The action in `actions`, the call in `tool_calls`, and a `refused` event in the log, counted as a step | `refusals` |
-| An action the budget cannot cover | A `refused` event with the reason `budget`, and `episode_over` true | The same, followed by the end event of the log with the reason `budget` | `refusals` and `end_reason` |
-| A call after the episode has ended | The counters, `episode_over`, and `note` | The call in `tool_calls` only, since the environment is not called | `calls_after_end` |
-| A call to a tool the server does not offer | The error result `Unknown tool: <name>` from FastMCP | Nothing | `calls_reaching_no_tool` |
-| An argument outside the signature of the tool | The answer to the call without that argument | Nothing, since FastMCP drops the key before the tool runs | None |
-
-The Plan-Execute executor ignores the error flag of a result, so a call to an unknown tool counts as a successful step. For a run through the Plan-Execute runner, `calls_reaching_no_tool` is the number of tool steps of the plan on this server minus the calls in `episode.json`, so it also counts a step that failed before its call.
+`src/servers/contract.py` loads the file: `load_contract`, `tools_of(server)`, `tool_class(name)`, `read_only_hint(name)`, `check_advertised(server, hints, parameters=None)`, which returns the list of differences between what a server advertises and the contract, and `public_table(servers=None)`, the rows the asset profile serves under `tools`. The class travels with each MCP tool as its `readOnlyHint` annotation, the environment logs it on every entry, and `test_advertised_tools_and_hints_match_the_contract` in the test file of each server compares the advertised tools, hints and parameters with the file, so that the declaration and the code cannot drift apart.
 
 ---
 
-## Released answers
+## Clock modes in the server
 
-The causal diagnosis server reasons over the episode without touching the environment, so it has to see what the agent has been told and nothing more. `episode.json` would give it the seed, from which a replay recovers the hidden combination. The action server writes `released.json` beside the state file instead, and the launcher of the causal diagnosis server binds that server to the `released.json` in its own folder (`src/servers/causal_diagnosis/launcher.py`). Apart from its own `predictions.json`, that server reads nothing else in the episode folder.
-
-`released.json` never holds the seed, the `allowed` combinations, the data path, a cycle number, the hidden combination, the combination after a replacement, or whether a replacement was needed. `test_released_answers_hold_only_what_the_agent_saw` in `src/servers/causal_diagnosis/tests/test_server.py` checks the released events against the history as the agent sees it, and the text of the file against these keys.
+The environment advances the clock by the declared duration of every action in the `declared` mode and by one cycle per step in the `instant` mode, as [environment.md](environment.md) describes. The `generation_time` mode charges the agent's thinking time as well, and that time is measured here: `episode.call` takes the wall clock of the call, `think_cycles` converts the seconds since `last_call_wall_time` into cycles by dividing by `seconds_per_cycle` and rounding up, the result is stored in `think_cycles` of the state file and passed to `step` before the action, and `last_call_wall_time` moves to the call. `episode.start` sets the wall clock too, so the thinking time of the first call counts from the start of the episode. Replay passes the stored cycles to `step` again, so a replayed episode reproduces the log whatever the wall clock of the replay. In the other two modes the stored cycles are zero. `call` takes an optional `now` for tests.
 
 ---
 
-## Reference policies through the same interface
+## Reference policies through the tools
 
-`src/servers/hydraulic_rig/policy_client.py` lets a policy that maps an observation to an action play through the tools, on exactly what a language model agent gets:
+`src/servers/hydraulic_rig/policy_client.py` lets a policy of `src/envs/hydraulic_rig/policies.py` play through the tools, on exactly what a language model agent gets:
 
-- `tool_call` maps an action of `TinyHydraulicEnv.step` to its tool and arguments, the inverse of the five tools.
-- `play` runs one episode, in which the policy sees the observation at reset and after that only what the answers carry.
-- `PublicClassifiers` keys the held-out prediction table of `GreedyPolicy` by measurements as the answers show them. Its constructor refuses a table in which renaming and rounding would merge two measurements of a tier, so the policy decides through the tools as it does in a direct run.
+- `tool_call(action)` maps an action of `HydraulicRigEnv.step` to its tool and arguments, the inverse of the nine tools, with the evidence identifiers joined by commas.
+- `play(policy, opening, send)` runs one episode: the policy starts from the opening envelope, whose result is the asset profile (`episode.opening(state)` gives it for a stored episode), and after that sees only the answers that `send` returns, until an answer says the episode is over.
 
-The driver plays the reference policies `random`, `greedy`, and `greedy_prior_1to2` of `policy_table` in `benchmarks/hydraulic_rig/run_policies.py` this way. `run_policy` in `benchmarks/hydraulic_rig/run_episodes.py` sends each action through the runner's own `_call_tool`, which starts the server from the launcher of the episode like any Plan-Execute call. The oracle reads the hidden state, which no tool releases, so it runs in process.
-
-```bash
-uv run python benchmarks/hydraulic_rig/run_episodes.py --scenario S1 --agent greedy_prior_1to2 --per-record 1
-```
-
-`test_greedy_policy_on_tool_answers_takes_its_in_process_actions` plays the greedy policy through `episode.call` on seeds 0 to 4, with and without the public rule on the number of faulty components, and compares each log with a direct run of the environment.
+The driver plays the reference policies `oracle`, `do_nothing` and `greedy` this way, each action sent through the runner's own `_call_tool`, which starts the server from the launcher of the episode like any Plan-Execute call. A shadow environment in the driver process is reset with the same seed and configuration, the oracle reads the hidden state from it, and after every call the shadow steps the same action with the thinking cycles the server stored, so the served log can be compared with the shadow's at the end (`replay_matches` in `scores.csv`). `test_do_nothing_and_greedy_through_the_tools_take_their_in_process_actions` plays the two policies through `episode.call` and compares each log with a direct run of the environment.
 
 ---
 
@@ -252,15 +232,15 @@ uv run python benchmarks/hydraulic_rig/run_episodes.py --scenario S1 --agent gre
 
 ```bash
 export HYD_FACTS_PATH=~/rig-data/hyd_facts.jsonl
-uv run pytest src/servers/hydraulic_rig -q
+PATH=$PWD/.venv/bin:$PATH python -m pytest src/servers/hydraulic_rig -q
 ```
 
-`src/servers/hydraulic_rig/tests/test_server.py` covers the field names, the round trip of the environment parameters through JSON, replay, refusals, calls after the end, the briefing, the atomic writes, `tool_call`, the greedy policy through the answers, and the server over stdio. Some tests are skipped when a file or a package is missing:
+`src/servers/hydraulic_rig/tests/test_server.py` covers the field names, the state file, replay, refusals, calls after the end, the released evidence, the thinking cycles of the `generation_time` mode and their replay, the briefing at every guidance level, the contract match, `tool_call`, the policies through the tools, and the server over stdio. Some tests are skipped when a file or a package is missing:
 
 | Missing | Effect |
 | --- | --- |
 | The rig data file, at `HYD_FACTS_PATH` or the default path | The whole module is skipped |
-| The mcp package | `test_server_offers_five_flat_tools_and_answers_over_stdio` is skipped |
-| `src/couchdb/scenarios_data/shared/iot/hydraulic_pump_1.json` | `test_hyd1_field_names_are_the_asset_s_own_columns` is skipped |
+| The mcp package | The stdio test is skipped |
+| `src/couchdb/scenarios_data/shared/iot/hydraulic_pump_1.json` | The test that compares the field names with the asset's own columns is skipped |
 
-The stdio test copies `launcher.py` beside a temporary episode, starts it with the interpreter of the test, and checks the five tool names, the advertised types, that every parameter is required without a default, and that malformed calls come back as refusals and enter `episode.json` as sent. It passes its own environment with `src/` at the front of `PYTHONPATH`, so the copy imports `servers` also in the pinned runtime of `requirements-smoke.txt`, where the project is not installed.
+The stdio test copies `launcher.py` beside a temporary episode, starts it with the interpreter of the test and `src` on `PYTHONPATH`, and checks the nine tool names, the read only hints, the advertised types, that every parameter is required without a default, and that malformed calls come back as refusals and enter `episode.json` as sent. No test states a value computed from the rig data.

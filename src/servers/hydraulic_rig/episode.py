@@ -1,65 +1,42 @@
-"""One tiny world episode behind a stateless tool server (docs/hydraulic_rig/action-server.md).
+"""One hydraulic rig episode behind a stateless tool server (docs/hydraulic_rig/action-server.md).
 
 AssetOpsBench's Plan-Execute runner starts a new server process for every tool call, so an episode lives in a JSON
-state file rather than in server memory: the environment parameters, the seed and every action passed to env.step,
-refused ones included because they count toward the step cap. Each call rebuilds the environment by reset(seed) and
-replay, which is exact because every draw comes from the generator seeded at reset (docs/hydraulic_rig/environment.md), applies the new
-action, and saves the file before it answers. Beside the state file the server keeps the released answers, everything
-the agent has been told and nothing else, for tools that reason over the episode without touching the environment,
-such as the causal-diagnosis server.
+state file rather than in server memory: the seed, the configuration, the data file, every action passed to env.step,
+refused ones included because they count toward the step cap, and the thinking time charged before each action. Each
+call rebuilds the environment by reset(seed) and replay, which is exact because every draw comes from the generator
+seeded at reset and the thinking cycles are stored, applies the new action, and saves the file before it answers. Beside
+the state file the server keeps the released evidence, everything the agent has been told and nothing else, for tools
+that reason over the episode without touching the environment, such as the diagnostics server.
 """
-import inspect
 import json
+import math
+import time
 from functools import lru_cache
 from pathlib import Path
 
+from envs.hydraulic_rig.config import EpisodeConfig
 from envs.hydraulic_rig.data import build_blocks, load_cycles
-from envs.hydraulic_rig.env import DEFAULT_PRICES, TinyHydraulicEnv
+from envs.hydraulic_rig.env import HydraulicRigEnv
 from servers.json_files import write_json_atomically
 
-from .names import ASSET_ID, public_result, tier_fields
+from .briefing import briefing
 
-STATE_FORMAT = 1
-RELEASED_FORMAT = 1
+STATE_FORMAT = 2
+RELEASED_FORMAT = 2
 RELEASED_NAME = "released.json"
-STATUS_KEYS = ("phase", "budget_left", "repairs_left", "steps_left")
+EPISODE_OVER = "the episode is over; this call changed nothing"
 
 
-def default_env_kwargs():
-    """The environment's own defaults, so that a state file records every parameter explicitly."""
-    params = inspect.signature(TinyHydraulicEnv.__init__).parameters
-    kwargs = {name: p.default for name, p in params.items() if p.default is not inspect.Parameter.empty}
-    kwargs["prices"] = kwargs["prices"] or DEFAULT_PRICES
-    return kwargs
-
-
-def encode_params(env_kwargs):
-    """JSON form of TinyHydraulicEnv keyword arguments; decode_params inverts it."""
-    out = dict(env_kwargs)
-    prices = env_kwargs["prices"]
-    out["prices"] = {"measure": {str(t): p for t, p in prices["measure"].items()}, "parts": dict(prices["parts"]), "downtime": prices["downtime"]}
-    allowed = env_kwargs.get("allowed")
-    out["allowed"] = None if allowed is None else sorted(list(c) for c in allowed)
-    return out
-
-
-def decode_params(params):
-    """JSON turns the tier keys into strings and the combinations into lists; the environment needs ints and tuples."""
-    out = dict(params)
-    prices = params["prices"]
-    out["prices"] = {"measure": {int(t): p for t, p in prices["measure"].items()}, "parts": dict(prices["parts"]), "downtime": prices["downtime"]}
-    out["allowed"] = None if params["allowed"] is None else {tuple(c) for c in params["allowed"]}
-    return out
-
-
-def new_state(seed, env_kwargs, facts_path):
+def new_state(seed, config, facts_path, wall_time):
     return {
         "format": STATE_FORMAT,
         "seed": seed,
-        "env_params": encode_params(env_kwargs),
+        "config": config.to_json(),
         "facts_path": str(facts_path),
         "actions": [],
+        "think_cycles": [],
         "tool_calls": [],
+        "last_call_wall_time": wall_time,
     }
 
 
@@ -76,44 +53,42 @@ def save_state(path, state):
 
 
 def released_path(state_path):
-    """The released answers beside the state file, which the causal-diagnosis server reads."""
+    """The released evidence beside the state file, which the diagnostics server reads."""
     return Path(state_path).with_name(RELEASED_NAME)
 
 
-def write_released(state_path, env, state):
-    """Everything the agent has been told: the public rules, the counters and the agent-facing history as the tool
-    answers showed it. Never the seed, the allowed combinations, the facts path, a cycle number or the hidden state."""
-    obs = env.observation()
-    prices = obs["prices"]
+def write_released(state_path, env):
+    """Everything the agent has been told: the question, the public rules, the status, the public events and the served
+    observations. Never the seed, the configuration, the data path, a recording index or the hidden state."""
+    profile = env.public_profile()
+    config = env.config
+    events = env.public_events()
+    status = {"time": env.time}
+    if config.anchors is not None:
+        status["day"] = config.date_of(env.time)
+    status.update({"budget_left": config.budget - env.cost, "steps_left": config.max_steps - env.steps,
+                   "open_work_orders": env.public_work_orders(), "episode_over": env.done})
     released = {
         "format": RELEASED_FORMAT,
-        "asset_id": ASSET_ID,
-        "task_text": state.get("task_text"),
-        "rules": {
-            "min_faulty": obs["min_faulty"],
-            "max_faulty": obs["max_faulty"],
-            "budget": env.budget,
-            "max_repairs": env.max_repairs,
-            "max_steps": env.max_steps,
-            "prices": {"measure": {str(t): p for t, p in prices["measure"].items()}, "parts": dict(prices["parts"]), "downtime": prices["downtime"]},
-            "components": obs["components"],
-            "levels": obs["levels"],
-            "healthy": obs["healthy"],
-            "tiers": {str(t): tier_fields(t) for t in obs["tiers"]},
-        },
-        "status": _status(env),
-        "events": [_agent_view(e) for e in obs["history"]],
+        "asset_id": config.asset_id,
+        "task_text": briefing(profile, config),
+        "guidance_level": config.guidance_level,
+        "rules": {key: profile[key] for key in ("components", "levels", "healthy", "sensor_groups", "statistics", "prices", "durations",
+                                                 "downtime_rate", "budget", "horizon", "max_steps", "fault_rule", "clock_mode", "healthy_bands")},
+        "status": status,
+        "events": events,
+        "observations": [{"n": o["n"], "t": o["t"], "sensor_group": e["sensor_group"], "values": o["values"]}
+                         for e in events if e["event"] == "read" for o in e["served"]],
     }
     write_json_atomically(released_path(state_path), released, indent=1)
 
 
-def start(state_path, seed, env_kwargs, facts_path, *, task_text=None):
-    """Create an episode: its state file and its first released answers (the rules and an empty history)."""
-    state = new_state(seed, env_kwargs, facts_path)
-    if task_text is not None:
-        state["task_text"] = task_text
+def start(state_path, seed, config, facts_path):
+    """Create an episode: its state file and its first released evidence (the question, the rules and no events). The
+    thinking time of the first call counts from here."""
+    state = new_state(seed, config, facts_path, time.time())
     save_state(state_path, state)
-    write_released(state_path, replay(state), state)
+    write_released(state_path, replay(state))
     return state
 
 
@@ -124,51 +99,51 @@ def load_world(facts_path):
 
 
 def replay(state):
-    """The environment after reset(seed) and every stored action."""
+    """The environment after reset(seed) and every stored action with its stored thinking cycles."""
     cycles, blocks = load_world(state["facts_path"])
-    env = TinyHydraulicEnv(cycles, blocks, **decode_params(state["env_params"]))
+    env = HydraulicRigEnv(cycles, blocks, EpisodeConfig.from_json(state["config"]))
     env.reset(state["seed"])
-    for action in state["actions"]:
+    for action, think in zip(state["actions"], state["think_cycles"]):
         if env.done:
             raise ValueError("the stored actions run past the end of the episode")
-        env.step(action)
+        env.step(action, think_cycles=think)
     return env
 
 
-def call(state_path, tool, arguments, action):
+def opening(state):
+    """The envelope a policy starts from: the current clock and counters with the asset profile as result."""
+    env = replay(state)
+    return env.envelope(env.public_profile())
+
+
+def think_cycles(config, last_wall_time, now):
+    """The agent's thinking time since the last call in cycles, rounded up; charged in the generation_time mode only."""
+    if config.clock_mode != "generation_time":
+        return 0
+    return max(0, math.ceil((now - last_wall_time) / config.seconds_per_cycle))
+
+
+def call(state_path, tool, arguments, action, now=None):
     """Apply one tool call to the stored episode and return the JSON text the agent sees.
 
-    Every call reaches env.step, which refuses malformed or out-of-order actions itself and logs the reason, except a
-    call after the episode has ended: env.step raises then, so the call is answered here and only recorded. The answer
-    carries what docs/hydraulic_rig/environment.md lets the tool server forward: the observation (the new history entry, which holds the
-    refusal reason, and the counters), the cost and the done flag; never the info dict, which ends an episode with the
-    full log and its hidden state. The released answers are rewritten after every call."""
+    Every call reaches env.step, which refuses malformed or out-of-order actions itself and logs the reason, except a call
+    after the episode has ended: env.step raises then, so the call is answered here as a refusal and only recorded. The
+    answer is the envelope of the environment; never the info dict, which ends an episode with the full log and its hidden
+    state. The released evidence is rewritten after every call. `now` is the wall clock of the call, taken from
+    time.time() when None."""
     state = load_state(state_path)
     env = replay(state)
+    now = time.time() if now is None else now
     if env.done:
-        response = {**_status(env), "note": "the episode is over; this call changed nothing"}
+        response = env.envelope(refused=EPISODE_OVER)
     else:
-        seen = len(env.observation()["history"])
-        _obs, cost, _done, _info = env.step(action)
+        think = think_cycles(env.config, state["last_call_wall_time"], now)
+        response, _cost, _done, _info = env.step(action, think_cycles=think)
         state["actions"].append(action)
-        new_events = env.observation()["history"][seen:]
-        response = {"event": _agent_view(new_events[-1]) if new_events else None, "cost": cost, **_status(env)}
+        state["think_cycles"].append(think)
+    state["last_call_wall_time"] = now
     text = json.dumps(response, separators=(",", ":"))
     state["tool_calls"].append({"tool": tool, "arguments": arguments, "response": text})
     save_state(state_path, state)
-    write_released(state_path, env, state)
+    write_released(state_path, env)
     return text
-
-
-def _status(env):
-    obs = env.observation()
-    status = {key: obs[key] for key in STATUS_KEYS}
-    status["episode_over"] = env.done
-    return status
-
-
-def _agent_view(event):
-    """The history entry of the environment, with the measurement as tool answers show it (names.public_result)."""
-    if event["event"] == "measure":
-        return dict(event, result=public_result(event["result"]))
-    return event

@@ -1,0 +1,9 @@
+{
+  "name": "full_tier_high",
+  "source": "ablation A9 of design v2 section 8: the full sensor tier priced far above the two cheaper tiers, every other price as in placeholder.json",
+  "prices": {
+    "read": {"tier1": 1, "tier2": 3, "tier3": 100},
+    "parts": {"cooler": 20, "valve": 20, "pump": 30, "accumulator": 20},
+    "repair_charge": 20
+  }
+}
