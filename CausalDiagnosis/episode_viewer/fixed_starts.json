@@ -1,0 +1,131 @@
+{
+ "facts_sha256": "1a27f0939d9ceb0d63003f126fcaae4250b94f5f45a551ee653b7f0a76479e95",
+ "master_seed": 42,
+ "presets": {
+  "advanced_real_time": "130fb10b444c88976af1e48b199c7dbd1c642ad939e77b5cd5b6104af765bb18",
+  "advanced_real_time_token_clock": "130fb10b444c88976af1e48b199c7dbd1c642ad939e77b5cd5b6104af765bb18",
+  "base": "837eff2932057d515bf85a6aa69aed324d15d036521edc8e38a12235910f6cff",
+  "deterioration": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "deterioration_durations_off": "b6c7fa1ca592b6ee22e48be7438b5307a041be764c52c18d15a9d509ecb37a18",
+  "deterioration_failure_off": "247507b1c9827d7e7b6c9d89564e1773ceaf45310486e69d7a4d538ca4398af3",
+  "deterioration_misdiagnosis_budget": "a6be69be73714a6dcf4f8687e61e8f48fc936b1e0189bcaab96c8f8a7e32b121",
+  "deterioration_mode_none": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "deterioration_thinking_off": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "deterioration_thinking_price_double": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "deterioration_thinking_price_half": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "deterioration_token_clock": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "priced": "82174bdb58d46b9cb4ab8369f82c7b9243d441433b1ae05f4ecd8435d666f4bb",
+  "real_time": "86376afa98ea3ad31aebf4c01496747233bf8af932a4c1d70665ddd02bd46972",
+  "real_time_token_clock": "86376afa98ea3ad31aebf4c01496747233bf8af932a4c1d70665ddd02bd46972",
+  "repair_rules": "247507b1c9827d7e7b6c9d89564e1773ceaf45310486e69d7a4d538ca4398af3",
+  "repair_rules_token_clock": "247507b1c9827d7e7b6c9d89564e1773ceaf45310486e69d7a4d538ca4398af3",
+  "scheduled": "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d",
+  "static": "29ed3e32f8407390177fe0821858997841157daf40d9246daf40d65e42283d22",
+  "static_zero_durations": "8763bb2aedc77fbe17d625c1d1dbb13ff5a3d012533f9acf6d643bccaa85314a",
+  "timed": "29ed3e32f8407390177fe0821858997841157daf40d9246daf40d65e42283d22"
+ },
+ "rule": "separable when the greedy reference, after reading without charge the recordings of the start that the AssetOpsBench rows record before cycle 0, and where a clock runs on the row the live recordings it then plays, submits the start combination, every level, in more than half of its rollouts on the seeds after the evaluation pool, its most probable combination after the record standing for its submission where no clock runs",
+ "rules": {
+  "130fb10b444c88976af1e48b199c7dbd1c642ad939e77b5cd5b6104af765bb18": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "247507b1c9827d7e7b6c9d89564e1773ceaf45310486e69d7a4d538ca4398af3": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "29ed3e32f8407390177fe0821858997841157daf40d9246daf40d65e42283d22": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "82174bdb58d46b9cb4ab8369f82c7b9243d441433b1ae05f4ecd8435d666f4bb": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "837eff2932057d515bf85a6aa69aed324d15d036521edc8e38a12235910f6cff": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "86376afa98ea3ad31aebf4c01496747233bf8af932a4c1d70665ddd02bd46972": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "8763bb2aedc77fbe17d625c1d1dbb13ff5a3d012533f9acf6d643bccaa85314a": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "a6be69be73714a6dcf4f8687e61e8f48fc936b1e0189bcaab96c8f8a7e32b121": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "b6c7fa1ca592b6ee22e48be7438b5307a041be764c52c18d15a9d509ecb37a18": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  },
+  "b818d0451073efadf090dce7fa3f9e6bc7c22ccf116fb1de42bfc04feb9c2f4d": {
+   "inseparable": {
+    "development_seed": 3,
+    "evaluation_seed": 4
+   },
+   "separable": {
+    "development_seed": 15,
+    "evaluation_seed": 39
+   }
+  }
+ },
+ "seed_pool": 8
+}
