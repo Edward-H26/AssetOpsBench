@@ -10,6 +10,13 @@ paths = [
   '''\.secrets\.baseline$''',
   '''(.*?)(test|tests|fixtures|examples|docs)(/|\\).*''',
   '''.*\.md$''',
+  # the SHA-256 digests that benchmarks/hydraulic_rig/asset_digests.py writes, no secret
+  '''(^|/)benchmarks/hydraulic_rig/asset_digests\.json$''',
+  # the SHA-256 digests of the fixed starts that benchmarks/hydraulic_rig/review_pack.py writes, no secret
+  '''(^|/)benchmarks/hydraulic_rig/fixed_starts\.json$''',
+  # the same two files at their places in CausalDiagnosis/
+  '''(^|/)CausalDiagnosis/experiments/run_verification/invariant_digests\.json$''',
+  '''(^|/)CausalDiagnosis/episode_viewer/fixed_starts\.json$''',
 ]
 # Known-safe placeholder values (regex). Add real false positives here.
 regexes = [

@@ -7,16 +7,18 @@ dict from the task description, original question, and prior step results.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import re
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
 from llm import LLMBackend
-from ..runner import DEFAULT_SERVER_PATHS
-from .models import Plan, PlanStep, StepResult
+from agent.runner import DEFAULT_SERVER_PATHS
+from agent.plan_execute.models import Plan, PlanStep, StepResult
 
 _log = logging.getLogger(__name__)
 
@@ -66,7 +68,7 @@ class Executor:
         descriptions: dict[str, str] = {}
         for name, path in self._server_paths.items():
             try:
-                tools = await _list_tools(path)
+                tools = await _list_tools(path, name)
                 lines = []
                 for t in tools:
                     params = ", ".join(
@@ -93,7 +95,7 @@ class Executor:
             if path is None:
                 continue
             try:
-                tools = await _list_tools(path)
+                tools = await _list_tools(path, name)
                 tool_schemas[name] = {
                     t["name"]: ", ".join(
                         f"{p['name']}: {p['type']}{'?' if not p['required'] else ''}"
@@ -171,7 +173,7 @@ class Executor:
                 question, step.task, step.tool, tool_schema, context, self._llm
             )
 
-            response = await _call_tool(server_path, step.tool, resolved_args)
+            response = await _call_tool(server_path, step.tool, resolved_args, step.server)
             return StepResult(
                 step_number=step.step_number,
                 task=step.task,
@@ -282,53 +284,69 @@ def _make_stdio_params(server: Path | str) -> "StdioServerParameters":
             cwd=str(_REPO_ROOT),
         )
     except ValueError:
-        return StdioServerParameters(command="python", args=[str(server)])
+        return StdioServerParameters(command="python", args=["-I", str(server)])  # a launcher runs only isolated
 
 
-async def _list_tools(server_path: Path | str) -> list[dict]:
+@contextlib.contextmanager
+def _server_errlog(server_path: Path | str, server_name: str | None):
+    """Where a server started here writes its standard error: for a launcher file, the error log of its episode folder that
+    CausalDiagnosis.agents.utils.mcp_sessions.open_sessions keeps for the servers it starts, so an unanswered tool call can be read against the
+    server's own record; for a server named by its package entry point, the caller's standard error."""
+    if not Path(str(server_path)).is_file():
+        yield sys.stderr
+        return
+    from CausalDiagnosis.agents.utils.mcp_sessions import error_log
+
+    with error_log(server_path, server_name or Path(str(server_path)).stem).open("w", encoding="utf-8") as log:
+        yield log
+
+
+async def _list_tools(server_path: Path | str, server_name: str | None = None) -> list[dict]:
     """Connect to an MCP server via stdio and list its tools with parameter info."""
     from mcp import ClientSession
     from mcp.client.stdio import stdio_client
 
     params = _make_stdio_params(server_path)
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            result = await session.list_tools()
-            tools = []
-            for t in result.tools:
-                schema = t.inputSchema or {}
-                props = schema.get("properties", {})
-                required = set(schema.get("required", []))
-                parameters = [
-                    {
-                        "name": k,
-                        "type": v.get("type", "any"),
-                        "required": k in required,
-                    }
-                    for k, v in props.items()
-                ]
-                tools.append(
-                    {
-                        "name": t.name,
-                        "description": t.description or "",
-                        "parameters": parameters,
-                    }
-                )
-            return tools
+    with _server_errlog(server_path, server_name) as log:
+        async with stdio_client(params, errlog=log) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.list_tools()
+                tools = []
+                for t in result.tools:
+                    schema = t.inputSchema or {}
+                    props = schema.get("properties", {})
+                    required = set(schema.get("required", []))
+                    parameters = [
+                        {
+                            "name": k,
+                            "type": v.get("type", "any"),
+                            "required": k in required,
+                        }
+                        for k, v in props.items()
+                    ]
+                    tools.append(
+                        {
+                            "name": t.name,
+                            "description": t.description or "",
+                            "parameters": parameters,
+                        }
+                    )
+                return tools
 
 
-async def _call_tool(server_path: Path | str, tool_name: str, args: dict) -> str:
+async def _call_tool(server_path: Path | str, tool_name: str, args: dict, server_name: str | None = None) -> str:
     """Connect to an MCP server via stdio and call a tool."""
     from mcp import ClientSession
     from mcp.client.stdio import stdio_client
 
     params = _make_stdio_params(server_path)
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            result = await session.call_tool(tool_name, args)
-            return _extract_content(result.content)
+    with _server_errlog(server_path, server_name) as log:
+        async with stdio_client(params, errlog=log) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.call_tool(tool_name, args)
+                return _extract_content(result.content)
 
 
 def _extract_content(content: list[Any]) -> str:

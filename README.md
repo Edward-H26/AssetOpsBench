@@ -85,14 +85,10 @@ AssetOpsBench is a **unified framework for developing, orchestrating, and evalua
 | **TSFM** | Tasks/evidence: `list_tasks`, `profile_series`, `characterize_series`, `data_quality`; model catalog: `list_models`, `search_models`, `find_models`, `resolve_model`, `model_template`, `register_model`, `register_finetuned`, `hf_stats`; feature catalog: `list_features`, `search_features`, `extract_features`, `select_features`; run/eval ledger: `recipe_template`, `run_recipe`, `run_tabular_recipe`, `run_plan`, `evaluate`, `list_runs`, `list_results` |
 | **WO** | Read: `list_workorders`, `get_workorder`, `get_workorder_tasks`, `get_workorder_costs`, `get_workorder_actuals_vs_planned`, `get_workorder_kpis`, `get_schedule_calendar`, `get_my_assigned_workorders`, `get_failure_codes`; write: `generate_work_order`, `update_workorder`, `approve_workorder`, `assign_technician`, `close_workorder`, `cancel_workorder` |
 | **Vibration** | `get_vibration_data`, `list_vibration_sensors`, `compute_fft_spectrum`, `compute_envelope_spectrum`, `assess_vibration_severity`, `calculate_bearing_frequencies`, `diagnose_vibration` |
-| **Hydraulic rig** | `get_asset_profile`, `read_sensors`, `advance_time`, `summarize_changes_since`, `get_failure_modes` (read), `submit_diagnosis`, `declare_insufficient_evidence`, `create_work_order`, `finish` (write) |
-| **Causal diagnosis** | `get_episode_evidence`, `rank_root_causes`, `estimate_intervention_effect`, `verify_outcome` |
 | *Shared utility server* | |
 | **Utilities** | `json_reader`, `get_sensor_catalog`, `get_asset_catalog`, `get_failure_mode_catalog`, `current_date_time`, `current_time_english` |
 
 Five domain servers (IoT, FMSR, TSFM, WO, Vibration) plus one shared utility server, documented in full — arguments, categories, and backing services — in **[docs/mcp-servers.md](./docs/mcp-servers.md)**.
-
-The hydraulic rig gym, its verifier and its two servers are documented in **[docs/hydraulic_rig/README.md](./docs/hydraulic_rig/README.md)**.
 
 The full TSFM MCP surface currently contains 41 tools covering model cards, feature cards, recipe execution, evaluation, and result/run lookup. See [docs/mcp-servers.md](./docs/mcp-servers.md#tsfm--time-series-model-and-feature-catalogs) for the complete reference.
 
@@ -112,6 +108,28 @@ The `src/` directory contains MCP servers and a plan-execute runner built on the
 
 
 ---
+
+## CausalDiagnosis
+
+This fork adds CausalDiagnosis, an industrial environment for language-model agents in which an agent finds the hidden faults of an asset and restores it with tools that cost money and take time. Everything this fork adds lives in [CausalDiagnosis/](CausalDiagnosis/README.md), whose README is the place to start: the architecture, the quick start and every command.
+
+| Folder | What lives there |
+| --- | --- |
+| [`datasets/`](CausalDiagnosis/datasets/) | one folder per dataset (its `asset.json`, data script and tests), the shared loader that reads any dataset, and the rules that split starts into development, training and test sets |
+| [`environment/`](CausalDiagnosis/environment/) | the episode engine: hidden faults, the six layers, the clock, the twelve actions, the tool contract, the verifier, the Gymnasium and OpenEnv wrappers, and the reference policies that use no model |
+| [`mcp_servers/`](CausalDiagnosis/mcp_servers/) | the action server, which serves the twelve actions of an episode as MCP tools, and the CausalDiagnosis MCP, four read-only advice tools with the programs that fit their models offline |
+| [`agents/`](CausalDiagnosis/agents/) | the CausalDiagnosis agent and the helpers every agent shares |
+| [`frameworks/`](CausalDiagnosis/frameworks/) | other benchmarks, each in its own folder behind a declaration; `frameworks/AssetOpsBench/` holds its paper agents, tool servers, judge, scenarios and reproduction |
+| [`experiments/`](CausalDiagnosis/experiments/) | which runs make up each table, the episode runner, the job lists of the cluster, and the checks that a run is real and can be replayed |
+| [`evaluation/`](CausalDiagnosis/evaluation/) | the metrics and the programs that build the result tables |
+| [`training/`](CausalDiagnosis/training/) | rejection-sampling data, LoRA fine-tuning and the online prompt optimization loop |
+| [`episode_viewer/`](CausalDiagnosis/episode_viewer/) | pages that show one episode to a person |
+| [`configs/`](CausalDiagnosis/configs/) | the presets of episodes, grouped by kind, with the price tables and the training settings |
+| [`cluster_jobs/`](CausalDiagnosis/cluster_jobs/) | the Slurm scripts, in folders numbered by run order, with a runbook in their README |
+| [`docs/`](CausalDiagnosis/docs/) | the reference pages: environment, both servers, experiments, metrics, dataset, adding a dataset |
+| [`examples/`](CausalDiagnosis/examples/) | one episode in a few lines, without a model |
+| [`results/`](CausalDiagnosis/results/) | the tables, written by programs and never by hand; run folders go to `results/runs/` and are not tracked |
+| [`utils/`](CausalDiagnosis/utils/) | small helpers every folder may use, among them `paths.py`, the one file that knows where things are |
 
 ## Example Scenarios
 

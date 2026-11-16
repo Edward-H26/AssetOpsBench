@@ -1,6 +1,6 @@
 # MCP Servers
 
-Eight FastMCP servers — six domain servers (`iot`, `fmsr`, `wo`, `tsfm`, `vibration`, `causal_diagnosis`), one rig environment server (`hydraulic_rig`) and one shared utility server (`utilities`) — expose the AssetOpsBench domain logic. Each is a standalone stdio process spawned on-demand by clients (`plan-execute`, `claude-agent`, `openai-agent`, `deep-agent`, Claude Desktop). Backing services and credentials are listed per-server below.
+Six FastMCP servers — five domain servers (`iot`, `fmsr`, `wo`, `tsfm`, `vibration`) plus one shared utility server (`utilities`) — expose the AssetOpsBench domain logic. Each is a standalone stdio process spawned on-demand by clients (`plan-execute`, `claude-agent`, `openai-agent`, `deep-agent`, Claude Desktop). Backing services and credentials are listed per-server below.
 
 ## Contents
 
@@ -10,8 +10,6 @@ Eight FastMCP servers — six domain servers (`iot`, `fmsr`, `wo`, `tsfm`, `vibr
 - [wo — Work Order](#wo--work-order)
 - [tsfm — Time Series Model and Feature Catalogs](#tsfm--time-series-model-and-feature-catalogs)
 - [vibration — Vibration Diagnostics](#vibration--vibration-diagnostics)
-- [hydraulic_rig — Rig Environment](#hydraulic_rig--rig-environment)
-- [causal_diagnosis — Causal Diagnostics](#causal_diagnosis--causal-diagnostics)
 
 ## iot — IoT Asset Registry and Telemetry Records
 
@@ -333,45 +331,6 @@ return the card fields plus `message`; lineage returns `feature_id` / `model_id`
 | `list_known_bearings` | read | — | List all bearings in the built-in database. |
 | `diagnose_vibration` | read, cpu-centric | `data_id`, `rpm?`, `bearing_designation?`, `bearing_*?`, `bpfo_hz?`, `bpfi_hz?`, `bsf_hz?`, `ftf_hz?`, `machine_group?`, `machine_description?` | Full automated diagnosis: FFT + shaft features + bearing envelope + ISO 10816 + fault classification + markdown report. |
 
-## hydraulic_rig — Rig Environment
-
-**Path:** `src/servers/hydraulic_rig/main.py`, each process bound to one episode by a launcher file beside its `episode.json`, such as a copy of `src/servers/hydraulic_rig/launcher.py`, which a runner receives through `server_paths`
-**Requires:** the rig data file that `episode.json` names, no database
-**Writes:** `episode.json` and `released.json` beside the launcher after every call
-
-The nine tools are declared in `src/servers/tool_contract_v2.json` with their class, duration and price, and each is registered with the matching `readOnlyHint`. Every parameter is flat, typed and required. `evidence_ids` is a comma separated list of evidence identifiers, possibly empty.
-
-| Tool | Category | Arguments | Description |
-|---|---|---|---|
-| `get_asset_profile` | read | - | Return the asset profile: components with their levels and healthy level, sensor groups, prices, durations, downtime rates, budget, horizon, step cap, fault rule, clock mode, the tool table and the healthy bands of the channel means. Free, takes no time. |
-| `read_sensors` | read | `sensor_group`, `cycles` | Run the rig for the given cycles and return the recorded mean and std of every channel of the group per cycle. Costs the group's price per cycle and takes the cycles read. |
-| `advance_time` | read | `cycles` | Let the rig run without reading it and return the new time. Free, downtime accrues meanwhile. |
-| `summarize_changes_since` | read | `cycle` | Return the cycles elapsed since the given cycle, the channel means that left their healthy band with the first such cycle, and the work orders closed since then. Free, takes no time. |
-| `get_failure_modes` | read | `component` | Return the failure mode codes of one component, or of all for an empty string, with severity, recommended action, indicating channels and evidence identifier. Free, takes no time. |
-| `submit_diagnosis` | write | `cooler`, `valve`, `pump`, `accumulator`, `evidence_ids` | Submit the diagnosis, one condition level per component, with the evidence behind it. Once per episode, never after a declaration. |
-| `declare_insufficient_evidence` | write | `sensor_group`, `cycles`, `evidence_ids` | Declare that the evidence cannot separate the remaining candidates and name the reading that would. Once per episode, never after a diagnosis. |
-| `create_work_order` | write | `component`, `prediction_id`, `evidence_ids` | Ask a technician to restore one component, citing a prediction of the diagnostics server or an empty string. Needs a diagnosis or a declaration first, one open order per component, costs the part plus the repair charge, closes after the lead time and the repair downtime. |
-| `finish` | write | `summary` | End the episode with a summary. Open work orders stay open. |
-
-How a runner starts this server, the episode files, the briefing and the answer of every tool are described in [hydraulic_rig/action-server.md](hydraulic_rig/action-server.md).
-
-## causal_diagnosis — Causal Diagnostics
-
-**Path:** `src/servers/causal_diagnosis/main.py`, each process bound to one episode by a launcher file beside its `released.json`, such as a copy of `src/servers/causal_diagnosis/launcher.py`, which a runner receives through `server_paths`. The launcher takes optional `key=value` arguments for the ablation arms (`ranking_model`, `abstention_rule`, `abstention_cut`). `causal-diagnosis-mcp-server` starts the server without an episode, in which every tool answers an error
-**Requires:** `src/servers/causal_diagnosis/models.json`, which the drivers and tests fit from the rig data on first use, no database
-**Writes:** `predictions.json` beside `released.json`
-
-All four tools are read only (`readOnlyHint` true) and take no simulated time. They read the released evidence of the episode and models fitted once on a fixed pool, never the hidden state.
-
-| Tool | Category | Arguments | Description |
-|---|---|---|---|
-| `get_episode_evidence` | read | `sensor_group` | List the released readings as evidence items with their healthy bands and anomaly scores, for `all`, a group, a channel or a field. |
-| `rank_root_causes` | read, cpu-centric | `top_k` | Rank the candidate start combinations by their posterior under the interventional effect model, with component fault probabilities, attribution, stability, and the decision whether the evidence is insufficient with the separating test. |
-| `estimate_intervention_effect` | read, cpu-centric | `action` | Predict the effect of `replace:<component>` or `monitor`: the probability that it addresses a fault, the recovery probability, price, duration, and the predicted summaries with conformal intervals. Stores the prediction as `pred/<n>`. |
-| `verify_outcome` | read | `prediction_id` | Compare a stored prediction with the first reading after the work order closed: a conformal p value per channel, the Bonferroni and Holm verdicts, and the recovery check. |
-
-The result fields of every tool, the formulas behind them and the models file are described in [hydraulic_rig/causal-diagnosis-server.md](hydraulic_rig/causal-diagnosis-server.md).
-
 ## Running a server manually
 
 Servers are normally spawned on-demand by an agent client. To launch one directly for testing:
@@ -383,7 +342,6 @@ uv run fmsr-mcp-server
 uv run wo-mcp-server
 uv run tsfm-mcp-server
 uv run vibration-mcp-server
-uv run causal-diagnosis-mcp-server   # without an episode, so every tool answers an error
 ```
 
 They speak MCP over stdio, so they're idle until a client connects on stdin.
