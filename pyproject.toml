@@ -46,7 +46,7 @@ fmsr-mcp-server = "servers.fmsr.main:main"
 tsfm-mcp-server = "servers.tsfm.main:main"
 wo-mcp-server = "servers.wo.main:main"
 vibration-mcp-server = "servers.vibration.main:main"
-causal-diagnosis-mcp-server = "servers.causal_diagnosis.main:main"
+causal-diagnosis-mcp-server = "CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.main:main"
 openai-agent = "agent.openai_agent.cli:main"
 deep-agent = "agent.deep_agent.cli:main"
 stirrup-agent = "agent.stirrup_agent.cli:main"
@@ -77,6 +77,8 @@ otel = [
     "opentelemetry-exporter-otlp-proto-http>=1.27.0",
     "opentelemetry-instrumentation-httpx>=0.48b0",
 ]
+# Optional packages of the Gymnasium and OpenEnv wrappers (CausalDiagnosis/environment/Causal_Diagnosis_Environment/gymnasium_wrapper.py, openenv_env.py) and their tests.
+rl = ["gymnasium==1.0.0", "openenv-core==0.3.0"]
 
 [tool.uv]
 package = true
@@ -84,6 +86,16 @@ package = true
 constraint-dependencies = [
     "authlib>=1.6.9",  # CVE-2026-27962
     "pyjwt>=2.14.0",   # CVE-2026-102268
+    # the OpenTelemetry pins of the registered runs, which the optional group rl may not move
+    "opentelemetry-api==1.39.1",
+    "opentelemetry-sdk==1.39.1",
+    "opentelemetry-proto==1.39.1",
+    "opentelemetry-exporter-otlp-proto-common==1.39.1",
+    "opentelemetry-exporter-otlp-proto-http==1.39.1",
+    "opentelemetry-instrumentation==0.60b1",
+    "opentelemetry-instrumentation-httpx==0.60b1",
+    "opentelemetry-semantic-conventions==0.60b1",
+    "opentelemetry-util-http==0.60b1",
 ]
 
 [tool.pytest.ini_options]
