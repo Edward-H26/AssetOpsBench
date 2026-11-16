@@ -1,0 +1,60 @@
+{
+ "format": 1,
+ "asset_id": "demo_1",
+ "evidence_kind": "demo_history",
+ "components": ["press"],
+ "levels": {"press": [0, 1]},
+ "healthy": {"press": 0},
+ "degradation": {"press": [0, 1]},
+ "observation_kinds": {"all": {"channels": ["F1", "F2"]}},
+ "channels": {
+  "F1": {"field": "F1_Force_kN_1Hz", "quantity": "Force"},
+  "F2": {"field": "F2_Stroke_mm_1Hz", "quantity": "Stroke"}
+ },
+ "statistics": {"recorded": ["value"], "served": ["value"]},
+ "defaults": {
+  "prices": {"read": {"all": 1}, "parts": {"press": 8}, "repair_charge": 3, "fix_kind": {"press": "service"}, "misdiagnosis": 2},
+  "durations": {"read_per_cycle": 1, "advance_per_cycle": 1, "lead_time": {"press": 1}, "repair_downtime": {"press": 1}},
+  "limits": {"budget": 60, "horizon": 20, "max_steps": 20},
+  "clock": {"clock_mode": "declared", "seconds_per_cycle": 30, "think_seconds_per_cycle": 10}
+ },
+ "rules": [
+  {
+   "kind": "fix_history",
+   "parameters": {"healthy_probability": 0.5, "healthy_ago": [2, 9], "degraded_probability": 0.5, "degraded_ago": [2, 9]}
+  }
+ ],
+ "sampler": {"fault_rule": {"min_faulty": 0, "max_faulty": 1}},
+ "failure_modes": [
+  {"component": "press", "level": 0, "code": "press_aligned", "severity": "healthy", "action": "none"},
+  {"component": "press", "level": 1, "code": "press_misaligned", "severity": "critical", "action": "realign_press"}
+ ],
+ "knowledge": {
+  "fmea_source": "demo_notes",
+  "association_source": "demo_notes",
+  "indicates": {"F1": ["press"], "F2": ["press"]},
+  "correlations": {"press": {"F1": 0.8, "F2": 0.6}}
+ },
+ "records": {
+  "level_key": "press_level",
+  "data_env": "DEMO_1_RECORDS_PATH",
+  "release_dir": "CausalDiagnosis/datasets/tests/ports/demo_1/data",
+  "release_file": "demo_records.jsonl"
+ },
+ "text": {
+  "noun": "stamping press",
+  "short_noun": "press",
+  "episode_noun": "stamping press",
+  "unit_noun": "unit",
+  "whole_asset_patterns": ["press", "stamping line", "demo_1"],
+  "registry_file": null,
+  "fallback": {"asset_type": "STAMPING_PRESS", "description": "Made-up stamping press of the port tests", "site": "Plant_7"},
+  "example_channel": "F1",
+  "question": "Which level does each part of the {components} of the stamping press stand at, within {limits}?",
+  "opening": "The monitor of the stamping line flagged the press.",
+  "scoring": "A diagnosis is scored against the level of the press at the cycle it is submitted.",
+  "level_meaning": "Level 0 is an aligned press and level 1 a misaligned one.",
+  "readings": "A reading is one value per channel, the force and the stroke of one stamping cycle."
+ },
+ "scoring": "program"
+}

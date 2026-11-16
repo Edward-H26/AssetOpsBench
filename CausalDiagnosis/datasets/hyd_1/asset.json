@@ -1,0 +1,234 @@
+{
+ "format": 1,
+ "asset_id": "hyd_1",
+ "evidence_kind": "recorded_levels",
+ "components": ["cooler", "valve", "pump", "accumulator"],
+ "levels": {"cooler": [3, 20, 100], "valve": [73, 80, 90, 100], "pump": [0, 1, 2], "accumulator": [90, 100, 115, 130]},
+ "healthy": {"cooler": 100, "valve": 100, "pump": 0, "accumulator": 130},
+ "degradation": {"cooler": [100, 20, 3], "valve": [100, 90, 80, 73], "pump": [0, 1, 2], "accumulator": [130, 115, 100, 90]},
+ "observation_kinds": {
+  "tier1": {"channels": ["TS1", "TS2", "TS3", "TS4", "VS1", "CE"]},
+  "tier2": {"channels": ["TS1", "TS2", "TS3", "TS4", "VS1", "CE", "FS1", "FS2", "CP"]},
+  "tier3": {
+   "channels": ["PS1", "PS2", "PS3", "PS4", "PS5", "PS6", "EPS1", "FS1", "FS2", "TS1", "TS2", "TS3", "TS4", "VS1", "CE", "CP", "SE"]
+  }
+ },
+ "channels": {
+  "PS1": {"field": "PS1_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "PS2": {"field": "PS2_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "PS3": {"field": "PS3_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "PS4": {"field": "PS4_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "PS5": {"field": "PS5_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "PS6": {"field": "PS6_Pressure_bar_100Hz", "quantity": "Pressure"},
+  "EPS1": {"field": "P1_MotorPower_W_100Hz", "quantity": "MotorPower"},
+  "FS1": {"field": "FS1_VolumeFlow_l_per_min_10Hz", "quantity": "VolumeFlow"},
+  "FS2": {"field": "FS2_VolumeFlow_l_per_min_10Hz", "quantity": "VolumeFlow"},
+  "TS1": {"field": "TS1_Temperature_C_1Hz", "quantity": "Temperature"},
+  "TS2": {"field": "TS2_Temperature_C_1Hz", "quantity": "Temperature"},
+  "TS3": {"field": "TS3_Temperature_C_1Hz", "quantity": "Temperature"},
+  "TS4": {"field": "TS4_Temperature_C_1Hz", "quantity": "Temperature"},
+  "VS1": {"field": "VS1_Vibration_mm_per_s_1Hz", "quantity": "Vibration"},
+  "CE": {"field": "CE_CoolingEfficiency_percent_1Hz", "quantity": "CoolingEfficiency"},
+  "CP": {"field": "CP_CoolingPower_kW_1Hz", "quantity": "CoolingPower"},
+  "SE": {"field": "SE_EfficiencyFactor_percent_1Hz", "quantity": "EfficiencyFactor"}
+ },
+ "statistics": {"recorded": ["mean", "std", "min", "max"], "served": ["mean", "std"]},
+ "defaults": {
+  "prices": {
+   "read": {"tier1": 1, "tier2": 3, "tier3": 10},
+   "parts": {"cooler": 20, "valve": 20, "pump": 30, "accumulator": 20},
+   "repair_charge": 20,
+   "misdiagnosis": 15,
+   "fix_kind": {"cooler": "replace", "valve": "replace", "pump": "replace", "accumulator": "service"}
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {"cooler": 3, "valve": 3, "pump": 3, "accumulator": 3},
+   "repair_downtime": {"cooler": 1, "valve": 1, "pump": 2, "accumulator": 1}
+  },
+  "limits": {"budget": 300, "horizon": 60, "max_steps": 60},
+  "clock": {"clock_mode": "declared", "seconds_per_cycle": 60, "think_seconds_per_cycle": 10, "seconds_per_token": 0.0048828125}
+ },
+ "rules": [
+  {
+   "kind": "fix_history",
+   "parameters": {"healthy_probability": 0.4, "healthy_ago": [5, 80], "degraded_probability": 0.3, "degraded_ago": [5, 80]}
+  },
+  {
+   "kind": "emergency",
+   "parameters": {"lead": 1, "surcharge": 2.0, "hold": 10}
+  },
+  {
+   "kind": "schedule",
+   "parameters": {"mode": "none", "components": 1, "first_drop": [5, 40], "interval": 10}
+  },
+  {
+   "kind": "hazard",
+   "parameters": {"mode": "scheduled", "base_rate": 0.01, "depth_factor": 1.0, "collateral": 0.0}
+  },
+  {
+   "kind": "dependencies",
+   "parameters": {
+    "dependencies": {"cooler": [], "valve": [], "pump": ["valve", "accumulator"], "accumulator": []},
+    "priority": {"valve": 1, "accumulator": 2, "cooler": 3, "pump": 4}
+   }
+  },
+  {
+   "kind": "visits",
+   "parameters": {"charge": 15}
+  },
+  {
+   "kind": "downtime",
+   "parameters": {
+    "rates": {
+     "cooler": {"100": 0, "20": 1, "3": 2},
+     "valve": {"100": 0, "90": 1, "80": 2, "73": 3},
+     "pump": {"0": 0, "1": 1, "2": 2},
+     "accumulator": {"130": 0, "115": 1, "100": 2, "90": 3}
+    },
+    "stopped": 5
+   }
+  },
+  {
+   "kind": "failure",
+   "parameters": {"patience": 10, "strict": false, "penalty": 50}
+  }
+ ],
+ "sampler": {
+  "fault_rule": {"min_faulty": 1, "max_faulty": 2}
+ },
+ "failure_modes": [
+  {
+   "component": "cooler",
+   "level": 3,
+   "code": "cooler_efficiency_critical",
+   "severity": "critical",
+   "action": "inspect_cooler;clean_or_replace_heat_exchanger"
+  },
+  {
+   "component": "cooler",
+   "level": 20,
+   "code": "cooler_efficiency_reduced",
+   "severity": "degraded",
+   "action": "schedule_maintenance;check_flow_and_fouling"
+  },
+  {"component": "cooler", "level": 100, "code": "cooler_ok", "severity": "healthy", "action": "none"},
+  {
+   "component": "valve",
+   "level": 73,
+   "code": "valve_switching_critical",
+   "severity": "critical",
+   "action": "inspect_valve_actuator;replace_valve_or_control"
+  },
+  {
+   "component": "valve",
+   "level": 80,
+   "code": "valve_switching_severe_lag",
+   "severity": "degraded",
+   "action": "calibrate_actuator;check_drive"
+  },
+  {
+   "component": "valve",
+   "level": 90,
+   "code": "valve_switching_small_lag",
+   "severity": "degraded",
+   "action": "monitor"
+  },
+  {"component": "valve", "level": 100, "code": "valve_ok", "severity": "healthy", "action": "none"},
+  {
+   "component": "pump",
+   "level": 2,
+   "code": "pump_internal_leakage_severe",
+   "severity": "critical",
+   "action": "replace_pump_or_repair_seal"
+  },
+  {
+   "component": "pump",
+   "level": 1,
+   "code": "pump_internal_leakage_weak",
+   "severity": "degraded",
+   "action": "monitor;plan_repair"
+  },
+  {"component": "pump", "level": 0, "code": "pump_ok", "severity": "healthy", "action": "none"},
+  {
+   "component": "accumulator",
+   "level": 90,
+   "code": "accumulator_pressure_low_critical",
+   "severity": "critical",
+   "action": "inspect_accumulator;service_or_replace"
+  },
+  {
+   "component": "accumulator",
+   "level": 100,
+   "code": "accumulator_pressure_severely_reduced",
+   "severity": "degraded",
+   "action": "service_accumulator"
+  },
+  {
+   "component": "accumulator",
+   "level": 115,
+   "code": "accumulator_pressure_reduced",
+   "severity": "degraded",
+   "action": "monitor"
+  },
+  {"component": "accumulator", "level": 130, "code": "accumulator_ok", "severity": "healthy", "action": "none"},
+  {
+   "component": "system_regime",
+   "level": null,
+   "code": "transient",
+   "severity": "info",
+   "action": "wait_until_stable"
+  },
+  {"component": "system_regime", "level": null, "code": "steady", "severity": "info", "action": "none"}
+ ],
+ "knowledge": {
+  "fmea_source": "industryasseteqa_hydraulic_facts",
+  "association_source": "helwig2015condition",
+  "indicates": {
+   "CE": ["cooler"],
+   "CP": ["cooler"],
+   "TS1": ["cooler"],
+   "TS2": ["cooler"],
+   "TS3": ["cooler"],
+   "TS4": ["cooler"],
+   "PS1": ["valve", "accumulator"],
+   "PS2": ["valve", "accumulator"],
+   "PS3": ["valve", "pump", "accumulator"],
+   "FS1": ["valve", "pump", "accumulator"],
+   "EPS1": ["valve", "accumulator"],
+   "SE": ["valve", "pump", "accumulator"]
+  },
+  "correlations": {
+   "cooler": {"CE": 0.98, "CP": 0.98, "TS1": 0.95, "TS2": 0.95, "TS3": 0.95, "TS4": 0.95},
+   "valve": {"PS1": 0.69, "PS2": 0.67, "PS3": 0.6, "FS1": 0.59, "EPS1": 0.57, "SE": 0.37},
+   "pump": {"FS1": 0.72, "SE": 0.65, "PS3": 0.45},
+   "accumulator": {"EPS1": 0.69, "PS1": 0.6, "PS2": 0.58, "PS3": 0.52, "FS1": 0.46, "SE": 0.37}
+  }
+ },
+ "records": {
+  "label_keys": {
+   "cooler": "cooler_condition",
+   "valve": "valve_condition",
+   "pump": "pump_leakage",
+   "accumulator": "accumulator_pressure"
+  },
+  "stable_flag_stable": 0,
+  "data_env": "HYD_FACTS_PATH",
+  "release_dir": "CausalDiagnosis/datasets/hyd_1/data",
+  "release_file": "hyd_cycles.jsonl",
+  "page": "https://archive.ics.uci.edu/dataset/447/condition+monitoring+of+hydraulic+systems",
+  "fetch": "python -m CausalDiagnosis.datasets.hyd_1.download_and_build --download"
+ },
+ "text": {
+  "noun": "hydraulic test rig",
+  "short_noun": "rig",
+  "episode_noun": "hydraulic rig",
+  "unit_noun": "unit",
+  "whole_asset_patterns": ["rig", "asset", "system", "machine", "hyd_1", "all (?:four )?components", "every component"],
+  "registry_file": "src/couchdb/scenarios_data/shared/iot/asset_profile_sample.json",
+  "fallback": {"asset_type": "HYDRAULIC_PUMP", "description": "Hydraulic pump condition-monitoring rig", "site": "MAIN"},
+  "example_channel": "PS1"
+ },
+ "scoring": "program"
+}

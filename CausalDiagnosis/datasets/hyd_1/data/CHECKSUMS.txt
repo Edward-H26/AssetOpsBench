@@ -1,0 +1,3 @@
+24128aad2ee45eea7e6b63ebbd9992cdf25d0483a2cebefbfc13bc69079af1f2  uci_hydraulic/condition+monitoring+of+hydraulic+systems.zip
+1a27f0939d9ceb0d63003f126fcaae4250b94f5f45a551ee653b7f0a76479e95  hyd_cycles.jsonl
+da5a34af233e969f63f76a84ff74b981f97de4c52d9106c8169b0ead27e67688  blocks.json

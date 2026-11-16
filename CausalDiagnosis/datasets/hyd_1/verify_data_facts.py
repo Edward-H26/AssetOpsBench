@@ -1,11 +1,11 @@
-"""Check the data facts of docs/hydraulic_rig/environment.md on the two local files. Apart from the
-file hashes, every check is a relation that holds whatever the counts, so the script states no value of the data.
-The checks describe the IndustryAssetEQA facts file: on another facts file, such as one that build_blocks.py rebuilt
-from the UCI archive, only the hash check runs and fails, and build_blocks.py --check compares the two files instead.
+"""Check the data facts of CausalDiagnosis/docs/environment.md on the two local files. Apart from the
+file hashes, the data file against its pin in CausalDiagnosis/datasets/hyd_1/data/CHECKSUMS.txt and the hyd_1 file against the
+value below, every check is a relation that holds whatever the counts, so the script states no value of the data. On a
+file that HYD_FACTS_PATH or --facts names in place of the data file, the hash check fails by name and the relations run.
 
-Read-only: opens the IndustryAssetEQA facts file and the AssetOpsBench hyd_1 file, downloads nothing, writes nothing.
-It does not import envs.hydraulic_rig, so benchmarks/hydraulic_rig/tests/test_data_facts.py can compare the environment's blocks with this recomputation.
-usage: python3 -I benchmarks/hydraulic_rig/verify_data_facts.py [--facts PATH] [--hyd1 PATH]"""
+Read-only: opens the data file and the AssetOpsBench hyd_1 file, downloads nothing, writes nothing.
+It does not import CausalDiagnosis.environment.Causal_Diagnosis_Environment, so CausalDiagnosis/datasets/hyd_1/tests/test_verify_data_facts.py can compare the environment's blocks with this recomputation.
+usage: python3 -I -m CausalDiagnosis.datasets.hyd_1.verify_data_facts [--facts PATH] [--hyd1 PATH]"""
 import argparse
 import hashlib
 import itertools
@@ -18,13 +18,14 @@ from datetime import date
 from pathlib import Path
 from typing import Any, NamedTuple
 
-SRC = Path(__file__).resolve().parents[2] / "src"
-DEFAULT_FACTS = Path(os.environ.get("HYD_FACTS_PATH", str(SRC / "envs" / "hydraulic_rig" / "data" / "hyd_cycles.jsonl")))
+from CausalDiagnosis.utils.paths import SRC
+DATA = Path(__file__).resolve().parent / "data"  # the release folder of hyd_1, which download_and_build.py fills and CHECKSUMS.txt pins
+DATA_FILE = "hyd_cycles.jsonl"
+# the variable when it is set and not empty, else the release file: the rule of the asset layer, kept here since this
+# script imports nothing of envs, so that its blocks are an independent recomputation
+DEFAULT_FACTS = Path(os.environ.get("HYD_FACTS_PATH") or DATA / DATA_FILE)
 DEFAULT_HYD1 = SRC / "couchdb" / "scenarios_data" / "shared" / "iot" / "hydraulic_pump_1.json"
-FACTS_SHA256 = "7912b1b641254d54daffa40ea2fe84c64dedf50edb2d996951ad1f3d9a433e47"  # the IndustryAssetEQA facts file
 HYD1_SHA256 = "622bcd1a668a939a2590b1aaf560ecce641731b04d802271b39ef454835918b5"  # the AssetOpsBench hyd_1 file
-NOT_EQA = ("The facts file is not the IndustryAssetEQA file that these checks describe, so only the hash check runs. "
-           "A file that build_blocks.py rebuilt from the UCI archive is compared with that file by build_blocks.py --check.")
 
 COMPONENTS = ("cooler", "valve", "pump", "accumulator")
 LABEL_KEYS = ("cooler_condition", "valve_condition", "pump_leakage", "accumulator_pressure")
@@ -69,7 +70,7 @@ def is_stable(record):
 
 
 def stable_blocks(facts):
-    """{combination: cycle indices of its stable cycles in cycle order}, the environment's blocks per docs/hydraulic_rig/environment.md."""
+    """{combination: cycle indices of its stable cycles in cycle order}, the environment's blocks per CausalDiagnosis/docs/environment.md."""
     blocks = {}
     for r in facts:
         if is_stable(r):
@@ -116,74 +117,77 @@ def relative_difference(a, b):
     return abs(a - b) / max(abs(a), abs(b)) if a or b else 0.0
 
 
-def paired_means(eqa_means, hyd1, field, channel, offset):
-    """(hyd_1 value, EQA mean) for every hyd_1 cycle c with an EQA record at cycle_index c + offset."""
-    return [(r[field], eqa_means[r["cycle"] + offset][channel]) for r in hyd1 if r["cycle"] + offset in eqa_means]
+def paired_means(data_means, hyd1, field, channel, offset):
+    """(hyd_1 value, mean of the data file) for every hyd_1 cycle c with a record at cycle_index c + offset."""
+    return [(r[field], data_means[r["cycle"] + offset][channel]) for r in hyd1 if r["cycle"] + offset in data_means]
 
 
-def whole_set_matches(eqa_means, hyd1, fields, offset):
-    """hyd_1 cycles c whose 17 channel means all agree with EQA's at cycle_index c + offset."""
-    return sum(1 for r in hyd1 if r["cycle"] + offset in eqa_means
-               and all(same_mean(r[fields[c]], eqa_means[r["cycle"] + offset][c]) for c in CHANNELS))
+def whole_set_matches(data_means, hyd1, fields, offset):
+    """hyd_1 cycles c whose 17 channel means all agree with those of the data file at cycle_index c + offset."""
+    return sum(1 for r in hyd1 if r["cycle"] + offset in data_means
+               and all(same_mean(r[fields[c]], data_means[r["cycle"] + offset][c]) for c in CHANNELS))
+
+
+def pinned():
+    """The SHA-256 that CHECKSUMS.txt of the data folder pins for the data file, None without the file or the line."""
+    checksums = DATA / "CHECKSUMS.txt"
+    if not checksums.exists():
+        return None
+    for line in checksums.read_text(encoding="utf-8").splitlines():
+        digest, _, name = line.partition("  ")
+        if name == DATA_FILE:
+            return digest
+    return None
 
 
 def file_checks(facts_path, hyd1_path):
-    """The two inputs are the files the facts were verified on (SHA-256 values recorded in docs/hydraulic_rig/environment.md)."""
-    return [Check("SHA-256 of the EQA facts file and of the hyd_1 file", (FACTS_SHA256, HYD1_SHA256),
+    """The data file against its pin in CHECKSUMS.txt and the hyd_1 file against the SHA-256 the script holds."""
+    return [Check("SHA-256 of the data file and of the hyd_1 file", (pinned(), HYD1_SHA256),
                   (sha256(facts_path), sha256(hyd1_path)))]
 
 
 def source_checks(facts, hyd1):
-    """Bullet "Source of record": cycles of 60 s, the 17 channels, one label row per cycle."""
-    seconds = {p["samples_per_cycle"] / p["nominal_sample_rate_hz"] for r in facts for p in r["sensor_profiles"]}
-    listed = sum(1 for r in facts if tuple(p["sensor"] for p in r["sensor_profiles"]) == CHANNELS)
+    """Bullet "Source of record": as many cycles as the hyd_1 file, one label row per cycle."""
     labelled = sum(1 for r in facts if set(r["labels"]) == {*LABEL_KEYS, "stable_flag"})
     return [
-        Check("cycles in the hyd_1 file, against the EQA facts file", len(facts), len(hyd1)),
-        Check("cycle length in s, EQA cycle_duration_sec", {60}, {r["cycle_duration_sec"] for r in facts}),
-        Check("cycle length in s, samples per cycle over sample rate of every sensor", {60}, seconds),
-        Check("EQA records whose sensor profiles are PS1 to PS6, EPS1, FS1, FS2, TS1 to TS4, VS1, CE, CP, SE",
-              len(facts), listed),
-        Check("EQA records with one label row: four conditions plus the stable flag", len(facts), labelled),
+        Check("cycles in the hyd_1 file, against the data file", len(facts), len(hyd1)),
+        Check("records with one label row: four conditions plus the stable flag", len(facts), labelled),
     ]
 
 
-def eqa_checks(facts):
-    """Bullet "IndustryAssetEQA's hyd_facts.jsonl": index range, one feature layout, provenance to the UCI files."""
+def layout_checks(facts):
+    """The layout of the data file: the index range and one feature layout for every record."""
     indices = [r["cycle_index"] for r in facts]
     stats, other = feature_layout(facts[0])
     (per_channel,) = {tuple(v) for v in stats.values()}  # every channel carries the same statistics
     summarised = sum(1 for c in CHANNELS if set(SUMMARY_STATS) <= set(stats.get(c, ())))
-    sensor_files = {c: f"{c}.txt" for c in CHANNELS}
-    traced = sum(1 for r in facts if r["provenance"]["sensor_files"] == sensor_files
-                 and r["provenance"]["profile_file"] == "profile.txt" and r["provenance"]["cycle_row"] == r["cycle_index"])
     return [
-        Check("EQA cycle_index runs from 0 without gaps", list(range(len(facts))), indices),
-        Check("distinct feature counts across EQA records", 1, len({len(r["features"]) for r in facts})),
-        Check("distinct feature name lists across EQA records", 1, len({tuple(f["name"] for f in r["features"]) for r in facts})),
+        Check("cycle_index runs from 0 without gaps", list(range(len(facts))), indices),
+        Check("distinct feature counts across records", 1, len({len(r["features"]) for r in facts})),
+        Check("distinct feature name lists across records", 1, len({tuple(f["name"] for f in r["features"]) for r in facts})),
         Check("channels with mean, std, min and max features", len(CHANNELS), summarised,
               f"{len(stats)} channels x {len(per_channel)} statistics ({', '.join(per_channel)}) "
               f"+ {len(other)} others ({', '.join(other)})"),
-        Check("EQA records citing the 17 UCI sensor files, profile.txt and cycle_row = cycle_index", len(facts), traced),
     ]
 
 
 def hyd1_checks(facts, hyd1):
-    """Bullet "AssetOpsBench's hyd_1 asset": cycles, timestamps, no labels, means equal to EQA's at cycle_index c-1."""
+    """Bullet "AssetOpsBench's hyd_1 asset": cycles, timestamps, no labels, means equal to those of the data file at
+    cycle_index c-1."""
     cycles = [r["cycle"] for r in hyd1]
     stamps = [r["timestamp"] for r in hyd1]
     keys = set().union(*hyd1)
     channel_keys = sorted(k for k in keys if k.split("_")[0] in HYD1_PREFIX.values())
     field = {k.split("_")[0]: k for k in channel_keys}
-    eqa_means = {r["cycle_index"]: channel_means(r) for r in facts}
+    data_means = {r["cycle_index"]: channel_means(r) for r in facts}
     fields = {c: field[HYD1_PREFIX[c]] for c in CHANNELS}
-    pairs = {c: paired_means(eqa_means, hyd1, fields[c], c, -1) for c in CHANNELS}
+    pairs = {c: paired_means(data_means, hyd1, fields[c], c, -1) for c in CHANNELS}
     ps1 = pairs["PS1"]
     every = [p for c in CHANNELS for p in pairs[c]]
-    shifted = max(sum(same_mean(a, b) for a, b in paired_means(eqa_means, hyd1, field["PS1"], "PS1", off)) for off in (-2, 0))
+    shifted = max(sum(same_mean(a, b) for a, b in paired_means(data_means, hyd1, field["PS1"], "PS1", off)) for off in (-2, 0))
     worst = {c: max(relative_difference(a, b) for a, b in pairs[c]) for c in CHANNELS}
     worst_channel = max(worst, key=worst.get)
-    shifted_sets = max(whole_set_matches(eqa_means, hyd1, fields, off) for off in (-2, 0))
+    shifted_sets = max(whole_set_matches(data_means, hyd1, fields, off) for off in (-2, 0))
     increasing = all(a < b for a, b in zip(stamps, stamps[1:]))
     day_gaps = {(date.fromisoformat(b) - date.fromisoformat(a)).days for a, b in zip(stamps, stamps[1:])}
     return [
@@ -193,7 +197,7 @@ def hyd1_checks(facts, hyd1):
         Check("hyd_1 channel fields, EPS1 named P1", sorted(HYD1_PREFIX.values()), sorted(k.split("_")[0] for k in channel_keys)),
         Check("hyd_1 fields other than the 17 channels (no labels)", list(HYD1_META), sorted(keys - set(channel_keys))),
         Check("hyd_1 asset_id", {"hyd_1"}, {r["asset_id"] for r in hyd1}),
-        Check("PS1 means agreeing, hyd_1 cycle c against EQA cycle_index c-1", len(hyd1), sum(same_mean(a, b) for a, b in ps1)),
+        Check("PS1 means agreeing, hyd_1 cycle c against cycle_index c-1", len(hyd1), sum(same_mean(a, b) for a, b in ps1)),
         Check("means agreeing over all 17 channels with the same pairing", len(CHANNELS) * len(hyd1),
               sum(same_mean(a, b) for a, b in every)),
         Check("control: PS1 means agreeing with the pairing shifted by one cycle either way", 0, shifted),
@@ -208,32 +212,20 @@ def label_checks(facts):
     levels = {c: sorted({r["labels"][k] for r in facts}) for c, k in zip(COMPONENTS, LABEL_KEYS)}
     flags = Counter(r["labels"]["stable_flag"] for r in facts)
     unstable_valve = sorted({r["labels"]["valve_condition"] for r in facts if not is_stable(r)})
-    regime = sorted({(fm["evidence"], fm["failure_code"]) for r in facts for fm in r["failure_modes"]
-                     if fm["component"] == "system_regime"})
     return [
         Check("cooler condition levels", [3, 20, 100], levels["cooler"]),
         Check("valve condition levels", [73, 80, 90, 100], levels["valve"]),
         Check("internal pump leakage levels", [0, 1, 2], levels["pump"]),
         Check("accumulator pressure levels in bar", [90, 100, 115, 130], levels["accumulator"]),
         Check("stable flag values", [0, 1], sorted(flags)),
-        Check("stable flag meaning in EQA's system_regime annotation",
-              [("stable_flag=0", "steady"), ("stable_flag=1", "transient")], regime),
         Check("cycles flagged stable or not stable", len(facts), flags[0] + flags[1]),
         Check("valve levels of the cycles flagged not stable", [100], unstable_valve),
     ]
 
 
-def ok_levels(facts, component, label_key):
-    """Levels of one component that EQA labels <component>_ok."""
-    return sorted({r["labels"][label_key] for r in facts for fm in r["failure_modes"]
-                   if fm["component"] == component and fm["failure_code"] == f"{component}_ok"})
-
-
 def healthy_checks(facts):
-    """Bullet "Healthy state": EQA's *_ok levels and the stable cycles of the healthy combination."""
-    checks = [Check(f"{c} levels labelled {c}_ok by EQA", [h], ok_levels(facts, c, k))
-              for c, k, h in zip(COMPONENTS, LABEL_KEYS, HEALTHY)]
-    return checks + [
+    """Bullet "Healthy state": the stable cycles of the healthy combination."""
+    return [
         Check("the healthy combination (100, 100, 0, 130) has stable cycles", True, bool(stable_blocks(facts).get(HEALTHY))),
     ]
 
@@ -254,7 +246,7 @@ def combination_checks(facts):
 
 
 def collect_checks(facts, hyd1):
-    return (source_checks(facts, hyd1) + eqa_checks(facts) + hyd1_checks(facts, hyd1) + label_checks(facts)
+    return (source_checks(facts, hyd1) + layout_checks(facts) + hyd1_checks(facts, hyd1) + label_checks(facts)
             + healthy_checks(facts) + combination_checks(facts))
 
 
@@ -271,13 +263,9 @@ def main(argv):
     ap.add_argument("--facts", default=str(DEFAULT_FACTS))
     ap.add_argument("--hyd1", default=str(DEFAULT_HYD1))
     a = ap.parse_args(argv)
-    for name, path in (("EQA facts", a.facts), ("hyd_1", a.hyd1)):
+    for name, path in (("data file", a.facts), ("hyd_1", a.hyd1)):
         print(f"{name}: {path} ({Path(path).stat().st_size} bytes)")
-    checks = file_checks(a.facts, a.hyd1)
-    if sha256(a.facts) == FACTS_SHA256:
-        checks += collect_checks(load_facts(a.facts), load_hyd1(a.hyd1))
-    else:
-        print(NOT_EQA)
+    checks = file_checks(a.facts, a.hyd1) + collect_checks(load_facts(a.facts), load_hyd1(a.hyd1))
     for c in checks:
         note = f"  [{c.note}]" if c.note else ""
         print(f"{'PASS' if c.passed else 'FAIL'}  {c.fact}: expected {c.expected}, observed {c.observed}{note}")
