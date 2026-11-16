@@ -1,0 +1,73 @@
+# The evaluation runs of the training table, written by CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and
+# never by hand, from training_variants.py and experiment_tables.py: 33 run lines on the test set, GRID_STARTS=sampled,
+# one run per line and replicate, on a server started with SERVE_ADAPTERS=1 and without a judge, which runs after the
+# grid over the folders of these runs in a serving job of the judge alone (run_judge.sh), as for every other grid file.
+# An agent without training plays every start of a replicate, and the model of a fold plays the starts of the fold it
+# holds out. The lines without training serve the training table alone, whose comparisons read every variant on this
+# server; the agents table reads the same rows from the last part of grid_agents.txt, on a server without the adapters.
+# training table, Plan-and-Execute + CausalDiagnosis MCP, no training
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant as_released
+# training table, Plan-and-Execute + CausalDiagnosis MCP, GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant gepa --training-fold 1
+# training table, Plan-and-Execute + CausalDiagnosis MCP, GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant gepa --training-fold 2
+# training table, Plan-and-Execute + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant gepa_score_only --training-fold 1
+# training table, Plan-and-Execute + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant gepa_score_only --training-fold 2
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft --training-fold 1
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft --training-fold 2
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft_gepa --training-fold 1
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft_gepa --training-fold 2
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft_unfiltered --training-fold 1
+# training table, Plan-and-Execute + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-variant ft_unfiltered --training-fold 2
+# training table, Agents-as-Tools + CausalDiagnosis MCP, no training
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant as_released
+# training table, Agents-as-Tools + CausalDiagnosis MCP, GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant gepa --training-fold 1
+# training table, Agents-as-Tools + CausalDiagnosis MCP, GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant gepa --training-fold 2
+# training table, Agents-as-Tools + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant gepa_score_only --training-fold 1
+# training table, Agents-as-Tools + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant gepa_score_only --training-fold 2
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft --training-fold 1
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft --training-fold 2
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft_gepa --training-fold 1
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft_gepa --training-fold 2
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft_unfiltered --training-fold 1
+# training table, Agents-as-Tools + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-variant ft_unfiltered --training-fold 2
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, no training
+--config deterioration --servers aob --store couchdb --agent causal --training-variant as_released
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent causal --training-variant gepa --training-fold 1
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent causal --training-variant gepa --training-fold 2
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent causal --training-variant gepa_score_only --training-fold 1
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, GEPA on the score alone, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent causal --training-variant gepa_score_only --training-fold 2
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft --training-fold 1
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft --training-fold 2
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft_gepa --training-fold 1
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning + GEPA, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft_gepa --training-fold 2
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 1
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft_unfiltered --training-fold 1
+# training table, CausalDiagnosis agent + CausalDiagnosis MCP, fine-tuning on unfiltered trajectories, the model of fold 2
+--config deterioration --servers aob --store couchdb --agent causal --training-variant ft_unfiltered --training-fold 2

@@ -1,0 +1,219 @@
+# The run grid of the main table, of the cumulative layer study and of the supporting ablations of the paper, written by
+# CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand, from experiment_tables.py: 100 run
+# lines, one run per line and replicate of GRID_REPLICATES, 5 replicates, 47 episodes per run on a preset with faulty
+# starts and 1 on the healthy control (22120 episodes), played through run_grid.sbatch with GRID_STARTS=sampled, the
+# test set. Every run line follows one comment line with the row or the ablation it serves. Lines 1 to 6 are the main
+# table, whose runs the rescoring of En4 scores again, and the next 6 the healthy control on the start with no faulty
+# component. Then the arm of En9 that stands beside the main table. The cumulative layer study plays the three rows with
+# the CausalDiagnosis MCP: its first layer is their lines of the main table and its last their lines in the environment
+# at the end of this file. After its middle layers, three lines play the rows without the MCP on all six big layers, the
+# baselines of the training table and the references of h1_top, h2_prime and the arms of layers 2, 3 and 5. A supporting
+# ablation plays where design.ABLATION_PLACES puts it, after the reference line of each of its rows that no other line
+# plays on its preset, and an arm that is an option of layers 2, 3 and 5 plays a preset of its own, all six big layers
+# with one setting changed, against the preset of training. Then 15 lines play the six rows on all six big layers and
+# the layer study on the rungs with a clock under the clock that charges the tokens the agent's model generated in place
+# of the wall seconds, a second condition of the clock, then 3 lines the ablation L1, the misdiagnosis price at the
+# budget, and the last 3 lines the three rows with the CausalDiagnosis MCP on all six big layers as released, each after
+# every other line, so that adding them left the place of every earlier line unchanged. Every line of this file plays on
+# a server without LoRA adapters, the server of the rows that the agents table compares, and the last part is the row of
+# the agents table that grid_training_evaluation.txt plays again beside the adapters.
+# main table, row 1 of 6, Plan-and-Execute
+--config base --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# main table, row 2 of 6, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute
+# main table, row 3 of 6, Agents-as-Tools
+--config base --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# main table, row 4 of 6, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool
+# main table, row 5 of 6, CausalDiagnosis agent
+--config base --servers aob --store couchdb --agent causal --no-diagnostics
+# main table, row 6 of 6, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal
+# healthy control, Plan-and-Execute
+--config healthy_control --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# healthy control, Plan-and-Execute + CausalDiagnosis MCP
+--config healthy_control --servers aob --store couchdb --agent plan_execute
+# healthy control, Agents-as-Tools
+--config healthy_control --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# healthy control, Agents-as-Tools + CausalDiagnosis MCP
+--config healthy_control --servers aob --store couchdb --agent agent_as_tool
+# healthy control, CausalDiagnosis agent
+--config healthy_control --servers aob --store couchdb --agent causal --no-diagnostics
+# healthy control, CausalDiagnosis agent + CausalDiagnosis MCP
+--config healthy_control --servers aob --store couchdb --agent causal
+# En9, the discriminant urn ranking model of the first version of the MCP against the joint block model, layer 0, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute --ranking-model discriminant_urn
+# En9, the discriminant urn ranking model of the first version of the MCP against the joint block model, layer 0, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool --ranking-model discriminant_urn
+# En9, the discriminant urn ranking model of the first version of the MCP against the joint block model, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --ranking-model discriminant_urn
+# cumulative layer study, layer 2 of 6, + priced reads and writes, Plan-and-Execute + CausalDiagnosis MCP
+--config priced --servers aob --store couchdb --agent plan_execute
+# cumulative layer study, layer 2 of 6, + priced reads and writes, Agents-as-Tools + CausalDiagnosis MCP
+--config priced --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study, layer 2 of 6, + priced reads and writes, CausalDiagnosis agent + CausalDiagnosis MCP
+--config priced --servers aob --store couchdb --agent causal
+# cumulative layer study, layer 3 of 6, + real-time clock, Plan-and-Execute + CausalDiagnosis MCP
+--config real_time --servers aob --store couchdb --agent plan_execute
+# cumulative layer study, layer 3 of 6, + real-time clock, Agents-as-Tools + CausalDiagnosis MCP
+--config real_time --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study, layer 3 of 6, + real-time clock, CausalDiagnosis agent + CausalDiagnosis MCP
+--config real_time --servers aob --store couchdb --agent causal
+# cumulative layer study, layer 4 of 6, + advanced real-time clock, Plan-and-Execute + CausalDiagnosis MCP
+--config advanced_real_time --servers aob --store couchdb --agent plan_execute
+# cumulative layer study, layer 4 of 6, + advanced real-time clock, Agents-as-Tools + CausalDiagnosis MCP
+--config advanced_real_time --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study, layer 4 of 6, + advanced real-time clock, CausalDiagnosis agent + CausalDiagnosis MCP
+--config advanced_real_time --servers aob --store couchdb --agent causal
+# cumulative layer study, layer 5 of 6, + repair rules, Plan-and-Execute + CausalDiagnosis MCP
+--config repair_rules --servers aob --store couchdb --agent plan_execute
+# cumulative layer study, layer 5 of 6, + repair rules, Agents-as-Tools + CausalDiagnosis MCP
+--config repair_rules --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study, layer 5 of 6, + repair rules, CausalDiagnosis agent + CausalDiagnosis MCP
+--config repair_rules --servers aob --store couchdb --agent causal
+# reference without the CausalDiagnosis MCP on all six big layers, Plan-and-Execute
+--config deterioration --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# reference without the CausalDiagnosis MCP on all six big layers, Agents-as-Tools
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# reference without the CausalDiagnosis MCP on all six big layers, CausalDiagnosis agent
+--config deterioration --servers aob --store couchdb --agent causal --no-diagnostics
+# Ag1, candidate troubleshooting plans off, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --causal-no-branches
+# Ag2, candidate troubleshooting plans for the top candidate only, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --causal-single-hypothesis
+# Ag3, plan length one against no count, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --causal-plan-length 1
+# Ag7, the agent's own read, the discriminating test of E10 from the long form of the reply, against the advice of the MCP that the registered agent follows, the priced layer, CausalDiagnosis agent + CausalDiagnosis MCP
+--config priced --servers aob --store couchdb --agent causal --causal-e10-reads
+# Ag7, the agent's own read, one step edge cutting over repair plan classes from the long form of the reply, against the advice of the MCP that the registered agent follows, the priced layer, CausalDiagnosis agent + CausalDiagnosis MCP
+--config priced --servers aob --store couchdb --agent causal --causal-ec2-reads
+# Ag9, the schedule of candidate plans off, every read step alone with its own ranking, against the agent as released, all six big layers, CausalDiagnosis agent + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent causal --causal-sequential
+# En5, the fixed confidence cut against the decision rule of the MCP, layer 0, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute --abstention-rule fixed_cut
+# En5, the fixed confidence cut against the decision rule of the MCP, layer 0, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool --abstention-rule fixed_cut
+# En5, the fixed confidence cut against the decision rule of the MCP, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --abstention-rule fixed_cut
+# En9, the joint ranking model against the joint block model of the main comparison, layer 0, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute --ranking-model joint
+# En9, the joint ranking model against the joint block model of the main comparison, layer 0, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool --ranking-model joint
+# En9, the joint ranking model against the joint block model of the main comparison, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --ranking-model joint
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, Plan-and-Execute
+--config base --servers aob --store couchdb --agent plan_execute --no-diagnostics --guidance 1
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute --guidance 1
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, Agents-as-Tools
+--config base --servers aob --store couchdb --agent agent_as_tool --no-diagnostics --guidance 1
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool --guidance 1
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, CausalDiagnosis agent
+--config base --servers aob --store couchdb --agent causal --no-diagnostics --guidance 1
+# En7, guidance level 1 against the level 2 of the main comparison, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --guidance 1
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, Plan-and-Execute
+--config base --servers aob --store couchdb --agent plan_execute --no-diagnostics --guidance 3
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, Plan-and-Execute + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent plan_execute --guidance 3
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, Agents-as-Tools
+--config base --servers aob --store couchdb --agent agent_as_tool --no-diagnostics --guidance 3
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, Agents-as-Tools + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent agent_as_tool --guidance 3
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, CausalDiagnosis agent
+--config base --servers aob --store couchdb --agent causal --no-diagnostics --guidance 3
+# En7, guidance level 3 against the level 2 of the main comparison, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --guidance 3
+# En6, the price table that prices the high fidelity group far above the rest, all six big layers, Plan-and-Execute
+--config deterioration --servers aob --store couchdb --agent plan_execute --no-diagnostics --prices full_tier_high
+# En6, the price table that prices the high fidelity group far above the rest, all six big layers, Agents-as-Tools
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --no-diagnostics --prices full_tier_high
+# En6, the price table that prices the high fidelity group far above the rest, all six big layers, CausalDiagnosis agent
+--config deterioration --servers aob --store couchdb --agent causal --no-diagnostics --prices full_tier_high
+# L2, the thinking time off, all six big layers, Plan-and-Execute
+--config deterioration_thinking_off --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L2, the thinking time off, all six big layers, Agents-as-Tools
+--config deterioration_thinking_off --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L2, the thinking time off, all six big layers, CausalDiagnosis agent
+--config deterioration_thinking_off --servers aob --store couchdb --agent causal --no-diagnostics
+# L2, the thinking time at twice its price, all six big layers, Plan-and-Execute
+--config deterioration_thinking_price_double --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L2, the thinking time at twice its price, all six big layers, Agents-as-Tools
+--config deterioration_thinking_price_double --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L2, the thinking time at twice its price, all six big layers, CausalDiagnosis agent
+--config deterioration_thinking_price_double --servers aob --store couchdb --agent causal --no-diagnostics
+# L2, the thinking time at half its price, all six big layers, Plan-and-Execute
+--config deterioration_thinking_price_half --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L2, the thinking time at half its price, all six big layers, Agents-as-Tools
+--config deterioration_thinking_price_half --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L2, the thinking time at half its price, all six big layers, CausalDiagnosis agent
+--config deterioration_thinking_price_half --servers aob --store couchdb --agent causal --no-diagnostics
+# L3, the declared action durations off, all six big layers, Plan-and-Execute
+--config deterioration_durations_off --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L3, the declared action durations off, all six big layers, Agents-as-Tools
+--config deterioration_durations_off --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L3, the declared action durations off, all six big layers, CausalDiagnosis agent
+--config deterioration_durations_off --servers aob --store couchdb --agent causal --no-diagnostics
+# L5, the deterioration off, all six big layers, Plan-and-Execute
+--config deterioration_mode_none --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L5, the deterioration off, all six big layers, Agents-as-Tools
+--config deterioration_mode_none --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L5, the deterioration off, all six big layers, CausalDiagnosis agent
+--config deterioration_mode_none --servers aob --store couchdb --agent causal --no-diagnostics
+# L5, the fixed schedule of level drops against the random hazard rates, all six big layers, Plan-and-Execute
+--config scheduled --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L5, the fixed schedule of level drops against the random hazard rates, all six big layers, Agents-as-Tools
+--config scheduled --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L5, the fixed schedule of level drops against the random hazard rates, all six big layers, CausalDiagnosis agent
+--config scheduled --servers aob --store couchdb --agent causal --no-diagnostics
+# L5, the failure rule off, all six big layers, Plan-and-Execute
+--config deterioration_failure_off --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L5, the failure rule off, all six big layers, Agents-as-Tools
+--config deterioration_failure_off --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L5, the failure rule off, all six big layers, CausalDiagnosis agent
+--config deterioration_failure_off --servers aob --store couchdb --agent causal --no-diagnostics
+# Sc3, static answering, one model call over the question without the gym, judged, layer 0
+--config base --servers aob --store couchdb --agent static
+# agents in the environment under the clock of generated tokens, Plan-and-Execute
+--config deterioration_token_clock --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# agents in the environment under the clock of generated tokens, Plan-and-Execute + CausalDiagnosis MCP
+--config deterioration_token_clock --servers aob --store couchdb --agent plan_execute
+# agents in the environment under the clock of generated tokens, Agents-as-Tools
+--config deterioration_token_clock --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# agents in the environment under the clock of generated tokens, Agents-as-Tools + CausalDiagnosis MCP
+--config deterioration_token_clock --servers aob --store couchdb --agent agent_as_tool
+# agents in the environment under the clock of generated tokens, CausalDiagnosis agent
+--config deterioration_token_clock --servers aob --store couchdb --agent causal --no-diagnostics
+# agents in the environment under the clock of generated tokens, CausalDiagnosis agent + CausalDiagnosis MCP
+--config deterioration_token_clock --servers aob --store couchdb --agent causal
+# cumulative layer study under the clock of generated tokens, layer 3 of 6, + real-time clock, Plan-and-Execute + CausalDiagnosis MCP
+--config real_time_token_clock --servers aob --store couchdb --agent plan_execute
+# cumulative layer study under the clock of generated tokens, layer 3 of 6, + real-time clock, Agents-as-Tools + CausalDiagnosis MCP
+--config real_time_token_clock --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study under the clock of generated tokens, layer 3 of 6, + real-time clock, CausalDiagnosis agent + CausalDiagnosis MCP
+--config real_time_token_clock --servers aob --store couchdb --agent causal
+# cumulative layer study under the clock of generated tokens, layer 4 of 6, + advanced real-time clock, Plan-and-Execute + CausalDiagnosis MCP
+--config advanced_real_time_token_clock --servers aob --store couchdb --agent plan_execute
+# cumulative layer study under the clock of generated tokens, layer 4 of 6, + advanced real-time clock, Agents-as-Tools + CausalDiagnosis MCP
+--config advanced_real_time_token_clock --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study under the clock of generated tokens, layer 4 of 6, + advanced real-time clock, CausalDiagnosis agent + CausalDiagnosis MCP
+--config advanced_real_time_token_clock --servers aob --store couchdb --agent causal
+# cumulative layer study under the clock of generated tokens, layer 5 of 6, + repair rules, Plan-and-Execute + CausalDiagnosis MCP
+--config repair_rules_token_clock --servers aob --store couchdb --agent plan_execute
+# cumulative layer study under the clock of generated tokens, layer 5 of 6, + repair rules, Agents-as-Tools + CausalDiagnosis MCP
+--config repair_rules_token_clock --servers aob --store couchdb --agent agent_as_tool
+# cumulative layer study under the clock of generated tokens, layer 5 of 6, + repair rules, CausalDiagnosis agent + CausalDiagnosis MCP
+--config repair_rules_token_clock --servers aob --store couchdb --agent causal
+# L1, the misdiagnosis price at the budget, all six big layers, Plan-and-Execute
+--config deterioration_misdiagnosis_budget --servers aob --store couchdb --agent plan_execute --no-diagnostics
+# L1, the misdiagnosis price at the budget, all six big layers, Agents-as-Tools
+--config deterioration_misdiagnosis_budget --servers aob --store couchdb --agent agent_as_tool --no-diagnostics
+# L1, the misdiagnosis price at the budget, all six big layers, CausalDiagnosis agent
+--config deterioration_misdiagnosis_budget --servers aob --store couchdb --agent causal --no-diagnostics
+# agents in the environment, Plan-and-Execute + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent plan_execute
+# agents in the environment, Agents-as-Tools + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent agent_as_tool
+# agents in the environment, CausalDiagnosis agent + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent causal

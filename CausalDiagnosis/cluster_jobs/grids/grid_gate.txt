@@ -1,0 +1,9 @@
+# The development gate, written by CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand: the
+# CausalDiagnosis agent and the paper-era Plan-and-Execute, both without the CausalDiagnosis MCP, on layer 0, played on
+# the development starts alone, GRID_STARTS=development and GRID_SEEDS=1 with GRID_EXTRA=--start-cap=N, N the count that
+# cluster_run_checks.py cap prints, the registered share of the development starts, never on a start of the test set.
+# cluster_run_checks.py gate compares the two runs.
+# development gate, CausalDiagnosis agent
+--config base --servers aob --store couchdb --agent causal --no-diagnostics
+# development gate, Plan-and-Execute
+--config base --servers aob --store couchdb --agent plan_execute --no-diagnostics

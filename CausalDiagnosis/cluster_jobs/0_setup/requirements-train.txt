@@ -1,0 +1,13 @@
+# The training environment of the LoRA adapters of the training experiment, a virtual environment of its own on the cluster that
+# setup_train_env.sbatch builds, never part of the fork's pyproject.toml or uv.lock. Every version was released at least two
+# weeks before it was pinned on 2026-11-07: trl 1.16.0 on 2026-10-15, peft 0.21.2 on 2026-10-01, transformers 5.19.0 on
+# 2026-10-06 (the last release before trl 1.16.0, which asks for transformers 4.56.2 or later), accelerate 1.15.0 on 2026-09-09,
+# datasets 5.1.0 on 2026-10-05 and torch 2.14.1 on 2026-09-30. setup_train_env.sbatch installs torch first from the CUDA 12.6
+# index of PyTorch, which the 550 driver (CUDA 12.4) of the H100 nodes runs through minor version compatibility, and this pin
+# keeps it.
+torch==2.14.1
+transformers==5.19.0
+trl==1.16.0
+peft==0.21.2
+accelerate==1.15.0
+datasets==5.1.0
