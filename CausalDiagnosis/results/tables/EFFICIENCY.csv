@@ -1,0 +1,1 @@
+agent,model,config,clock_mode,surface,diagnostics_server,guidance_level,verifier_scope,prices,ranking_model,abstention_rule,training_variant,lora_adapters,abstention_cut,prices_sha256,fraction,faults,n,tool_invocations,tool_invocations_low,tool_invocations_high,tool_invocations_se,tool_invocations_n,tool_invocations_std,wall_s,wall_s_low,wall_s_high,wall_s_se,wall_s_n,wall_s_std
