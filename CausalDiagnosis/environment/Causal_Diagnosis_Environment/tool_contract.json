@@ -1,0 +1,171 @@
+{
+  "format": 2,
+  "asset_words": {"short_noun": "rig"},
+  "clock": {
+    "modes": {
+      "declared": "time moves only inside tool calls, by the declared duration of each",
+      "generation_time": "the declared durations plus the agent's thinking time before each counted call, a call that reaches the environment, a refused one included, or the step of a turn that calls no tool of the rig. The thinking time of a counted call is the time since the previous counted call, or since the handover of the task for the first, on the monotonic clock of the benchmark, less the credited time of the first start of each tool server, of the service of each counted call and of every failed attempt of a model request, and its seconds are added to the seconds carried from the calls before, one cycle for every full think_seconds_per_cycle and the rest carried to the next call",
+      "instant": "every call but get_current_time takes one cycle, and so does the step of a turn that calls no tool of the rig"
+    },
+    "seconds_per_cycle": "the wall clock seconds that one cycle of the rig stands for, a published parameter of the asset profile",
+    "think_seconds_per_cycle": "the seconds of the agent's thinking that make one cycle in the generation_time mode, a published parameter of the asset profile",
+    "cycle_order": ["the emergency holds that end expire", "the scheduled drops", "the drops of the stochastic hazard", "the work orders close or start their repair, in priority order", "the rig plays one recorded cycle unless a repair stops it", "the downtime accrues", "the failure check", "the clock moves to the next cycle", "the repairs that end with the cycle close"],
+    "notifying_events": ["work_order_executed", "work_order_closed", "failure", "alarm"],
+    "notifications": "every answer of the action server lists the public events since the previous call, then the timeout of a wait that reached it and the end of the episode, in the message types of ARE's notification system"
+  },
+  "token_clock": {
+    "mode": "the declared durations plus the agent's thinking time before each counted call, a call that reaches the environment, a refused one included, or the step of a turn that calls no tool of the rig. The thinking time of a counted call is the tokens its model generated since the previous counted call times seconds_per_token, and its seconds are added to the seconds carried from the calls before, one cycle for every full think_seconds_per_cycle and the rest carried to the next call",
+    "seconds_per_token": "the seconds of thinking that one generated token stands for in the generated_tokens mode, a published parameter of the asset profile"
+  },
+  "servers": {
+    "hydraulic_rig": "the action server: the tools that read the rig and change the asset or the case record",
+    "causal_diagnosis": "the diagnostics server: analytic tools over the released evidence that change nothing"
+  },
+  "tools": {
+    "get_asset_profile": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "read_sensors": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"sensor_group": "string", "cycles": "integer"},
+      "duration": {"rule": "cycles times durations.read_per_cycle, since the rig has to run the cycles it records", "cycles_per_unit": 1},
+      "price": {"rule": "prices.read[sensor_group] for every cycle that returns a reading"},
+      "scored": false,
+      "aliases": ["inspect"]
+    },
+    "get_current_time": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {},
+      "duration": {"rule": "none in every clock mode, since no tool sets the time", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "wait_for_notification": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"timeout": "integer"},
+      "duration": {"rule": "the clock runs one cycle at a time until a notification is pending or the timeout in cycles is reached, the cycles left before the horizon when the timeout is empty, one cycle in the instant clock mode", "cycles_per_unit": 1},
+      "price": {"rule": "free, while the downtime accrues as the rig runs"},
+      "scored": false,
+      "aliases": []
+    },
+    "summarize_changes_since": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"cycle": "integer"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "get_failure_modes": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"component": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "get_fix_history": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "lookup_fix": {
+      "server": "hydraulic_rig",
+      "class": "read",
+      "parameters": {"component": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "submit_diagnosis": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"cooler": "integer", "valve": "integer", "pump": "integer", "accumulator": "integer", "evidence_ids": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": ["diagnose"]
+    },
+    "declare_insufficient_evidence": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"sensor_group": "string", "cycles": "integer", "evidence_ids": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": []
+    },
+    "create_work_order": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"component": "string", "prediction_id": "string", "evidence_ids": "string", "mode": "string"},
+      "duration": {"rule": "on a row without a clock an order closes inside its call while the repair card is off; otherwise the standard orders created one after another, with no other call between them, form one visit, and an emergency order forms its own: without a clock the visit closes at the next call that is not an order, and with a clock the technician arrives at the largest creation cycle plus lead time among the orders not yet begun (durations.lead_time[component], emergency.lead for an emergency order), or at the close of the repair begun before them, and repairs them back to back in priority order, smaller number first, ties in creation order, each repair taking durations.repair_downtime[component], while a repair that has begun keeps its cycles; the rig is stopped from the arrival to the last close", "cycles_per_unit": 0},
+      "price": {"rule": "prices.parts[component] plus prices.repair_charge, times emergency.surcharge for an emergency order, plus prices.visit for the order that opens a visit, charged at creation; the stopped downtime rate accrues during the repairs"},
+      "scored": true,
+      "card_clauses": {"emergency": {"parameters": ["mode"], "duration": [", and an emergency order forms its own", ", emergency.lead for an emergency order"], "price": [", times emergency.surcharge for an emergency order"]}},
+      "aliases": ["replace"]
+    },
+    "finish": {
+      "server": "hydraulic_rig",
+      "class": "write",
+      "parameters": {"summary": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": true,
+      "aliases": []
+    },
+    "get_episode_evidence": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"sensor_group": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "rank_root_causes": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"top_k": "integer", "branch_detail": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "estimate_intervention_effect": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"action": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    },
+    "verify_outcome": {
+      "server": "causal_diagnosis",
+      "class": "read",
+      "parameters": {"prediction_id": "string"},
+      "duration": {"rule": "none", "cycles_per_unit": 0},
+      "price": {"rule": "free"},
+      "scored": false,
+      "aliases": []
+    }
+  }
+}
