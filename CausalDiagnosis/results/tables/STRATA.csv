@@ -1,0 +1,1 @@
+agent,model,config,clock_mode,surface,diagnostics_server,guidance_level,verifier_scope,prices,ranking_model,abstention_rule,training_variant,lora_adapters,abstention_cut,prices_sha256,fraction,stratum,n,pass,pass_low,pass_high,pass_se,pass_n,success,success_low,success_high,success_se,success_n,abstained,abstained_low,abstained_high,abstained_se,abstained_n
