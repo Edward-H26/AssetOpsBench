@@ -1,0 +1,15 @@
+# the generated locations of this folder, each named in utils/paths.py; the synced runs and the uploads are ignored by
+# cluster_jobs/.gitignore
+# the data folder of every asset but its CHECKSUMS.txt
+datasets/**/data/*
+!datasets/**/data/CHECKSUMS.txt
+# the run folders, their published subsets and the walkthrough pages, which quote sensor readings of single cycles
+results/runs/
+results/published_runs/
+docs/walkthroughs/
+# the calibration reports, the fitted models and the grade table, computed on the machine that uses them
+results/calibration_*.md
+mcp_servers/Causal_Diagnosis_MCP/offline/models.json
+mcp_servers/Causal_Diagnosis_MCP/offline/grades.json
+# the empty lock file beside every JSON file written under its lock
+*.json.lock
