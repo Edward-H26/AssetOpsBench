@@ -1,0 +1,209 @@
+# The sampling runs of the fine tuning of the training table, written by
+# CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand, from training_variants.py and
+# CausalDiagnosis/configs/training/hyd_1/rft.json: 102 run lines, one run each, played with GRID_STARTS=training and
+# without a judge, since the filter is the verifier's pass. A run plays the training start states of the model of its
+# fold once.
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 1
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 2
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 3
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 4
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 5
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 6
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 7
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 8
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 9
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 10
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 11
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 12
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 13
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 14
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 15
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 16
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 1, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 1 --training-sample 17
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 1
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 2
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 3
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 4
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 5
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 6
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 7
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 8
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 9
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 10
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 11
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 12
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 13
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 14
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 15
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 16
+# training table, sampling, Plan-and-Execute + CausalDiagnosis MCP, fold 2, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent plan_execute --training-fold 2 --training-sample 17
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 1
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 2
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 3
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 4
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 5
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 6
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 7
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 8
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 9
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 10
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 11
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 12
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 13
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 14
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 15
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 16
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 1, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 1 --training-sample 17
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 1
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 2
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 3
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 4
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 5
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 6
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 7
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 8
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 9
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 10
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 11
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 12
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 13
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 14
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 15
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 16
+# training table, sampling, Agents-as-Tools + CausalDiagnosis MCP, fold 2, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent agent_as_tool --training-fold 2 --training-sample 17
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 1
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 2
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 3
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 4
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 5
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 6
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 7
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 8
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 9
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 10
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 11
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 12
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 13
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 14
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 15
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 16
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 1, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 1 --training-sample 17
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 1 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 1
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 2 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 2
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 3 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 3
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 4 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 4
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 5 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 5
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 6 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 6
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 7 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 7
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 8 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 8
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 9 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 9
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 10 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 10
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 11 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 11
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 12 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 12
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 13 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 13
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 14 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 14
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 15 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 15
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 16 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 16
+# training table, sampling, CausalDiagnosis agent + CausalDiagnosis MCP, fold 2, sample 17 of 17
+--config deterioration --servers aob --store couchdb --agent causal --training-fold 2 --training-sample 17

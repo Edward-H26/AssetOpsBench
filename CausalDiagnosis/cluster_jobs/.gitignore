@@ -1,0 +1,5 @@
+# per user settings, local grid files, and the laptop side folders that sync_runs.sh and upload_fork.sh fill
+env.sh
+grids/local_*.txt
+runs_synced/
+uploads/

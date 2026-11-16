@@ -1,0 +1,12 @@
+# The optional pilot that measures the thinking rate against think_seconds_per_cycle of the asset file, which every run
+# of record keeps (CausalDiagnosis/docs/environment.md), written by
+# CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand: the three agents with the
+# CausalDiagnosis MCP on the full environment, played on the development starts alone, GRID_STARTS=development and
+# GRID_SEEDS=1 with GRID_EXTRA=--start-cap=N, N the count that cluster_run_checks.py cap prints, the registered share of
+# the development starts, never on a start of the test set.
+# optional pilot of the thinking rate, Plan-and-Execute + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent plan_execute
+# optional pilot of the thinking rate, Agents-as-Tools + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent agent_as_tool
+# optional pilot of the thinking rate, CausalDiagnosis agent + CausalDiagnosis MCP
+--config deterioration --servers aob --store couchdb --agent causal
