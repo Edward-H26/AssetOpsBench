@@ -1,0 +1,248 @@
+{
+  "format": 1,
+  "purpose": "The registered analysis of the experiment: what is tested, what is only described, and every number or rule that a table, a check of the development steps or the judge reads. It is written by hand before any registered run and never generated. A value that is null is open, with the user or until the development steps find it by its registered rule, and a tool that needs it stops and names it.",
+  "level": 0.05,
+  "test": {
+    "name": "two-sided sign-flip test over whole start combinations",
+    "whole_outcomes": "exact by convolution when every per-episode value is a whole number",
+    "other_outcomes": "random sign assignments, as many as the intervals have resamples, with their seed"
+  },
+  "intervals": {
+    "resamples": 10000,
+    "level": 0.95,
+    "seed": 0,
+    "method": "percentile interval of a bootstrap that resamples whole start combinations",
+    "min_clusters": 30,
+    "min_clusters_rule": "below this number of start combinations a cell prints its estimate alone, without interval and without standard error"
+  },
+  "counting": {
+    "unscored": "a played episode that the verifier did not score counts as a failure on every outcome that is a share or a pass, and as zero on a graded outcome; it is left out of the means of cost, time and calls, whose cells print their own number of episodes",
+    "reward": "a played episode that the verifier did not score reads zero on the reward, as on a graded outcome, so the pass and the reward of one comparison count the same episodes; a share that is better when lower leaves it out, and its row prints how many episodes the share counts",
+    "unjudged": "a played episode without a judge record of the registered protocol and judge model counts as a failure on every judge criterion",
+    "not_played": "a row that misses a planned episode is incomplete; every test that reads it is not run and enters Holm with a p value of one",
+    "max_unscored_share": 0.02,
+    "max_unscored_share_rule": "a row whose share of unscored episodes lies above this number is refused: its cells print refused and its tests are not run",
+    "fraction_of_record": 1.0,
+    "fraction_of_record_rule": "the read of record and the result cells of the paper read the tables at this whole fraction of the replicates of the test set. A read below it marks every label partial with its fraction and runs no registered test",
+    "replay": "an episode that the infrastructure broke is played once more under the same seed; every row prints its replays, and the appendix prints each rate again with the replayed episodes counted as failures",
+    "holm": "Holm runs over the registered size of a family, a test that could not be computed entering with a p value of one"
+  },
+  "rows": {
+    "plan_execute": "Plan-and-Execute",
+    "plan_execute+mcp": "Plan-and-Execute + CausalDiagnosis MCP",
+    "agent_as_tool": "Agents-as-Tools",
+    "agent_as_tool+mcp": "Agents-as-Tools + CausalDiagnosis MCP",
+    "causal": "CausalDiagnosis agent",
+    "causal+mcp": "CausalDiagnosis agent + CausalDiagnosis MCP"
+  },
+  "tool_levels": "Every row plays the framework's tools with get_asset_profile and the three answer tools, submit_diagnosis, declare_insufficient_evidence and finish. A row with the MCP adds get_current_time and wait_for_notification where its layers run a clock, lookup_fix where repair rules run on a clock, summarize_changes_since and the four tools of the MCP.",
+  "questions": [
+    {"id": "RQ1", "table": "agents", "families": ["h0"], "tests": [],
+     "text": "Whether an LLM judge of the trajectory and the verifier of the hidden state reach the same conclusions on which episodes succeed and on which agent is better."},
+    {"id": "RQ2", "table": "agents", "families": [], "tests": ["agents:H2a", "agents:H2b", "agents:H2c"],
+     "text": "How much of the offline accuracy of the CausalDiagnosis MCP each agent design realizes as verified outcomes, at what expense in model calls, and how often an agent follows advice that is wrong."},
+    {"id": "RQ3", "table": "agents", "families": ["h1_top"], "tests": ["agents:H1c", "agents:H1d"],
+     "text": "Whether, given the same MCP, model, tool servers and step limit, the CausalDiagnosis agent turns the advice into a verified repair more often than the Plan-and-Execute and Agents-as-Tools designs."},
+    {"id": "RQ4", "table": "training", "families": ["training"], "tests": [],
+     "text": "Whether training on the verdict of the verifier improves the verified outcome on held-out faults beyond training on as many episodes without it."}
+  ],
+  "primary": {
+    "rule": "Each group names the families that one question tests together, and the group is one family of the Holm correction at the registered level, its size the sum of the sizes of its families. A family that no group names is secondary.",
+    "groups": [
+      {"name": "judge", "families": ["h0"]},
+      {"name": "agents", "families": ["agents"]},
+      {"name": "agents_environment", "families": ["h1_top", "h2_prime"]}
+    ]
+  },
+  "families": {
+    "agents": {
+      "preset": "base", "start_set": "test", "measures": ["diagnosis_all_correct", "pass"], "direction": "above", "size": 14,
+      "tests": [["H1a", "causal", "plan_execute"], ["H1b", "causal", "agent_as_tool"], ["H1c", "causal+mcp", "plan_execute+mcp"],
+                ["H1d", "causal+mcp", "agent_as_tool+mcp"], ["H2a", "plan_execute+mcp", "plan_execute"], ["H2b", "agent_as_tool+mcp", "agent_as_tool"],
+                ["H2c", "causal+mcp", "causal"]],
+      "holds": "both paired differences lie above zero and both Holm decisions reject; both below zero with both decisions rejecting reads reversed",
+      "floor": "a comparison of an H1 test against a reference row whose pass rate lies below the floor of pass is reported as uninformative, its tests kept in the family"
+    },
+    "h1_top": {
+      "preset": "deterioration", "start_set": "test", "measures": ["diagnosis_all_correct", "pass"], "direction": "above", "size": 8,
+      "tests": [["H1a", "causal", "plan_execute"], ["H1b", "causal", "agent_as_tool"], ["H1c", "causal+mcp", "plan_execute+mcp"],
+                ["H1d", "causal+mcp", "agent_as_tool+mcp"]],
+      "holds": "as agents", "floor": "as agents",
+      "cells": "the rows without the MCP are the top rung of the ladder, the rows with the MCP the part environment of the agents grid, both on a server without LoRA adapters"
+    },
+    "h2_prime": {
+      "preset": "deterioration", "start_set": "test", "measures": ["pass", "reward"], "direction": "above", "size": 6,
+      "tests": [["H2'a", "plan_execute+mcp", "plan_execute"], ["H2'b", "agent_as_tool+mcp", "agent_as_tool"], ["H2'c", "causal+mcp", "causal"]],
+      "holds": "both paired differences lie above zero and both Holm decisions reject", "floor": "none"
+    },
+    "h0": {
+      "preset": "base", "start_set": "test", "measures": ["judge_pass", "pass"], "direction": "two-sided", "size": 13,
+      "tests": "one row test per row of the main table and one comparison test per test of agents, the six rows and seven comparisons of the design",
+      "holds": "a test rejects when Holm rejects; the sign of the statistic says whether the judge overstates or understates the verified pass",
+      "floor": "none"
+    },
+    "training": {
+      "preset": "deterioration", "start_set": "test", "measures": ["pass", "diagnosis_all_correct"], "direction": "above", "size": 30,
+      "tests": "the five comparisons of the training variants for each of the three rows with the MCP, on every test episode under cross-fitting",
+      "holds": "a difference above zero whose Holm decision rejects", "floor": "none"
+    },
+    "full_environment": {
+      "preset": "deterioration", "reference_preset": "base", "start_set": "test", "measures": ["pass"], "direction": "two-sided", "size": 3,
+      "tests": [["F_a", "plan_execute+mcp"], ["F_b", "agent_as_tool+mcp"], ["F_c", "causal+mcp"]],
+      "holds": "the difference differs from zero and Holm rejects; the registered expectation is a difference below zero",
+      "floor": "a test whose base layer cell has a pass rate below the floor of pass is reported as uninformative",
+      "cells": "the full environment is the row of the part environment of the agents grid, the base layer its row of the main table, both on a server without LoRA adapters"
+    },
+    "layers": {
+      "preset": "every rung of the ladder after the first", "start_set": "test", "measures": ["pass"], "direction": "two-sided", "size": 5,
+      "tests": "one test per rung of the ladder after the first against the rung below it, pooled over the three rows with the MCP",
+      "holds": "the pooled difference differs from zero and Holm rejects",
+      "floor": "a test whose rung below has a pooled pass rate below the floor of pass is reported as uninformative",
+      "expectation": "every rung serves the rows with the MCP the tools its layers need, so the difference of a rung measures the mechanism its layer adds; the effect of each single layer is read on the reference policies as well, which need no model"
+    },
+    "parallel_time": {
+      "preset": "deterioration", "start_set": "test", "measures": ["repair_declared"], "direction": "below", "size": 1,
+      "tests": [["P_a", "causal+mcp", "the schedule of candidate plans on against off"]],
+      "holds": "the difference lies below zero, its test rejects and both margins are met",
+      "margin_pass": 0.05,
+      "margin_cost": 0.25,
+      "margin_rule": "the lower end of the 95 percent interval of the paired pass difference lies above minus margin_pass, and the upper end of the 95 percent interval of the paired difference of the cost over the oracle lies below margin_cost",
+      "floor": "none"
+    }
+  },
+  "ablations": "the tables of the supporting ablations keep a Holm of their own over the tests they hold and decide nothing, the robustness check of H1 at the third guidance level among them, and the table of L1, the misdiagnosis price at the budget of the asset, is descriptive and holds no test",
+  "descriptive": {
+    "exact_match": "the exact match of the faulty set (key faulty_set_right) for every row, with its constant-answer baseline, the share of the episodes of the start set that falls on the most frequent faulty set, and its floor, the larger of the floor of pass and that baseline; a rate at or below its floor is marked",
+    "floor_of_pass": 0.05,
+    "restored": "the share of episodes that end with every component at its healthy level and no work order on a healthy component (key restored_clean), for every row",
+    "funnel": "per row the shares of the planned episodes that reach an accepted diagnosis, the right faulty set, Top-1, an order on every faulty component, no order on a healthy component and a finish, and the counters of the episode records",
+    "system_contrast": "the paired difference between the CausalDiagnosis agent with the MCP and each common design without it, with its interval and its two parts, and no test",
+    "pairs_by_fault": "the paired differences of the agents family per component that is healthy at the start and per pair of a component and a faulty level, read as a description of the fault situations of the asset",
+    "healthy_control": "false alarms and unnecessary work orders of each row when the monitor's flag is false, on the start with no faulty component, as counts and with no test",
+    "policy_layers": "the paired difference of pass, success and reward between each rung of the ladder and the rung below it for each reference policy, with no test",
+    "judge_agreement": "Cohen's kappa of the judge's majority pass against pass, Top-1, the exact match of the faulty set and restored_clean, per row",
+    "offline_accuracy": "the Top-1 rate of the MCP offline on the test set with the five recordings of the start and no live reading, quoted beside the main table, no row and no episode",
+    "failure_classes": "per row the share and the count of each failure class of the verifier over the episodes played, and the share of the closing claims of recovery that the hidden state contradicts, with its interval and with no test",
+    "a3": "the table A3 of aggregate.py, the first evidence for why a gym is needed, on the questions the benchmark already poses; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a7": "the table A7 of aggregate.py, the justification of scoring writes only; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a8": "the table A8 of aggregate.py, whether the threshold should follow prices; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a9": "the table A9 of aggregate.py, the sensitivity the preregistration promised; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a10": "the table A10 of aggregate.py, the information a prompt supplies; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a12": "the table A12 of aggregate.py, the calibration of the CausalDiagnosis MCP; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "misdiagnosis_price": "the table MISDIAGNOSIS_PRICE of aggregate.py, what the price of a wrong diagnosis changes in how the agents commit to a diagnosis; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "switches": "the table SWITCHES of aggregate.py, what each option of a layer adds on the full environment; descriptive, with no confirmatory test",
+    "gepa": "the table GEPA of aggregate.py, what each loop spent and where its final block came from, the trainable interface of the environment for the task block; descriptive, with no confirmatory test",
+    "gepa_curve": "the table GEPA_curve of aggregate.py, whether the verifier's feedback teaches the prompt more than its score does, the environment's online training signal; descriptive, with no confirmatory test",
+    "h1_guidance": "the table H1_GUIDANCE of aggregate.py, whether H1 holds without the guidance of the main level; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a13_a17": "the table A13_A17 of aggregate.py, what each element of the agent is worth on its own; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "calls": "the table CALLS of aggregate.py, whether planning over candidate troubleshooting plans saves the thinking time that a degrading asset charges as downtime; descriptive, with no confirmatory test",
+    "thinking": "the table THINKING of aggregate.py, how much of the thinking time that a degrading asset charges comes from the model, and whether a run lost time to a sleep or a clock step, which reads as a suspect run; descriptive, with no confirmatory test",
+    "strata": "the table STRATA of aggregate.py, whether the mechanism of the agent, checks that catch a change and plans that act or repair as a test where the rule declares, is what produces its advantage; descriptive, with no confirmatory test",
+    "judge": "the table JUDGE of aggregate.py, what answer scoring reads in the runs whose outcome the verifier scores; descriptive, with no confirmatory test",
+    "efficiency": "the table EFFICIENCY of aggregate.py, what a row costs to run, as AssetOpsBench reports its frameworks; descriptive, with no confirmatory test",
+    "plans": "the table PLANS of aggregate.py, how far ahead a row plans, as AssetOpsBench reports its models; descriptive, with no confirmatory test",
+    "elim": "the table ELIM of aggregate.py, how many hypotheses the reads an agent pays for rule out, a yardstick of the MCP's model of the asset and not of the agent's belief; descriptive, with no confirmatory test",
+    "elim_pairs": "the table ELIM_pairs of aggregate.py, whether the MCP and the agent buy their pass with reads that rule out hypotheses; descriptive, with no confirmatory test",
+    "mcp": "the table MCP of aggregate.py, what the MCP adds, what it charges and what it risks, beside the hypotheses; descriptive, with no confirmatory test",
+    "policies": "the table POLICIES of aggregate.py, how far an agent stands from the policy that knows the hidden state and from the policies that need no model, row by row; descriptive, with no confirmatory test",
+    "training_record": "the table TRAINING_RECORD of aggregate.py, whether the three agents trained on the same budget; descriptive, with no confirmatory test",
+    "first_drop": "the table FIRST_DROP of aggregate.py, whether an agent does worse where the asset deteriorates early; descriptive, with no confirmatory test",
+    "labels": "the table LABELS of aggregate.py, whether the MCP finds evidence that the reference policy misses, or the reverse, which the starts separable under one label only show; descriptive, with no confirmatory test",
+    "runs": "the table RUNS of aggregate.py, every number of the leaderboard that leaderboard.py writes traces to the run folders of one row; descriptive, with no confirmatory test"
+  },
+  "companions": {
+    "En9": "the plain classifier in place of the ranking of the MCP on the three rows with the MCP, in a table beside the main table",
+    "healthy_control": "the six rows of the main table on the start with no faulty component, played from the commit that the run records"
+  },
+  "tables": {
+    "A3": "descriptive.a3",
+    "A7": "descriptive.a7",
+    "A8": "descriptive.a8",
+    "A9": "descriptive.a9",
+    "A10": "descriptive.a10",
+    "A12": "descriptive.a12",
+    "MISDIAGNOSIS_PRICE": "descriptive.misdiagnosis_price",
+    "SWITCHES": "descriptive.switches",
+    "GEPA": "descriptive.gepa",
+    "GEPA_curve": "descriptive.gepa_curve",
+    "AGENTS": "families.agents",
+    "AGENTS_pairs": "families.agents",
+    "H1_GUIDANCE": "descriptive.h1_guidance",
+    "H2PRIME_pairs": "families.h2_prime",
+    "H0": "families.h0",
+    "A13_A17": "descriptive.a13_a17",
+    "CALLS": "descriptive.calls",
+    "THINKING": "descriptive.thinking",
+    "STRATA": "descriptive.strata",
+    "JUDGE": "descriptive.judge",
+    "JUDGE_AGREEMENT": "descriptive.judge_agreement",
+    "EFFICIENCY": "descriptive.efficiency",
+    "PLANS": "descriptive.plans",
+    "ELIM": "descriptive.elim",
+    "ELIM_pairs": "descriptive.elim_pairs",
+    "MCP": "descriptive.mcp",
+    "POLICIES": "descriptive.policies",
+    "LAYERS_pairs": "families.layers",
+    "TRAINING": "families.training",
+    "TRAINING_pairs": "families.training",
+    "TRAINING_RECORD": "descriptive.training_record",
+    "FUNNEL": "descriptive.funnel",
+    "FAILURES": "descriptive.failure_classes",
+    "SYSTEM_CONTRAST": "descriptive.system_contrast",
+    "PAIRS_BY_FAULT": "descriptive.pairs_by_fault",
+    "POLICY_LAYERS": "descriptive.policy_layers",
+    "FIRST_DROP": "descriptive.first_drop",
+    "HEALTHY_CONTROL": "descriptive.healthy_control",
+    "RESTORED": "descriptive.restored",
+    "H1_TOP_pairs": "families.h1_top",
+    "FULL_ENV_pairs": "families.full_environment",
+    "PARALLEL": "families.parallel_time",
+    "PARALLEL_pairs": "families.parallel_time",
+    "LABELS": "descriptive.labels",
+    "RUNS": "descriptive.runs"
+  },
+  "reward": {
+    "w_c": 0.2,
+    "w_t": 0.1,
+    "cost_cap": 1.5,
+    "declaration_credit": 0.5,
+    "stream_declaration_credit": 0.0,
+    "rule": "the outcome term is 1 for a good episode, a pass whose cited evidence the released record holds, the declaration credit for a correct declaration whose cited evidence the record holds, and 0 otherwise; the reward subtracts w_c times the cost over the oracle's cost, capped at cost_cap, and w_t times the largest delay over the horizon, capped at 1, the delay taken at the horizon when a fault occurrence was never restored by an agent close; both weights are nonnegative; the online loop of GEPA scores its stream with the stream declaration credit; the filter of the training data keeps the good episodes"
+  },
+  "definitions": {
+    "repair_declared": "per episode the largest time to repair in declared cycles over every fault occurrence of the episode: the cycles from the onset of the occurrence to the agent's close that restores the component, less the cycles charged for thinking from the onset to the creation of the order whose close restores it; the onset is the cycle at which the hidden record takes the component off its healthy level, by a deterioration transition, a scheduled or hazard drop, the expiry of an emergency repair or a new fault after a restoring close, and cycle zero for a fault present at the start, the one onset of the time to work order and the time to repair as well; an occurrence not restored and an episode without a verdict count the horizon of the preset",
+    "cost_window": "the realized cost of the cost prediction error runs from the first order of a visit to the first restore of the asset once no order of the visit is open, or to the end of the episode when the asset is never restored"
+  },
+  "predictions": {
+    "En5": "On layer 0 the fixed cut declares more often and commits less often than the decision rule, on separable and on inseparable starts alike, since the decision rule never declares where no price is charged. Its Top-1 and its pass are no higher. Only the fixed cut can earn the credit of a declaration, so success may favor it on starts that both labels mark inseparable."
+  },
+  "model_request": {
+    "retry_delay_s": 2.0,
+    "retry_delay_source": "watsonx ModelInference(delay_time=2) of the agents of AssetOpsBench",
+    "read_timeout_s": 600.0,
+    "read_timeout_source": "the default timeout of the openai client that every request had before",
+    "rule": "a model request that the service fails (no connection, 429, 502, 503, or outside an episode the read timeout) is attempted again with no count of attempts after retry_delay_s; inside an episode the deadline of the row bounds every attempt, outside one each attempt has read_timeout_s and a dead endpoint ends the program with SERVICE_DOWN; the constants of CausalDiagnosis/utils/model_request_retry.py equal these values"
+  },
+  "judge": {
+    "protocol": "the judge of AssetOpsBench: its prompt, five calls at temperature 0.3, the mean per criterion and the majority for the pass",
+    "model": "the stand-in judge model named in the identity of a run, served with thinking off",
+    "final_response": "the closing answer of the runner",
+    "record": "runner_trajectory",
+    "record_rule": "trajectory.json of the runner for every agent, the list of tool calls with their outputs, the input shape of the released scorer of AssetOpsBench, with no second pass over the record of the server",
+    "reply_tokens": 2048,
+    "reply_tokens_rule": "the tokens left free for the reply of every judge call, a value of the scoring and of no agent: the client default DEFAULT_MAX_TOKENS of src/llm/base.py with which the evaluation of AssetOpsBench runs; the judge sends it as max_tokens on every request, the cut of its input leaves it free, and a reply cut at it is a failed call counted false",
+    "cut_rule": "the judge reads the whole trajectory and the whole answer; only a prompt whose tokens, counted by the served judge, pass its served context less the reply tokens of the judge request is cut, by the least that fits: records nearest the middle leave first, never a write, then the texts of the kept records are headed to one length, then the answer; the judge record names what was cut"
+  },
+  "development": {
+    "valid_share": 0.5,
+    "exact_match_alpha": 0.05,
+    "exact_match_bar_rule": "the bar is the smallest count of the episodes of the round that an exact one-sided binomial test at exact_match_alpha separates from the count of the constant answer on the same episodes, and it must lie above the floor of the exact match on the starts that the round plays",
+    "max_harness_share": 0.02,
+    "patience_share": 0.9,
+    "patience_factor": 2,
+    "patience_steps": 2,
+    "patience_steps_rule": "the patience values that the optional development check of run_checks.py plays, the first included, a development check whose result no run of record reads, every run keeping the patience of the failure card of the asset file; no step may reach the horizon of the preset, where the failure rule never fires",
+    "start_share": 0.5,
+    "start_share_rule": "the share of the development starts of the asset that a round and the optional development check of run_checks.py play, rounded up to a whole start"
+  }
+}

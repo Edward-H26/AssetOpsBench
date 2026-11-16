@@ -1,0 +1,347 @@
+{
+ "format": 1,
+ "asset_id": "bench_1",
+ "evidence_kind": "recorded_levels",
+ "components": [
+  "fan",
+  "belt",
+  "bearing"
+ ],
+ "levels": {
+  "fan": [
+   0,
+   1
+  ],
+  "belt": [
+   50,
+   75,
+   100
+  ],
+  "bearing": [
+   1,
+   2
+  ]
+ },
+ "healthy": {
+  "fan": 0,
+  "belt": 100,
+  "bearing": 1
+ },
+ "degradation": {
+  "fan": [
+   0,
+   1
+  ],
+  "belt": [
+   100,
+   75,
+   50
+  ],
+  "bearing": [
+   1,
+   2
+  ]
+ },
+ "observation_kinds": {
+  "basic": {
+   "channels": [
+    "T1"
+   ]
+  },
+  "full": {
+   "channels": [
+    "T1",
+    "V1",
+    "I1"
+   ]
+  }
+ },
+ "channels": {
+  "T1": {
+   "field": "T1_Temperature_C_1Hz",
+   "quantity": "Temperature"
+  },
+  "V1": {
+   "field": "V1_Vibration_mm_per_s_10Hz",
+   "quantity": "Vibration"
+  },
+  "I1": {
+   "field": "I1_Current_A_10Hz",
+   "quantity": "Current"
+  }
+ },
+ "statistics": {
+  "recorded": [
+   "mean",
+   "std"
+  ],
+  "served": [
+   "mean",
+   "std"
+  ]
+ },
+ "defaults": {
+  "prices": {
+   "read": {
+    "basic": 2,
+    "full": 6
+   },
+   "parts": {
+    "fan": 10,
+    "belt": 5,
+    "bearing": 15
+   },
+   "repair_charge": 5,
+   "fix_kind": {
+    "fan": "replace",
+    "belt": "replace",
+    "bearing": "service"
+   },
+   "misdiagnosis": 4
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "fan": 2,
+    "belt": 1,
+    "bearing": 3
+   },
+   "repair_downtime": {
+    "fan": 1,
+    "belt": 1,
+    "bearing": 2
+   }
+  },
+  "limits": {
+   "budget": 100,
+   "horizon": 30,
+   "max_steps": 30
+  },
+  "clock": {
+   "clock_mode": "declared",
+   "seconds_per_cycle": 60,
+   "think_seconds_per_cycle": 10
+  }
+ },
+ "rules": [
+  {
+   "kind": "failure",
+   "parameters": {
+    "patience": 5,
+    "strict": false,
+    "penalty": 10
+   }
+  },
+  {
+   "kind": "downtime",
+   "parameters": {
+    "rates": {
+     "fan": {
+      "0": 0,
+      "1": 2
+     },
+     "belt": {
+      "100": 0,
+      "75": 1,
+      "50": 3
+     },
+     "bearing": {
+      "1": 0,
+      "2": 4
+     }
+    },
+    "stopped": 3
+   }
+  },
+  {
+   "kind": "visits",
+   "parameters": {
+    "charge": 4
+   }
+  },
+  {
+   "kind": "dependencies",
+   "parameters": {
+    "dependencies": {
+     "fan": [],
+     "belt": [],
+     "bearing": [
+      "belt"
+     ]
+    },
+    "priority": {
+     "belt": 1,
+     "fan": 2,
+     "bearing": 3
+    }
+   }
+  },
+  {
+   "kind": "hazard",
+   "parameters": {
+    "mode": "scheduled",
+    "base_rate": 0.0,
+    "depth_factor": 1.0,
+    "collateral": 0.0
+   }
+  },
+  {
+   "kind": "schedule",
+   "parameters": {
+    "mode": "none",
+    "components": 1,
+    "first_drop": [
+     3,
+     10
+    ],
+    "interval": 5
+   }
+  },
+  {
+   "kind": "emergency",
+   "parameters": {
+    "lead": 0,
+    "surcharge": 1.5,
+    "hold": 5
+   }
+  },
+  {
+   "kind": "fix_history",
+   "parameters": {
+    "healthy_probability": 0.5,
+    "healthy_ago": [
+     2,
+     20
+    ],
+    "degraded_probability": 0.5,
+    "degraded_ago": [
+     2,
+     20
+    ]
+   }
+  }
+ ],
+ "sampler": {
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 1
+  }
+ },
+ "failure_modes": [
+  {
+   "component": "fan",
+   "level": 0,
+   "code": "fan_ok",
+   "severity": "healthy",
+   "action": "none"
+  },
+  {
+   "component": "fan",
+   "level": 1,
+   "code": "fan_stalled",
+   "severity": "critical",
+   "action": "replace_fan"
+  },
+  {
+   "component": "belt",
+   "level": 100,
+   "code": "belt_ok",
+   "severity": "healthy",
+   "action": "none"
+  },
+  {
+   "component": "belt",
+   "level": 75,
+   "code": "belt_worn",
+   "severity": "degraded",
+   "action": "tension_belt"
+  },
+  {
+   "component": "belt",
+   "level": 50,
+   "code": "belt_slipping",
+   "severity": "critical",
+   "action": "replace_belt"
+  },
+  {
+   "component": "bearing",
+   "level": 1,
+   "code": "bearing_ok",
+   "severity": "healthy",
+   "action": "none"
+  },
+  {
+   "component": "bearing",
+   "level": 2,
+   "code": "bearing_dry",
+   "severity": "degraded",
+   "action": "lubricate_bearing"
+  }
+ ],
+ "knowledge": {
+  "fmea_source": "bench_notes",
+  "association_source": "bench_notes",
+  "indicates": {
+   "T1": [
+    "fan"
+   ],
+   "V1": [
+    "belt",
+    "bearing"
+   ],
+   "I1": [
+    "fan",
+    "belt"
+   ]
+  },
+  "correlations": {
+   "fan": {
+    "T1": 0.9,
+    "I1": 0.5
+   },
+   "belt": {
+    "V1": 0.8,
+    "I1": 0.4
+   },
+   "bearing": {
+    "V1": 0.7
+   }
+  }
+ },
+ "records": {
+  "label_keys": {
+   "fan": "fan_state",
+   "belt": "belt_tension",
+   "bearing": "bearing_wear"
+  },
+  "stable_flag_stable": 0,
+  "data_env": "BENCH_1_FACTS_PATH",
+  "release_dir": "CausalDiagnosis/experiments/episode_runners/tests/ports/bench_1/data",
+  "release_file": "bench_cycles.jsonl"
+ },
+ "text": {
+  "noun": "test bench",
+  "short_noun": "bench",
+  "episode_noun": "test bench",
+  "unit_noun": "unit",
+  "whole_asset_patterns": [
+   "bench",
+   "test line",
+   "bench_1",
+   "every component"
+  ],
+  "registry_file": null,
+  "fallback": {
+   "asset_type": "TEST_BENCH",
+   "description": "Made-up test bench of the driver tests",
+   "site": "Lab_3"
+  },
+  "example_channel": "T1",
+  "question": "Which level does each part of the {components} of the test bench stand at, within {limits}?",
+  "opening": "The monitor of the test line flagged the bench.",
+  "scoring": "A diagnosis is scored against the level of each part of the bench at the cycle it is submitted.",
+  "level_meaning": "The fan runs at level 0 and stalls at level 1, the belt holds at 100 and wears to 75 and 50, and the bearing runs at 1 and dries at 2."
+ },
+ "scoring": "program"
+}
