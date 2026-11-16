@@ -1,0 +1,21 @@
+{
+ "_note": "hand-made from SGLang v0.5.19 python/sglang/srt/entrypoints/http_server.py, the handler of GET /server_info (server_args.resolved_dict() with the scheduler info, startup_time, internal_states, version, kv_events) and server_args.py; every value is made up, none comes from a server",
+ "model_path": "/home/someuser/models/granite-3.3-8b-instruct",
+ "tokenizer_path": "/home/someuser/models/granite-3.3-8b-instruct",
+ "served_model_name": "granite-3.3-8b-instruct",
+ "dtype": "bfloat16",
+ "quantization": null,
+ "kv_cache_dtype": "auto",
+ "context_length": 131072,
+ "host": "10.9.8.7",
+ "port": 30123,
+ "api_key": "sk-test-dummy-key-0000",
+ "admin_api_key": "sk-test-admin-key-0000",
+ "mem_fraction_static": 0.85,
+ "cuda_graph_max_bs": 16,
+ "max_total_num_tokens": 400000,
+ "startup_time": 1763100000.0,
+ "internal_states": [{"last_gen_throughput": 0.0}],
+ "version": "0.5.19",
+ "kv_events": null
+}

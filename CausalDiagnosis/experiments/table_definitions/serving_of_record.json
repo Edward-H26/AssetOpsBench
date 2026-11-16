@@ -1,0 +1,61 @@
+{
+  "format": 1,
+  "agent": {
+    "hub_id": "ibm-granite/granite-3.3-8b-instruct",
+    "served_name": "granite-3.3-8b-instruct",
+    "weights_commit": "51dd4bc2ade4059a6bd87649d68aa11e4fb2529b",
+    "dtype": "bfloat16",
+    "engine_version": "0.5.19",
+    "launch_args": {
+      "alone": [
+        "--context-length",
+        "131072",
+        "--dtype",
+        "bfloat16",
+        "--enable-cache-report",
+        "--chat-template",
+        "agent_chat_template.jinja"
+      ],
+      "co_served": [
+        "--context-length",
+        "131072",
+        "--dtype",
+        "bfloat16",
+        "--mem-fraction-static",
+        "0.85",
+        "--cuda-graph-max-bs",
+        "16",
+        "--enable-cache-report",
+        "--chat-template",
+        "agent_chat_template.jinja"
+      ]
+    }
+  },
+  "judge": {
+    "hub_id": "Qwen/Qwen3.8-27B-FP8",
+    "served_name": "Qwen3.8-27B-FP8",
+    "weights_commit": "c3a462cc3d38cf351f3b26cbd763469eeb74ef81",
+    "dtype": "auto",
+    "engine_version": "0.5.19",
+    "launch_args": {
+      "alone": [
+        "--context-length",
+        "131072",
+        "--cuda-graph-max-bs",
+        "16",
+        "--reasoning-parser",
+        "qwen3"
+      ],
+      "co_served": [
+        "--context-length",
+        "131072",
+        "--mem-fraction-static",
+        "0.45",
+        "--cuda-graph-max-bs",
+        "16",
+        "--reasoning-parser",
+        "qwen3"
+      ]
+    }
+  }
+}
