@@ -1,0 +1,80 @@
+{
+  "format": 1,
+  "asset_words": {"short_noun": "rig"},
+  "about": "The tool contract of the AssetOpsBench rows of the environment table: AssetOpsBench's own iot, fmsr and wo servers behind the metering layer and the task tools of the rig's action server, one table per server keyed by tool name, every tool of the three AssetOpsBench servers listed or hidden with its reason.",
+  "rows": ["base", "priced", "real_time", "advanced_real_time", "repair_rules", "deterioration"],
+  "servers": {
+    "iot": "AssetOpsBench's IoT server over the asset registry and the telemetry of the episode",
+    "fmsr": "AssetOpsBench's failure mode server over the failure mode documents of the episode",
+    "wo": "AssetOpsBench's work order server over the work orders of the episode and the failure code catalog",
+    "task": "the actions of the rig's action server that AssetOpsBench's tools do not carry: on a row with the tools of CausalDiagnosis the asset profile, the change summary, one diagnosis or one declaration, finish, from the real time clock row the two time tools, and from the repair rules row the repair manual lookup_fix, which has no AssetOpsBench counterpart; on a row without the tools of CausalDiagnosis the asset profile, the diagnosis and finish"
+  },
+  "actions": {
+    "read_recorded": {"class": "read", "rule": "a read of a window of recorded cycles, which history and latest_reading become"},
+    "aob_read": {"class": "read", "rule": "a free read of an AssetOpsBench tool that sells no telemetry, logged so that the call counts toward the step cap and pays its thinking time"}
+  },
+  "clock": {
+    "notifications": "from the real time clock row on, the receipt line that ends every answer lists the public events since the previous call, then the timeout of a wait that reached it and the end of the episode, in the message types of ARE's notification system"
+  },
+  "layers": {
+    "base": "AssetOpsBench's own tools over the record of the episode, iot's registry reads, history and latest_reading, fmsr's get_failure_modes, wo's work order reads and generate_work_order, with the task server's get_asset_profile, submit_diagnosis, declare_insufficient_evidence and finish",
+    "priced": "no new tool, since the prices and the budget act on history, latest_reading and generate_work_order and a receipt line ends every answer",
+    "real_time": "the task server's get_current_time and wait_for_notification, and the notifications in the receipt line",
+    "advanced_real_time": "no new tool, since history plays the cycles its window reaches at their declared duration and an order of generate_work_order waits its lead time and stops the rig for its repair downtime",
+    "repair_rules": "the task server's lookup_fix for the manual, generate_work_order with work_type EM for the emergency mode, wo's list_workorders for the fix history as the work orders closed before the episode, and generate_work_order for the visit charge and the dependencies",
+    "deterioration": "no new tool, since the deterioration and the failure card run on the clock and show in the telemetry and the notifications"
+  },
+  "tools": {
+    "iot": {
+      "sites": {"class": "read", "action": "aob_read", "row": "base", "parameters": {}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "asset_ids": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "assets": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "assettype": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "asset_detail": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "asset_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "installed_sensors": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "asset_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "measured_sensors": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "asset_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "find_assets_by_sensors": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "sensors": "array", "match": "string", "substring": "boolean", "source": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "stream_extent": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "asset_id": "string", "sensor": "string", "start": "string", "end": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "sensor_coverage": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_name": "string", "asset_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "history": {"class": "read", "action": "read_recorded", "row": "base", "parameters": {"site_name": "string", "asset_id": "string", "start": "string", "end": "string", "sensors": "array", "limit": "integer", "cursor": "string"}, "duration": {"rule": "none for a recorded cycle, and durations.read_per_cycle for every cycle not yet recorded that the window reaches, which the rig plays first in the advanced real time clock row, while the real time clock row clips the window to the present", "value_of": "read_sensors"}, "price": {"rule": "prices.read of the cheapest sensor group whose fields cover the returned fields, for every returned cycle that no group paid earlier for that cycle covers, so that a re-read of a paid cycle is free", "value_of": "read_sensors"}, "scored": false},
+      "latest_reading": {"class": "read", "action": "read_recorded", "row": "base", "parameters": {"site_name": "string", "asset_id": "string", "sensor": "string"}, "duration": {"rule": "none, since the newest row is recorded"}, "price": {"rule": "prices.read of the cheapest sensor group that covers the returned fields, for the newest recorded cycle unless a group paid earlier for that cycle covers them", "value_of": "read_sensors"}, "scored": false},
+      "sensor_stats": {"hidden": "its window aggregates enter no released observation, so the diagnostics server and the separability label would miss what the agent saw"}
+    },
+    "fmsr": {
+      "get_failure_modes": {"class": "read", "action": "get_failure_modes", "row": "base", "parameters": {"asset_class": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "generate_failure_modes": {"hidden": "it calls a language model of its own"},
+      "add_failure_modes": {"hidden": "it writes the failure mode catalog, which only the producer of the episode writes"}
+    },
+    "wo": {
+      "list_workorders": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_id": "string", "status": "string", "asset_num": "string", "priority": "integer", "date_from": "string", "date_to": "string", "page_size": "integer", "page_num": "integer"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_workorder": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"wonum": "string", "site_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_workorder_tasks": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"wonum": "string", "site_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_workorder_costs": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"wonum": "string", "site_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_workorder_actuals_vs_planned": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"wonum": "string", "site_id": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_workorder_kpis": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_id": "string", "period_months": "integer"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_schedule_calendar": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"site_id": "string", "date_from": "string", "date_to": "string", "group_by": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_my_assigned_workorders": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"labor_code": "string", "site_id": "string", "open_only": "boolean"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "get_failure_codes": {"class": "read", "action": "aob_read", "row": "base", "parameters": {"code": "string"}, "duration": {"rule": "none"}, "price": {"rule": "free"}, "scored": false},
+      "generate_work_order": {"class": "write", "action": "create_work_order", "row": "base", "parameters": {"description": "string", "asset_num": "string", "site_id": "string", "priority": "integer", "work_type": "string", "reported_by": "string", "location": "string", "notes": "string", "wonum": "string", "aob_source": "object"}, "duration": {"rule": "none for the call. Without a clock the order closes inside its call while the repair card is off, and with the rest of its visit at the next call that is not an order while it is on. It closes at the next played cycle in the real time clock row. From the advanced real time clock row on, the standard orders created one after another, with no other call between them, form one visit: the technician arrives at the largest creation cycle plus lead time among the orders not yet begun, or at the close of the repair begun before them, and repairs them back to back in the order they were created, each for its repair downtime, while a repair that has begun keeps its cycles. From the repair rules row the visit pays one visit charge and repairs in priority order, smaller number first, while work_type EM gives an emergency order with a visit of its own and emergency.lead"}, "price": {"rule": "the price of the rig's create_work_order, prices.parts[component] plus prices.repair_charge, times emergency.surcharge for work_type EM, with prices.visit for the order that opens a visit, charged at creation", "value_of": "create_work_order"}, "scored": true},
+      "update_workorder": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"},
+      "approve_workorder": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"},
+      "assign_technician": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"},
+      "close_workorder": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"},
+      "cancel_workorder": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"}
+    },
+    "task": {
+      "get_asset_profile": {"row": "base"},
+      "get_current_time": {"row": "real_time"},
+      "wait_for_notification": {"row": "real_time"},
+      "lookup_fix": {"row": "repair_rules"},
+      "summarize_changes_since": {"row": "base"},
+      "submit_diagnosis": {"row": "base"},
+      "declare_insufficient_evidence": {"row": "base"},
+      "finish": {"row": "base"}
+    }
+  },
+  "hidden_servers": {
+    "utilities": "json_reader opens any path, the episode's hidden folder included, and both time tools read the wall clock",
+    "tsfm": "its tools take file paths and write catalogs, and none of them reads the rig",
+    "vibration": "no rig data reaches it, since its tools analyse vibration recordings and the rig records none"
+  }
+}
