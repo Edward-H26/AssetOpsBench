@@ -1,0 +1,26 @@
+{
+  "name": "scheduled",
+  "description": "The deterioration row with the fixed schedule of level drops of timed.json in place of the random hazard rates, the supporting ablation that sets scheduled against random deterioration. The schedule draws one component, a healthy one whenever the start has one, which drops one condition level at a cycle drawn in first_drop and one more every interval cycles until its worst level. Every other switch equals deterioration.json, and the parameters of the schedule are public in the processes block while the drawn component and its drop cycles stay hidden.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": {
+      "mode": "schedule",
+      "first_drop": [
+        5,
+        30
+      ]
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

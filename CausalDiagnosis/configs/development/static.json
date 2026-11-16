@@ -1,0 +1,23 @@
+{
+  "name": "static",
+  "description": "Static episodes for development and the tests, every big layer but the real-time clock with the deterioration mode none, so the hidden combination of the start changes only through the agent's repairs. The clock mode is declared with the time tools listed, the actions take their declared durations, and the failure card runs at the asset's values without the strict end.",
+  "layers": [
+    "priced",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": "none",
+    "time_tools": "on",
+    "failure": {
+      "strict": false
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

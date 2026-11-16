@@ -1,0 +1,17 @@
+{
+  "name": "deterioration",
+  "description": "The deterioration row of the environment table, all six big layers, the setting of the training table. Big layer 5 adds the random hazard rates, under which a component drops one level in a cycle with a chance that grows with the levels it sits below its healthy level, decided by a table of uniforms that the seed fixes, and the failure card, so a component left at its worst level fails after its patience, adds its penalty to the hidden ledger and ends the episode, and only a repair on it that has closed by then averts the failure. The rates are public in the processes block while the drops stay hidden, and the row differs from repair_rules.json by big layer 5 alone.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

@@ -1,0 +1,14 @@
+{
+  "name": "real_time",
+  "description": "The real-time clock row of the environment table, priced.json with big layer 2, the clock that follows the System app of ARE. In the generation_time mode the agent's thinking runs the clock, the wall seconds between its calls adding up from call to call into one cycle per full think_seconds_per_cycle of the asset file, wait_for_notification lasts the cycles it waits, and every other call takes no time, since reads, lead times and repair downtime are zero. Every answer carries the notifications of the public events since the previous call, and this row differs from the priced row by the agent's time alone.",
+  "layers": [
+    "priced",
+    "real_time"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

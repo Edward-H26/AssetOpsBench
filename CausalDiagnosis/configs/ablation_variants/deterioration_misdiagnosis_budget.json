@@ -1,0 +1,20 @@
+{
+  "name": "deterioration_misdiagnosis_budget",
+  "description": "The deterioration row with the misdiagnosis price of big layer 1 at the budget of the asset, the arm of the supporting ablation L1. A wrong accepted diagnosis adds as much to the hidden ledger as the budget allows the prices of an episode, while every other switch of the six big layers stays as on the deterioration row.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "misdiagnosis": "budget"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

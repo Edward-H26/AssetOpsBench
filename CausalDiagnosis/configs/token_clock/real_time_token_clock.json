@@ -1,0 +1,17 @@
+{
+  "name": "real_time_token_clock",
+  "description": "The real-time clock row in the generated_tokens mode, real_time.json with the switch clock_mode at generated_tokens and nothing else changed. The tokens the agent's model generates between two calls, each counted as seconds_per_token seconds of the asset file, add up from call to call into one cycle per full think_seconds_per_cycle, so a call is charged the same thinking time whatever the load of the machine that serves the model. A second condition beside real_time.json, whose clock is the clock of record, for the layer study.",
+  "layers": [
+    "priced",
+    "real_time"
+  ],
+  "switches": {
+    "clock_mode": "generated_tokens"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

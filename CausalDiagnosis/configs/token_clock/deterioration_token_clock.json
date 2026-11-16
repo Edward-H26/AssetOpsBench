@@ -1,0 +1,20 @@
+{
+  "name": "deterioration_token_clock",
+  "description": "The deterioration row of all six big layers in the generated_tokens mode, deterioration.json with the switch clock_mode at generated_tokens and nothing else changed. The tokens the agent's model generates between two calls, each counted as seconds_per_token seconds of the asset file, add up from call to call into one cycle per full think_seconds_per_cycle, so a call is charged the same thinking time whatever the load of the machine that serves the model. A second condition beside deterioration.json, whose clock is the clock of record, for the six rows of the agents in the environment.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "clock_mode": "generated_tokens"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

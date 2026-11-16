@@ -4,7 +4,10 @@
   "prices": {
     "read": {"tier1": null, "tier2": null, "tier3": null},
     "parts": {"cooler": null, "valve": null, "pump": null, "accumulator": null},
-    "repair_charge": null
+    "repair_charge": null,
+    "visit": null,
+    "misdiagnosis": null,
+    "fix_kind": {"cooler": null, "valve": null, "pump": null, "accumulator": null}
   },
   "durations": {
     "read_per_cycle": null,

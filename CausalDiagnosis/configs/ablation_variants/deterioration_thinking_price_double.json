@@ -1,0 +1,22 @@
+{
+  "name": "deterioration_thinking_price_double",
+  "description": "The deterioration row at half the seconds of thinking per cycle of the asset file, so a second of thinking moves the clock twice as far, a point of the time pressure curve beside deterioration_thinking_off. The rate is a multiplier on the value the asset file declares, never a fixed number of seconds, and every other switch of the six big layers stays as on the deterioration row.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "think_seconds_per_cycle": {
+      "scale": 0.5
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

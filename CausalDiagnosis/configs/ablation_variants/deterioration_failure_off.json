@@ -1,0 +1,20 @@
+{
+  "name": "deterioration_failure_off",
+  "description": "The deterioration row with the failure card off, a supporting ablation of the small switches. The random hazard rates still drop components, while no component fails and no failure ends the episode.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "failure": "off"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

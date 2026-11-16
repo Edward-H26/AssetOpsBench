@@ -1,0 +1,16 @@
+{
+ "name": "rft",
+ "about": "the registered numbers of the training in the environment: rejection sampling fine tuning with LoRA and the online loop of GEPA over one tunable block, the same for the three agents, one model per fold of folds.json (CausalDiagnosis/docs/experiments.md, section Training in the environment)",
+ "samples_per_state": 17,
+ "sampling_temperature": 0.7,
+ "rounds": 1,
+ "filter": "good",
+ "minimum": {"kept_per_training_state": 1, "extension_rounds": 1},
+ "control_seed": 0,
+ "folds": {"file": "folds.json", "development_file": "folds_development.json"},
+ "gepa": {"max_episodes": 240, "block": 3, "window": 2, "children": 1, "gepa_seed": 0, "card": "verifier", "proposal_attempts": 2, "unanswered_proposals": 2},
+ "lora": {"r": 16, "alpha": 32, "dropout": 0.05, "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]},
+ "training": {"epochs": 2, "learning_rate": 0.0001, "lr_scheduler": "cosine", "warmup": 0.03, "weight_decay": 0.0, "max_grad_norm": 1.0,
+              "per_device_batch": 1, "gradient_accumulation": 16, "max_length": 32768, "seed": 0, "precision": "bf16",
+              "gradient_checkpointing": true, "attention": "sdpa", "save_steps": 50, "logging_steps": 10}
+}

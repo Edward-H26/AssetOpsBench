@@ -1,0 +1,15 @@
+{
+  "name": "advanced_real_time",
+  "description": "The advanced real-time clock row of the environment table, real_time.json with big layer 3. Every tool call is a durative action of its declared length, so a read lasts the cycles it records and a work order waits its lead time and stops the rig for its repair downtime, and every elapsed cycle charges the downtime price of the hidden condition and the stopped rate during a repair to the hidden ledger, at the asset's durations and rates. The failure card belongs to big layer 5, so no component fails on this row.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

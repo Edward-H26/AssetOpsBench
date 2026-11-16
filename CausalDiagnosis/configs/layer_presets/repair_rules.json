@@ -1,0 +1,16 @@
+{
+  "name": "repair_rules",
+  "description": "The repair rules row of the environment table, advanced_real_time.json with big layer 4. A repair takes only when the components it depends on are at their healthy level at its close, the standard orders created one after another, with no other call between them, form one technician visit with one visit charge that repairs them in priority order, get_fix_history lists the work orders before the episode, and an emergency order arrives sooner at a surcharge but holds the component only for a limited number of cycles. A seed draws the same hidden start here as on every other row, since the fix history draws from a generator of its own.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

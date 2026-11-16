@@ -1,0 +1,23 @@
+{
+  "name": "deterioration_durations_off",
+  "description": "The deterioration row with the action durations of big layer 3 off, a supporting ablation of the small switches. A read takes no time and a work order closes after no lead time and no repair downtime, and the emergency order is off as well, since it arrives sooner than a standard order only where standard orders wait a lead time. The thinking time still runs the clock, and the downtime price still accrues.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "read_per_cycle": "off",
+    "lead_time": "off",
+    "repair_downtime": "off",
+    "emergency": "off"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

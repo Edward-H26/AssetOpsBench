@@ -1,0 +1,1162 @@
+{
+ "name": "folds_development",
+ "about": "the training split of the asset by the general rule of CausalDiagnosis/datasets/splits/train_test_folds.py: the model that holds out fold h trains on the start combinations whose models name h and plays the test episodes of the start combinations of fold h (CausalDiagnosis/docs/experiments.md, section Training in the environment)",
+ "rule": "CausalDiagnosis.datasets.splits.train_test_folds.fault_folds through CausalDiagnosis/experiments/table_definitions/write_training_split.py",
+ "asset_id": "hyd_1",
+ "k": 2,
+ "seed": 0,
+ "starts": "development",
+ "facts_sha256": "1a27f0939d9ceb0d63003f126fcaae4250b94f5f45a551ee653b7f0a76479e95",
+ "components": [
+  "cooler",
+  "valve",
+  "pump",
+  "accumulator"
+ ],
+ "combinations": [
+  {
+   "combination": [
+    3,
+    73,
+    0,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    0,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    0,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    73,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    1,
+    130
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    2,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    73,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    73,
+    2,
+    130
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    80,
+    0,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    0,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    0,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    1,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    1,
+    130
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    2,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    80,
+    2,
+    130
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    0,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    0,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    0,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    90,
+    1,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    1,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    1,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    1,
+    130
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    2,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    90,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    90,
+    2,
+    130
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    3,
+    100,
+    1,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    100,
+    1,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    100,
+    1,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    100,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    100,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    3,
+    100,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    20,
+    73,
+    0,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    0,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    0,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    1,
+    130
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    2,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    73,
+    2,
+    130
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    0,
+    90
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    80,
+    0,
+    100
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    80,
+    0,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    80,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    80,
+    1,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    1,
+    130
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    80,
+    2,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    2,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    80,
+    2,
+    130
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    0,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    0,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    0,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    1,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    1,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    1,
+    130
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    2,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    2,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    2,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    90,
+    2,
+    130
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    100,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    100,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    20,
+    100,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    100,
+    2,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    100,
+    2,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    20,
+    100,
+    2,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    1,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    1,
+    100
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    73,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  },
+  {
+   "combination": [
+    100,
+    80,
+    1,
+    90
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    100,
+    80,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": true,
+   "models": [
+    2
+   ]
+  },
+  {
+   "combination": [
+    100,
+    80,
+    1,
+    115
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    80,
+    2,
+    90
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    80,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    80,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    1,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    1,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    1,
+    115
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    2,
+    90
+   ],
+   "fold": 2,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    2,
+    100
+   ],
+   "fold": 1,
+   "trains": false,
+   "models": []
+  },
+  {
+   "combination": [
+    100,
+    90,
+    2,
+    115
+   ],
+   "fold": 2,
+   "trains": true,
+   "models": [
+    1
+   ]
+  }
+ ],
+ "atoms": [
+  {
+   "component": "cooler",
+   "level": 3,
+   "fold": 2
+  },
+  {
+   "component": "cooler",
+   "level": 20,
+   "fold": 1
+  },
+  {
+   "component": "valve",
+   "level": 73,
+   "fold": 2
+  },
+  {
+   "component": "valve",
+   "level": 80,
+   "fold": 1
+  },
+  {
+   "component": "valve",
+   "level": 90,
+   "fold": 2
+  },
+  {
+   "component": "pump",
+   "level": 1,
+   "fold": 1
+  },
+  {
+   "component": "pump",
+   "level": 2,
+   "fold": 2
+  },
+  {
+   "component": "accumulator",
+   "level": 90,
+   "fold": 1
+  },
+  {
+   "component": "accumulator",
+   "level": 100,
+   "fold": 1
+  },
+  {
+   "component": "accumulator",
+   "level": 115,
+   "fold": 2
+  }
+ ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "deterioration_mode_none",
+  "description": "The deterioration row with the deterioration mode none, a supporting ablation of the small switches. No component drops a level but by a repair, while the failure card of big layer 5 and every other switch stay as on the deterioration row.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": "none"
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

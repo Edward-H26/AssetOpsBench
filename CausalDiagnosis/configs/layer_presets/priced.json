@@ -1,0 +1,13 @@
+{
+  "name": "priced",
+  "description": "The priced row of the environment table, the base with big layer 1. A read costs the price of its sensor group per newly paid cycle, a work order its part and the repair charge, and the budget stops the episode when an action cannot pay. A wrong diagnosis costs the misdiagnosis price, which the environment adds to the cost of the episode and not to the budget. The visit charge belongs to the repair rules and stays zero, and there is no clock.",
+  "layers": [
+    "priced"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

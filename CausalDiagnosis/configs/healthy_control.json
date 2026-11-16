@@ -1,0 +1,15 @@
+{
+  "name": "healthy_control",
+  "description": "The control on the healthy start: base.json with the fault rule of the starts at no faulty component, so every seed draws the combination with every component at its healthy level, at one of its entry offsets. An episode passes when the diagnosis names every component at its healthy level and no work order is created. The verdict counts the components that a diagnosis names as faulty and the work orders, each of which is unnecessary on this start. The row is descriptive and no hypothesis test reads it.",
+  "layers": [],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 0
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

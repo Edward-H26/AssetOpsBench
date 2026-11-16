@@ -1,0 +1,11 @@
+{
+  "name": "base",
+  "description": "The base row of the environment table, big layer 0 alone. Every tool is free and there is no budget, so the cost of an episode counts its calls. The clock mode is declared and every declared duration is zero, so time passes only while the agent waits with the rig's own tools, and every small switch of the five big layers above the base sits at its off value. A seed draws the same hidden start here as on every other row.",
+  "layers": [],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

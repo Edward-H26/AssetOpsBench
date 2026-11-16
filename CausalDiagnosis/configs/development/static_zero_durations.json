@@ -1,0 +1,26 @@
+{
+  "name": "static_zero_durations",
+  "description": "static.json with every declared duration of big layer 3 at zero, so reads take no time, work orders close in the cycle they are created and the clock moves only while the agent waits. The emergency order is off, since it arrives sooner than a standard order only where standard orders wait a lead time. It is the one composition whose repair rules run without a clock, where the orders of one visit close together at the next call that is not an order.",
+  "layers": [
+    "priced",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": "none",
+    "read_per_cycle": "off",
+    "lead_time": "off",
+    "repair_downtime": "off",
+    "emergency": "off",
+    "failure": {
+      "strict": false
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

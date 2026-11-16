@@ -1,0 +1,12 @@
+{
+  "name": "full_tier_high",
+  "source": "ablation A9: the full sensor tier priced far above the two cheaper tiers, every other price as in default.json",
+  "prices": {
+    "read": {"tier1": 1, "tier2": 3, "tier3": 100},
+    "parts": {"cooler": 20, "valve": 20, "pump": 30, "accumulator": 20},
+    "repair_charge": 20,
+    "visit": 15,
+    "misdiagnosis": 15,
+    "fix_kind": {"cooler": "replace", "valve": "replace", "pump": "replace", "accumulator": "service"}
+  }
+}

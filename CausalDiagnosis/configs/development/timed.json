@@ -1,0 +1,29 @@
+{
+  "name": "timed",
+  "description": "Timed episodes for development and the tests, static.json with the fixed schedule of level drops. The schedule drops one component level by level from a first cycle drawn in first_drop, which ends at 30 so that a component with three recorded drops at interval 10 reaches its worst level by cycle 50 and a work order created then closes, after the longest lead time and repair downtime of the asset, before the horizon of 60 with one cycle left for finish. A seed gives the same hidden start as static.json.",
+  "layers": [
+    "priced",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": {
+      "mode": "schedule",
+      "first_drop": [
+        5,
+        30
+      ]
+    },
+    "time_tools": "on",
+    "failure": {
+      "strict": false
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}
