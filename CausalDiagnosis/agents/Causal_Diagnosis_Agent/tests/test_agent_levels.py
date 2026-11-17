@@ -12,7 +12,8 @@ from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tests.test_causal_diagnosis_a
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import Board  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import Plan, Step, check_plan, rule_plan  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import orientation_turn, planning_turn, summary_turn, system_prompt  # noqa: E402
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import OPTIONAL_KIND_TOOLS, AobSurface, RigSurface  # noqa: E402
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import OPTIONAL_KIND_TOOLS, RigSurface  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.causal_diagnosis_agent_surface import AobSurface  # noqa: E402
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers import layer_2_real_time as real_time  # noqa: E402
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.recorded_history_env import RecordedRigEnv  # noqa: E402
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.tests.conftest import world  # noqa: E402,F401  the recorded cycles, a fixture
