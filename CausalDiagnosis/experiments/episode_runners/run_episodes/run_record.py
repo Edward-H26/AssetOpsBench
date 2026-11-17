@@ -25,7 +25,6 @@ from CausalDiagnosis.experiments.episode_runners.audit_reports import run_summar
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import BRIEFING_VERSION  # noqa: E402
 from CausalDiagnosis.utils import frameworks  # noqa: E402
 from CausalDiagnosis.agents.utils.mcp_sessions import SESSIONS  # noqa: E402
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions  # noqa: E402
 from . import agent_kinds
 
 
@@ -165,6 +164,7 @@ def agent_settings(a, runner):
         settings = paper.request_settings(runner.temperature)
         limits = paper.settings(runner.servers, runner.temperature)
     elif a.agent == "causal":
+        from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions
         from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import request_settings
         routed = hasattr(getattr(runner.backend, "inner", runner.backend), "request_settings")  # a stand-in planner sends no request
         settings = request_settings(runner.backend, temperature=runner.temperature) if routed else {"decoding": None, "transport": sessions}

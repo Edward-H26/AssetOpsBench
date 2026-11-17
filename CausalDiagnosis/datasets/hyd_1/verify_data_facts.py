@@ -226,7 +226,7 @@ def label_checks(facts):
 def healthy_checks(facts):
     """Bullet "Healthy state": the stable cycles of the healthy combination."""
     return [
-        Check("the healthy combination (100, 100, 0, 130) has stable cycles", True, bool(stable_blocks(facts).get(HEALTHY))),
+        Check(f"the healthy combination {HEALTHY} has stable cycles", True, bool(stable_blocks(facts).get(HEALTHY))),
     ]
 
 

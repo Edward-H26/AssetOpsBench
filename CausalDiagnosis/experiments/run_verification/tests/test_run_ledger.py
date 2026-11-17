@@ -581,7 +581,7 @@ def test_no_file_of_the_tree_names_the_freeze_file_or_its_command():
     for top in ("CausalDiagnosis", "hpc", "CausalDiagnosis/docs", "src", "README.md"):
         base = ledger.run_data.ROOT / top
         for path in [base] if base.is_file() else sorted(base.rglob("*")):
-            if path.is_file() and path.suffix in (".py", ".sh", ".sbatch", ".md", ".txt", ".json") and path.name != "test_ledger.py":
+            if path.is_file() and path.suffix in (".py", ".sh", ".sbatch", ".md", ".txt", ".json") and path.name != "test_run_ledger.py":
                 text = path.read_text(encoding="utf-8", errors="replace")
                 hits += [f"{path.relative_to(ledger.run_data.ROOT)}:{n}" for n, line in enumerate(text.splitlines(), 1) if pattern.search(line)]
     assert hits == []

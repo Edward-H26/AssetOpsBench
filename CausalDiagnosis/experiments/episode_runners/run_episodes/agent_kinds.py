@@ -18,7 +18,6 @@ POLICY_AGENTS = ("oracle", "do_nothing", "greedy", "random", "declare")
 SCRIPTED_AGENTS = tuple(name for name in DECLARED_AGENTS if name not in MODEL_AGENTS)
 AGENTS = (*SCRIPTED_AGENTS, *MODEL_AGENTS, *POLICY_AGENTS)
 ABSTENTION_RULES = ("decision", "fixed_cut")
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions  # noqa: E402
 
 
 # the modules through which the driver reaches the code of each agent label beyond what it imports for every run, which the
@@ -33,6 +32,9 @@ def agent_label_of(agent, model, causal_options=None):
     if agent in POLICY_AGENTS or agent in SCRIPTED_AGENTS:
         return agent
     if agent == "causal":
+        # here and not at the top, so that a run of another agent or of a reference policy loads no file of the causal agent
+        from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions
+
         label = CausalLoopOptions(**(causal_options or {})).label()
         return f"{label}_{model}"
     return f"{agent}_{model}"

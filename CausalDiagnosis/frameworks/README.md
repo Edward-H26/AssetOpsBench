@@ -33,6 +33,6 @@ another. The core puts the fork's `src/` on `sys.path`, which a framework built 
 ## The limit of the format
 
 The fields above are derived from one framework, AssetOpsBench. A later framework that needs a field the declaration does not
-have changes core code, and that change voids the freeze file in force. A field this core does not know is ignored with one
+have changes core code, among it CausalDiagnosis/utils/frameworks.py of the harness list, so runs before and after that change differ in their code identity. A field this core does not know is ignored with one
 message, so a declaration written for a later format does not stop an older core; a known field with a wrong shape stops the
 registry, since the core would misread it.

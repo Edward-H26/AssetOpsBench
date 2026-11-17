@@ -6,7 +6,7 @@ What each table of the paper runs, the program that plays the episodes, and the 
 
 | Folder | What it holds |
 | --- | --- |
-| `table_definitions/` | which presets, agents and seeds make up each table (`experiment_tables.py`), the pre-registered analysis (`registered_analysis.json`), the training variants, and the program that writes the training split of a dataset |
+| `table_definitions/` | which presets, agents and seeds make up each table (`experiment_tables.py`), the analysis (`registered_analysis.json`), the training variants, and the program that writes the training split of a dataset |
 | `episode_runners/` | the episode runner, which plays episodes with an agent or a reference policy through the tool servers and verifies each one, and the runner of the reference policies without servers |
 | `cluster_runs/` | the job lists of the cluster, one line per run, the tables a job list reads before it starts, and the checks of the cluster run order |
 | `run_verification/` | the ledger of a run (where, when and with which code and model it ran), the record check of a tree and the serving file of record, the replay check, the digests of every text an agent reads, and the checks of synced and finished runs |

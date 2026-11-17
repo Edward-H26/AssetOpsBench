@@ -2,7 +2,7 @@
 
 Whoever runs the jobs follows this page alone, from the first login on the cluster to the tables of a run of record. Every command runs in the login shell of the cluster, unless its block starts on the laptop, where it runs at the fork root. Every job goes through `submit.sh`, which prints one line `SUBMITTED` with the name of the script, the id of the job and the path of its log. `H` names the folder `CausalDiagnosis/cluster_jobs` of the clone that a job plays. Its numbered folders follow the run order, `0_setup`, `1_checks`, `2_serve_model`, `3_run` and `4_after_run`, and the section of the same number describes each, while `grids` holds the grid files. `submit.sh` finds a job script of any numbered folder by its file name.
 
-Names on this page follow the code and the texts that an agent reads, and the [glossary](../docs/README.md#glossary) of the docs README gives the term of the paper for each of them, such as pre-registered for registered, cumulative layer study for ladder and call counter for metering layer.
+Names on this page follow the code and the texts that an agent reads, and the [glossary](../docs/README.md#glossary) of the docs README gives the term of the paper for each of them, such as cumulative layer study for ladder and call counter for metering layer.
 
 ## What this tree is
 

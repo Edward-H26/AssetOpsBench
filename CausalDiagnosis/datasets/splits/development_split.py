@@ -14,8 +14,8 @@ import random
 from itertools import combinations as subsets
 from itertools import islice
 
-DEVELOPMENT_SEED = 0  # the registered seed that picks the test combinations moved to development, fixed before any run
-EXAMPLE_SEED = 0  # the registered seed that draws the example start of the two reference designs, fixed before any run
+DEVELOPMENT_SEED = 0  # the registered seed that picks the test combinations moved to development
+EXAMPLE_SEED = 0  # the registered seed that draws the example start of the two reference designs
 # the search for the fewest moved combinations tries the covers by size, a count that grows without bound with the asset, so
 # a split whose search passes this many candidate covers is refused
 MAX_COVERS_TRIED = 1_000_000

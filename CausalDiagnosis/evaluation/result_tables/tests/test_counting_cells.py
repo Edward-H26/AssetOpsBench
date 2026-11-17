@@ -55,7 +55,7 @@ def _tex(results):
 def _rewritten(results, table, change):
     """The page of a results folder written again by main_tables after change has set the cells of every row of one aggregate table,
     as aggregate writes them for a row of the test set or for a read below the fraction of record, which these fixtures cannot play."""
-    path = results / "aggregate" / f"{table}.csv"
+    path = results / "tables" / f"{table}.csv"
     with open(path, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     for row in rows:
@@ -64,7 +64,7 @@ def _rewritten(results, table, change):
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
         writer.writeheader()
         writer.writerows(rows)
-    main_tables.write(results / "aggregate", results, results / "INDEX.json")
+    main_tables.write(results / "tables", results, results / "INDEX.json")
     return (results / main_tables.PAGE).read_text(encoding="utf-8")
 
 

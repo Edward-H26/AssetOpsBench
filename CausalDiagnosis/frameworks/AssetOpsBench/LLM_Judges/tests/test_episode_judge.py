@@ -13,6 +13,7 @@ from llm import LLMBackend
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate
 from CausalDiagnosis.frameworks.AssetOpsBench.LLM_Judges import episode_judge as judge
 from CausalDiagnosis.frameworks.AssetOpsBench.LLM_Judges import judge_finished_runs as rejudge
+from CausalDiagnosis.utils.llm_backends import EndpointChatBackend
 
 RUBRIC_PASS = ('{"task_completion": true, "data_retrieval_accuracy": true, "generalized_result_verification": true, '
                '"agent_sequence_correct": true, "clarity_and_justification": true, "hallucinations": false, '
@@ -268,7 +269,7 @@ def test_an_endpoint_without_a_context_gets_no_cut_and_the_tokenize_request_carr
         return 200, {"tokens": [1, 2, 3], "count": 3, "max_model_len": 99}
 
     sent = judge_endpoint(monkeypatch, answer)
-    backend = judge.EndpointChatBackend("tokenrouter/judge-x", base_url="http://127.0.0.1:1/v1", api_key="k", extra_body=judge.JUDGE_REQUEST)
+    backend = EndpointChatBackend("tokenrouter/judge-x", base_url="http://127.0.0.1:1/v1", api_key="k", extra_body=judge.JUDGE_REQUEST)
     models = [None]
     assert judge.served_budget(backend, "http://127.0.0.1:1/v1") is None and judge.served_budget(backend, None) is None
     models = [32768]
@@ -309,7 +310,7 @@ def test_a_judge_that_cannot_read_its_served_context_stops_with_the_reason(monke
     only a listing that names no max_model_len, as a router's, gives no budget."""
     listing = [(404, {"detail": "not found"})]
     judge_endpoint(monkeypatch, lambda method, url, body: listing[0])
-    backend = judge.EndpointChatBackend("tokenrouter/judge-x", base_url="http://127.0.0.1:1/v1", api_key="k", extra_body=judge.JUDGE_REQUEST)
+    backend = EndpointChatBackend("tokenrouter/judge-x", base_url="http://127.0.0.1:1/v1", api_key="k", extra_body=judge.JUDGE_REQUEST)
     with pytest.raises(judge.ContextUnknown, match="gave no model listing .*404"):
         judge.served_budget(backend, "http://127.0.0.1:1/v1")
     listing[0] = (200, {"data": [{"id": "judge-x"}]})
@@ -477,18 +478,18 @@ def fresh_code(monkeypatch):
 
 
 def test_the_judge_record_names_the_commit_of_the_clone_that_wrote_it(tmp_path, monkeypatch, fresh_code):
-    monkeypatch.setattr(fresh_code, "git_state", lambda paths, root=None: ("f" * 40, []))
+    monkeypatch.setattr(fresh_code.code_identity, "git_state", lambda paths, root=None: ("f" * 40, []))
     record = judge.judge_episode(episode_folder(tmp_path), FakeJudge([RUBRIC_PASS]), "single")
     assert record["code_commit"] == "f" * 40
     judge.code_of_judge.cache_clear()
-    monkeypatch.setattr(fresh_code, "git_state", lambda paths, root=None: (None, None))
+    monkeypatch.setattr(fresh_code.code_identity, "git_state", lambda paths, root=None: (None, None))
     assert judge.judge_episode(episode_folder(tmp_path / "upload"), FakeJudge([RUBRIC_PASS]), "single")["code_commit"] is None
 
 
 def test_the_judge_record_names_the_hash_of_the_code_list_that_holds_the_judge(tmp_path, monkeypatch, fresh_code):
     own = judge.Path(judge.__file__).resolve().relative_to(judge.ROOT.resolve()).as_posix()
     listed = {"scoring": {own: "1" * 64, "other/file.py": "2" * 64}, "harness": {"x.py": "3" * 64}}
-    monkeypatch.setattr(fresh_code, "tree_files", lambda root=None: listed)
+    monkeypatch.setattr(fresh_code.code_identity, "tree_files", lambda root=None: listed)
     first = judge.judge_episode(episode_folder(tmp_path / "a"), FakeJudge([RUBRIC_PASS]), "single")["judge_code_sha256"]
     assert first == fresh_code.canonical_sha256(sorted(listed["scoring"].items()))
     judge.code_of_judge.cache_clear()
@@ -532,7 +533,7 @@ def test_a_judge_without_its_context_stops_the_run_and_leaves_no_empty_pass(monk
     from CausalDiagnosis.experiments.episode_runners import run_episodes
     from CausalDiagnosis.utils import model_request_retry as retry
 
-    options = {"backend": None, "protocol": "single", "agent_model": "agent-model", "base_url": "http://127.0.0.1:1/v1"}
+    options = {"judge": "local", "backend": None, "protocol": "single", "agent_model": "agent-model", "base_url": "http://127.0.0.1:1/v1"}
     for failure in (judge.ContextUnknown("no model listing"), retry.ServiceDown("gone")):
         monkeypatch.setattr(judge, "judge_episode", lambda *args, failure=failure, **kwargs: (_ for _ in ()).throw(failure))
         with pytest.raises(type(failure)):

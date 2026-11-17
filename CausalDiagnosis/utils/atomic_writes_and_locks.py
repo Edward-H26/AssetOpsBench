@@ -60,7 +60,7 @@ class GeneratedTableMissing(RuntimeError):
 def refuse_writing(what):
     """Stop before a process computes and writes a generated table (a label table, a grade, the models file) when it runs with
     CD_TABLES_READ_ONLY=1: on a clone that cluster jobs share one process writes the tables, the tables job, so that no table
-    changes under a run in flight, and a registered run reads the tables its freeze file holds and computes none."""
+    changes under a run in flight, and a registered run reads the tables as they are and computes none."""
     if os.environ.get(READ_ONLY_TABLES) == "1":
         raise GeneratedTableMissing(f"{what} is missing or was written by other code, and this process only reads the tables "
                                     f"({READ_ONLY_TABLES}=1): compute them first with the tables job, {TABLES_JOB}")

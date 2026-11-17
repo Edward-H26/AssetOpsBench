@@ -978,7 +978,7 @@ def test_a_run_whose_rules_all_pass_is_of_record_and_one_changed_file_stamps_it(
     a, name, config = _parsed("--config", "base", "--agent", "oracle", "--starts", "sampled")
     facts = default_facts_path()
     for function in ("untracked_loaded", "data_reasons"):
-        monkeypatch.setattr(run_episodes.ledger, function, lambda *args, **kwargs: [])
+        monkeypatch.setattr(run_episodes.ledger.code_identity, function, lambda *args, **kwargs: [])
     monkeypatch.setattr(run_episodes.ledger.code_identity, "open_reasons", lambda: [])
     monkeypatch.setattr(run_episodes.ledger.code_identity, "tree_record_reasons", lambda root=None: [])
     assert run_episodes.start_check.registration(a, config, name, facts) == []
@@ -993,7 +993,9 @@ def test_a_registered_run_computes_no_table(tmp_path, monkeypatch):
     made one first (scratch_repository); the control: on no repository the registered run is refused."""
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
     from CausalDiagnosis.experiments.run_verification.tests.test_run_ledger import scratch_repository
+    from CausalDiagnosis.utils.atomic_writes_and_locks import READ_ONLY_TABLES
 
+    monkeypatch.setenv(READ_ONLY_TABLES, "0")  # recorded here, so that teardown removes what the registered run sets
     fitted = []
     monkeypatch.setattr(fit, "ensure_models", lambda *args, **kwargs: fitted.append(args))
     monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args, **kwargs: [])
@@ -1153,7 +1155,7 @@ def test_the_launchers_keep_their_bytes_and_launch_options_builds_the_same_serve
                 private_options[server] = hidden
         private = json.loads((folder / episode_launchers.LAUNCH_PRIVATE).read_text(encoding="utf-8"))
         environment = {data_file[0]: str(data_file[1])} if "data_file" in options else {}
-        assert private == {"src": str(servers_of_a_run.SRC), "asset_folders": episode_launchers.asset_search_path(), "environment": environment,
+        assert private == {"src": [str(servers_of_a_run.ROOT), str(servers_of_a_run.SRC)], "asset_folders": episode_launchers.asset_search_path(), "environment": environment,
                            "options": private_options}, number
     _name, config = load_config("base")
     for servers, store in ((rig, None), (aob, {"kind": "memory"})):
@@ -1246,6 +1248,7 @@ def test_a_registered_run_holds_the_tables_for_itself_and_the_servers_it_starts(
 
     from CausalDiagnosis.utils.atomic_writes_and_locks import READ_ONLY_TABLES
 
+    monkeypatch.setenv(READ_ONLY_TABLES, "0")  # recorded here, so that teardown removes what hold_tables sets
     monkeypatch.delenv(READ_ONLY_TABLES, raising=False)
     run_episodes.hold_tables(["the preset is no registered start set"])
     assert READ_ONLY_TABLES not in os.environ

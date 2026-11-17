@@ -10,7 +10,7 @@ that the agent and the diagnostics server read one rule (a test holds that). Wha
 wait early, and thinking time moves the clock on the rows whose clock counts it."""
 from dataclasses import dataclass, field
 
-from CausalDiagnosis.utils.public_rules.visits import visit_schedule
+from .visits import visit_schedule
 
 
 @dataclass(frozen=True)

@@ -8,7 +8,7 @@ included, and the same agent plays without the diagnostics server on its own can
 to end test asserts on the files written and on the row extras, never on a recorded value; the parser, the plan check, the
 rule plan and the compaction are tested on a synthetic board without servers. Run folders go under pytest's tmp_path,
 outside the repository."""
-from CausalDiagnosis.utils.paths import SRC
+from CausalDiagnosis.utils.paths import ROOT
 import contextlib
 import dataclasses
 import importlib.util
@@ -4115,18 +4115,24 @@ def test_the_plan_check_charges_one_visit_per_run_of_orders():
 def test_no_place_groups_orders_by_their_creation_cycle():
     """Guard against a second copy of the visit rule: the engine (clock, repair rules, env), the diagnostics server's schedule
     and the agent's board and plan check name no grouping by creation cycle (visit_of, visit_at, a comparison of created_t) and
-    reach servers/public_rules/visits.py."""
+    reach utils/public_rules/visits.py. The board and the plan check are packages, so every module of each is read and the
+    needed name stands in one of them."""
     import ast
-    src = SRC
-    places = {"envs/hydraulic_rig/clock.py": "schedule_orders", "envs/hydraulic_rig/layers/repair_rules.py": "visit_schedule",
-              "envs/hydraulic_rig/env.py": "joins", "servers/causal_diagnosis/branches.py": "schedule_of_visit",
-              "agent/causal_loop/board.py": "joins", "agent/causal_loop/plan.py": "visit_closes"}
+    places = {"CausalDiagnosis/environment/Causal_Diagnosis_Environment/clock/episode_clock.py": "schedule_orders",
+              "CausalDiagnosis/environment/Causal_Diagnosis_Environment/layers/layer_4_repair_rules.py": "visit_schedule",
+              "CausalDiagnosis/environment/Causal_Diagnosis_Environment/env.py": "joins",
+              "CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/advice/troubleshooting_plans.py": "schedule_of_visit",
+              "CausalDiagnosis/agents/Causal_Diagnosis_Agent/situation_board/": "joins",
+              "CausalDiagnosis/agents/Causal_Diagnosis_Agent/plan/": "visit_closes"}
     for rel, needed in places.items():
-        tree = ast.parse((src / rel).read_text(encoding="utf-8"))
-        assert needed in _names(tree) and not _names(tree) & {"visit_of", "visit_at"}, rel
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Compare) and any(isinstance(op, ast.Eq) for op in node.ops):
-                assert "created_t" not in ast.unparse(node), (rel, ast.unparse(node))
+        trees = {path: ast.parse(path.read_text(encoding="utf-8"))
+                 for path in (sorted((ROOT / rel).glob("*.py")) if rel.endswith("/") else [ROOT / rel])}
+        assert trees and needed in set().union(*map(_names, trees.values())), rel
+        for path, tree in trees.items():
+            assert not _names(tree) & {"visit_of", "visit_at"}, path
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Compare) and any(isinstance(op, ast.Eq) for op in node.ops):
+                    assert "created_t" not in ast.unparse(node), (path, ast.unparse(node))
 
 
 @pytest.mark.parametrize("row", ["deterioration", "repair_rules"])

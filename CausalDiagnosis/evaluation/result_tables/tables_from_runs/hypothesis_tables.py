@@ -12,8 +12,8 @@ def turns_pair(level, reference, ctx):
 
 
 def cost_ratio(level, reference, ctx):
-    """The mean cost of a level over the mean cost of its reference on the matched episodes, the ratio of mean cost of the
-    pre-registered criteria, with a bootstrap interval clustered by block over the pairs (cluster_bootstrap over the sum of
+    """The mean cost of a level over the mean cost of its reference on the matched episodes, the ratio of mean cost that the
+    registered analysis names, with a bootstrap interval clustered by block over the pairs (cluster_bootstrap over the sum of
     the level's costs and the sum of the reference's, empty when the reference sums to zero). The p value is the one of the
     paired cost difference, since the ratio of the means is one exactly when the mean difference is zero."""
     pairs = cell_statistics.matched(level, reference, episode_selection.AGENT_KEY, "cost")

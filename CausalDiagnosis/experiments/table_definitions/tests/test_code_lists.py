@@ -137,15 +137,16 @@ def test_the_tables_of_record_are_built_with_every_rendering_module_blocked(tmp_
 
 def test_a_plan_execute_run_names_the_port_and_the_sub_agents_it_shares_with_agent_as_tool(tmp_path):
     """--agent plan_execute plays the paper-era port, whose steps run on the sub-agents of the Agent-As-Tool port over the vendored
-    engine. A fresh interpreter that imports the port loads files of the harness and of the list of plan_execute alone, and the
-    identity of a plan_execute run moves with a file of the port and with a shared file, which moves that of agent_as_tool too."""
+    engine. A fresh interpreter that imports the port loads files of the harness, of episode (the tool servers of AssetOpsBench),
+    both identity lists of every run, and of the list of plan_execute alone, and the identity of a plan_execute run moves with a
+    file of the port and with a shared file, which moves that of agent_as_tool too."""
     code = ("import importlib, json, sys\nfrom pathlib import Path\nroot = Path.cwd().resolve()\nimportlib.import_module('CausalDiagnosis.frameworks.AssetOpsBench.agents.Plan_Execute_Paper')\n"
             "print(json.dumps(sorted({Path(m.__file__).resolve().relative_to(root).as_posix() for m in list(sys.modules.values())\n"
             "                         if getattr(m, '__file__', None) and Path(m.__file__).resolve().is_relative_to(root)})))\n")
     loaded = [path for path in json.loads(_fresh(code)) if (ROOT / path).is_file()]
     own = f"{run_identity_file_lists.AGENT_LIST}plan_execute"
     assert any(path.startswith("CausalDiagnosis/frameworks/AssetOpsBench/agents/Plan_Execute_Paper/") for path in loaded) and any(path.startswith("CausalDiagnosis/frameworks/AssetOpsBench/agents/Agent_As_Tool_Paper/") for path in loaded)
-    assert {path: run_identity_file_lists.lists_of(path) for path in loaded if run_identity_file_lists.lists_of(path) != ("harness",) and own not in run_identity_file_lists.lists_of(path)} == {}
+    assert {path: run_identity_file_lists.lists_of(path) for path in loaded if run_identity_file_lists.lists_of(path) not in (("harness",), ("episode",)) and own not in run_identity_file_lists.lists_of(path)} == {}
     root = _small_tree(tmp_path)
     port = root / "CausalDiagnosis/frameworks/AssetOpsBench/agents/Plan_Execute_Paper/runner.py"
     port.parent.mkdir(parents=True)

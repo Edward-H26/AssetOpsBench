@@ -33,7 +33,7 @@ if importlib.util.find_spec("mcp") is None:
     pytest.skip("needs the mcp package", allow_module_level=True)
 
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate  # noqa: E402
-from CausalDiagnosis.experiments.episode_runners import episode_launchers, run_configuration
+from CausalDiagnosis.experiments.episode_runners import episode_launchers, run_configuration, servers_of_a_run
 from CausalDiagnosis.utils import csv_rows  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions import experiment_tables as design  # noqa: E402
 from CausalDiagnosis.frameworks.AssetOpsBench.LLM_Judges import episode_judge as judge  # noqa: E402
@@ -386,7 +386,7 @@ def test_every_server_process_finds_a_port_mounted_beside_the_package(mounted, t
     started = subprocess.run([sys.executable, "-I", str(tmp_path / "with" / "probe_server.py")], capture_output=True, text=True, env=alone,
                              timeout=120)
     assert started.returncode == 0 and started.stdout.split() == [BENCH, str(facts)], started.stderr[-800:]
-    bare = f"import os, sys\nsys.path[:0] = {[str(run_episodes.ROOT), str(run_episodes.SRC)]!r}" + probe
+    bare = f"import os, sys\nsys.path[:0] = {[str(servers_of_a_run.ROOT), str(servers_of_a_run.SRC)]!r}" + probe
     assert subprocess.run([sys.executable, "-c", bare], capture_output=True, text=True, env=alone, timeout=120).returncode != 0
     assert private["options"][run_episodes.CAUSAL_SERVER]["models_path"] == str(fit.models_path(BENCH))
     assert "models_path=PRIVATE" in launchers[run_episodes.CAUSAL_SERVER].read_text(encoding="utf-8")
@@ -518,9 +518,9 @@ def test_the_parts_bound_to_one_asset_refuse_another_asset(mounted, tmp_path):
     for asset_id, args, reason in (
             (BENCH, ["--config", "base", "--agent", "greedy"], "--agent greedy runs the reference classifiers"),
             (BENCH, ["--config", "base", "--agent", "scripted", "--verifier-scope", "all"], "the verifier scope all runs the reference classifiers"),
-            (BENCH, ["--config", str(anchored), "--agent", "scripted"], "the anchored preset maps the AssetOpsBench scenarios"),
+            (BENCH, ["--config", str(anchored), "--agent", "scripted"], "the anchored preset maps the scenarios of a scenario set"),
             (DEMO, ["--config", "base", "--agent", "static"], "the static agent shows the recorded fields")):
-        with pytest.raises(SystemExit, match=f"{re.escape(reason)}.*plays the asset {asset_id}"):
+        with pytest.raises(SystemExit, match=f"{re.escape(reason)}.*(plays the asset {asset_id}|the asset {asset_id} that this run plays)"):
             run_episodes.main([*args, "--asset", asset_id, "--seeds", "1", "--store", "memory", "--out", str(out)])
     assert not out.exists()
 
