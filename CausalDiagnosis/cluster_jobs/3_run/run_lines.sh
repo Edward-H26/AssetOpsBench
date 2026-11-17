@@ -62,13 +62,6 @@ if [ "${SLURM_RESTART_COUNT:-0}" -gt 0 ]; then
   for a in "$d"_attempt*; do [ -d "$a" ] && COVERED+=("$a"); done
 fi
 if [ "${GRID_PENDING:-0}" = 1 ]; then
-  # pending_grid_lines.py matches the finished runs to the lines of the grid file, which hold no word of GRID_EXTRA, so a selector
-  # of GRID_EXTRA would leave every line pending and play it again
-  case " ${GRID_EXTRA:-} " in
-    *" --start-state"*|*" --scenario-ids"*)
-      echo "GRID_PENDING=1 matches the finished runs to the lines of $GRID_FILE alone, so a selector belongs on the grid line and not in GRID_EXTRA=$GRID_EXTRA" >&2
-      exit 2 ;;
-  esac
   COVERED=()
   for a in "$RUNS"/grid_*; do [ -d "$a" ] && COVERED+=("$a"); done
 fi
@@ -76,9 +69,12 @@ if [ ${#COVERED[@]} -gt 0 ]; then
   PLAY=$LA/pending_lines.txt
   REPLICATED=()
   [ "${GRID_STARTS:-sampled}" != sampled ] || REPLICATED=(${GRID_FRACTION:+--fraction "$GRID_FRACTION"} ${GRID_REPLICATES:+--replicates $GRID_REPLICATES})
-  # the lines name no model: run_grid.sbatch adds the served model after each line, so a finished run records SERVED_NAME
+  # the lines name no model: run_grid.sbatch adds the served model after each line, so a finished run records SERVED_NAME; it adds
+  # its seeds and GRID_EXTRA after each line as well, so the tool plans every line with the episodes that the job plays
+  # shellcheck disable=SC2086
   python -m CausalDiagnosis.experiments.cluster_runs.pending_grid_lines --grid "$GRID_PATH" --runs "${COVERED[@]}" \
-    --starts "${GRID_STARTS:-sampled}" ${REPLICATED[@]+"${REPLICATED[@]}"} ${SERVED_NAME:+--model "$SERVED_NAME"} > "$PLAY" \
+    --starts "${GRID_STARTS:-sampled}" ${REPLICATED[@]+"${REPLICATED[@]}"} ${SERVED_NAME:+--model "$SERVED_NAME"} \
+    --seeds "${GRID_SEEDS:-3}" --first-seed "${GRID_FIRST_SEED:-0}" ${GRID_EXTRA:-} > "$PLAY" \
     || { echo "pending_grid_lines.py failed" >&2; exit 2; }
   echo "$(grep -c . "$PLAY") pending pairs of $GRID_FILE in $PLAY, after the finished runs of ${#COVERED[@]} grid folders"
 fi

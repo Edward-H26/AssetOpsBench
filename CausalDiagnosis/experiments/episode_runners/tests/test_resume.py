@@ -357,20 +357,24 @@ def test_a_folder_the_command_cannot_take_up_is_left_as_it_is_and_the_line_plays
 
 def test_pending_lines_names_the_run_in_progress_with_resume_and_nothing_once_the_pair_is_done(runs, tmp_path):
     """A pending pair that a run in progress plays is printed with --resume and the run folder; a finished run of the pair leaves
-    nothing pending; a run that started before the cutoff of its agent, a filler and a run stopped after harness errors in a row
-    are not taken up; and the filler arguments of a pending line drop --resume with its folder."""
+    nothing pending, and under another start cap or another count of seeds, which its run.json and the command of its ledger
+    record, leaves the pair pending; a run that started before the cutoff of its agent, a filler and a run stopped after harness
+    errors in a row are not taken up; and the filler arguments of a pending line drop --resume with its folder."""
     copy = runs["copy"]
     grid = copy.parent
-    assert pending_lines.pending([LINE], [grid], {}, starts="development") == [f"{LINE} --resume {copy}"]
-    assert pending_lines.pending([LINE], [grid, runs["resumed"]["boundary"].parent], {}, starts="development") == []
-    assert pending_lines.pending([LINE], [grid], {"oracle": "2999-01-01T00:00:00"}, starts="development") == [LINE]
+    words = DEVELOPMENT[2:]  # the start cap that the job adds after the line, with which the tool plans it
+    assert pending_lines.pending([LINE], [grid], {}, starts="development", run_options=words) == [f"{LINE} --resume {copy}"]
+    assert pending_lines.pending([LINE], [grid, runs["resumed"]["boundary"].parent], {}, starts="development", run_options=words) == []
+    for other in (["--start-cap", "4"], [*words, "--seeds", "2"]):
+        assert pending_lines.pending([LINE], [runs["resumed"]["boundary"].parent], {}, starts="development", run_options=other) == [LINE], other
+    assert pending_lines.pending([LINE], [grid], {"oracle": "2999-01-01T00:00:00"}, starts="development", run_options=words) == [LINE]
     record = read_json(copy / ledger.LEDGER)
     for name, changed in (("filler", {"command": {**record["command"], "argv": [*record["command"]["argv"], "--filler"]}}),
                           ("stopped", {"events": [{"at": None, "tool": "run_episodes.py", "what": failures.STOP_EVENT, "files": {}}]})):
         folder = tmp_path / name
         shutil.copytree(copy, folder / copy.name)
         (folder / copy.name / ledger.LEDGER).write_text(json.dumps({**record, **changed}), encoding="utf-8")
-        assert pending_lines.pending([LINE], [folder], {}, starts="development") == [LINE], name
+        assert pending_lines.pending([LINE], [folder], {}, starts="development", run_options=words) == [LINE], name
     assert grid_lines.filler_arguments(f"{LINE} --replicate 2 --resume {copy}") == LINE
 
 
