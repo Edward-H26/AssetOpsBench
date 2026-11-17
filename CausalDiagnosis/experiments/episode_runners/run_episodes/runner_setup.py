@@ -1,3 +1,4 @@
+import importlib
 import os
 from pathlib import Path
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import CAUSAL_SERVER, registered_servers, tool_surface  # noqa: E402
@@ -67,6 +68,10 @@ def default_servers(agent, config_name):
 def build_runner(a, config_name, config, price_table, cycles, blocks, facts_path, registered=False):
     """An EpisodeRunner for the command line settings; it fits the diagnostics models when a server or the grade needs them, except
     in a registered run, which opens the generated tables as they are and computes none."""
+    # the modules of the agent of the run, imported once here, where the run takes its agent, since the driver imports no file
+    # of an agent list for every run: an agent that cannot be imported stops the run before its run folder, not in an episode
+    for module in agent_kinds.AGENT_ENTRY_MODULES.get(a.agent, ()):
+        importlib.import_module(module)
     a.servers = a.servers or default_servers(a.agent, config_name)
     if a.agent in agent_kinds.PAPER_ERA_AGENTS and a.servers not in agent_kinds.DECLARED_AGENTS[a.agent]["surfaces"]:
         raise SystemExit(frameworks.code("AGENTS", a.agent).servers_refusal)

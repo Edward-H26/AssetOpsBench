@@ -222,7 +222,7 @@ def test_a_replay_is_deterministic_and_the_view_holds_no_private_key(world, tmp_
 
 
 def test_only_asset_model_reads_the_tables_of_an_asset():
-    """Every module of the package but asset_model imports from the rig packages at most the generic arithmetic of the
+    """Every module of the package and of its subpackages but asset_view imports from the rig packages at most the generic arithmetic of the
     classifiers, the environment's rules of the cost unit of a row and of a row without a clock, the key of the stopped rate, the
     key of a combination in the label table, and the public constant of
     the reward for a correct declaration with the format of the released evidence and the events that commit an episode, so
@@ -231,15 +231,15 @@ def test_only_asset_model_reads_the_tables_of_an_asset():
                "CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config": {"STOPPED", "cost_unit", "has_clock"},
                "CausalDiagnosis.environment.Causal_Diagnosis_Environment.start_state_seeds": {"combo_key"},
                "CausalDiagnosis.environment.Causal_Diagnosis_Environment.verifier": {"ABSTENTION_CREDIT", "COMMIT_EVENTS", "RELEASED_FORMAT"}}
-    for path in sorted(PACKAGE.glob("*.py")):
-        if path.name == "asset_model.py":
+    for path in sorted(p for p in PACKAGE.rglob("*.py") if "tests" not in p.relative_to(PACKAGE).parts):
+        if path.name == "asset_view.py":
             continue
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith(("envs.", "CausalDiagnosis.mcp_servers.Environment_Actions_MCP")):
+            if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith(("CausalDiagnosis.environment.", "CausalDiagnosis.mcp_servers.Environment_Actions_MCP")):
                 names = {alias.name for alias in node.names}
                 assert names <= allowed.get(node.module, set()), (path.name, node.module, names)
             if isinstance(node, ast.Import):
-                assert not any(alias.name.startswith(("envs.", "CausalDiagnosis.mcp_servers.Environment_Actions_MCP")) for alias in node.names), path.name
+                assert not any(alias.name.startswith(("CausalDiagnosis.environment.", "CausalDiagnosis.mcp_servers.Environment_Actions_MCP")) for alias in node.names), path.name
 
 
 def test_the_steps_of_effect_diagnostics_replay_the_belief_of_the_filter(world, tmp_path):

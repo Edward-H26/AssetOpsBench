@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "purpose": "The registered analysis of the experiment: what is tested, what is only described, and every number or rule that a table, a check of the development steps or the judge reads. It is written by hand before any registered run and never generated. A value that is null is open, with the user or until the development steps find it by its registered rule, and a tool that needs it stops and names it.",
+  "purpose": "The registered analysis of the experiment: what is tested, what is only described, and every number or rule that a table, a check of the development steps or the judge reads. It is written by hand and never generated. A value that is null is open, with the user or until the development steps find it by its registered rule, and a tool that needs it stops and names it.",
   "level": 0.05,
   "test": {
     "name": "two-sided sign-flip test over whole start combinations",
@@ -68,7 +68,7 @@
       "tests": [["H1a", "causal", "plan_execute"], ["H1b", "causal", "agent_as_tool"], ["H1c", "causal+mcp", "plan_execute+mcp"],
                 ["H1d", "causal+mcp", "agent_as_tool+mcp"]],
       "holds": "as agents", "floor": "as agents",
-      "cells": "the rows without the MCP are the top rung of the ladder, the rows with the MCP the part environment of the agents grid, both on a server without LoRA adapters"
+      "cells": "the rows without the MCP are the reference lines without it on all six big layers, the rows with the MCP the part environment of the agents grid, both on a server without LoRA adapters"
     },
     "h2_prime": {
       "preset": "deterioration", "start_set": "test", "measures": ["pass", "reward"], "direction": "above", "size": 6,
@@ -126,7 +126,7 @@
     "a3": "the table A3 of aggregate.py, the first evidence for why a gym is needed, on the questions the benchmark already poses; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
     "a7": "the table A7 of aggregate.py, the justification of scoring writes only; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
     "a8": "the table A8 of aggregate.py, whether the threshold should follow prices; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
-    "a9": "the table A9 of aggregate.py, the sensitivity the preregistration promised; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
+    "a9": "the table A9 of aggregate.py, the sensitivity of the conclusions on cost to the price table; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
     "a10": "the table A10 of aggregate.py, the information a prompt supplies; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
     "a12": "the table A12 of aggregate.py, the calibration of the CausalDiagnosis MCP; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",
     "misdiagnosis_price": "the table MISDIAGNOSIS_PRICE of aggregate.py, what the price of a wrong diagnosis changes in how the agents commit to a diagnosis; a supporting ablation with the Holm of its own that the entry ablations names, deciding nothing",

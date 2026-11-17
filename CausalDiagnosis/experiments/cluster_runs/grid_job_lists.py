@@ -22,9 +22,10 @@ line of the cluster is written by hand and a row, a preset or a variant renamed 
 
 A grid file holds one run of run_episodes/ per line after a comment line that names the table row or the ablation it serves,
 as CausalDiagnosis/cluster_jobs/3_run/run_grid.sbatch reads it. grid_agents.txt holds the runs that need no training: the six rows of the main table on layer 0
-and the healthy control, the arm of En9 that stands beside the main table, the environment ladder with the three agents without
-the CausalDiagnosis MCP, whose base rung is three lines of the main table and whose top rung gives the baselines of the training
-table, and the supporting ablations where design.ABLATION_PLACES puts them, each after the reference line of a row that no other
+and the healthy control, the arm of En9 that stands beside the main table, the environment ladder with the three agents with
+the CausalDiagnosis MCP, whose base rung is three lines of the main table and whose top rung is their lines of part environment, the
+three agents without the MCP on all six big layers, the baselines of the training table, and the supporting ablations where
+design.ABLATION_PLACES puts them, each after the reference line of a row that no other
 line plays on its preset. grid_pilot.txt and grid_gate.txt hold development runs that no table reads, the optional pilot that measures
 the thinking rate against the value the asset file declares and the development gate. grid_training_sampling.txt and grid_training_evaluation.txt hold the sampling runs of the
 fine tuning and the evaluation runs of every variant of the training table. The commands part and row print one part of the grid,

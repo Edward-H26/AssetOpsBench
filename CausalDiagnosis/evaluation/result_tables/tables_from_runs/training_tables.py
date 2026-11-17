@@ -122,7 +122,7 @@ def training_row(episode):
 
 
 def baselines_on_the_same_episodes(episodes):
-    """The episodes after the check of the baselines of the training table: the baseline row of an agent, the agent without the MCP on the top rung of the ladder, and
+    """The episodes after the check of the baselines of the training table: the baseline row of an agent, the agent without the MCP on all six big layers, and
     its untrained row with the MCP play the same seeds of the test set, else the script stops and names the agent, since the training
     table reads the baseline beside that row as a cell of the same episodes."""
     seeds = {}

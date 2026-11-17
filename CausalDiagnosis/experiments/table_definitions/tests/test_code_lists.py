@@ -23,6 +23,13 @@ def _fresh(code, cwd=ROOT):
     return done.stdout
 
 
+def _fork_files(paths):
+    """The files of the fork among the files under the root that a fresh interpreter loaded: the files of the interpreter's own
+    environment are left out, since the documented setup puts the .venv inside the root."""
+    environment = Path(sys.prefix).resolve()
+    return [path for path in paths if (ROOT / path).is_file() and not (ROOT / path).resolve().is_relative_to(environment)]
+
+
 def test_the_files_of_a_port_take_their_lists_by_rules_that_name_no_asset():
     """A port keeps everything in its folder under CausalDiagnosis/datasets: its data script by the name hyd_1 uses lies in
     harness with hyd_1's, its package modules and presets in episode, its tests in checks, its runs under results/runs in no
@@ -63,7 +70,7 @@ def test_no_module_of_scoring_analysis_training_or_upstream_is_loaded_by_an_epis
             "    importlib.import_module(name)\n"
             "print(json.dumps(sorted({Path(m.__file__).resolve().relative_to(root).as_posix() for m in list(sys.modules.values())\n"
             "                         if getattr(m, '__file__', None) and Path(m.__file__).resolve().is_relative_to(root)})))\n")
-    loaded = [path for path in json.loads(_fresh(code)) if (ROOT / path).is_file()]
+    loaded = _fork_files(json.loads(_fresh(code)))
     assert len(loaded) > 50
     wrong = {path: run_identity_file_lists.lists_of(path) for path in loaded if set(run_identity_file_lists.lists_of(path)) & set(NOT_LOADED) or not run_identity_file_lists.lists_of(path)}
     assert wrong == {}
@@ -143,7 +150,7 @@ def test_a_plan_execute_run_names_the_port_and_the_sub_agents_it_shares_with_age
     code = ("import importlib, json, sys\nfrom pathlib import Path\nroot = Path.cwd().resolve()\nimportlib.import_module('CausalDiagnosis.frameworks.AssetOpsBench.agents.Plan_Execute_Paper')\n"
             "print(json.dumps(sorted({Path(m.__file__).resolve().relative_to(root).as_posix() for m in list(sys.modules.values())\n"
             "                         if getattr(m, '__file__', None) and Path(m.__file__).resolve().is_relative_to(root)})))\n")
-    loaded = [path for path in json.loads(_fresh(code)) if (ROOT / path).is_file()]
+    loaded = _fork_files(json.loads(_fresh(code)))
     own = f"{run_identity_file_lists.AGENT_LIST}plan_execute"
     assert any(path.startswith("CausalDiagnosis/frameworks/AssetOpsBench/agents/Plan_Execute_Paper/") for path in loaded) and any(path.startswith("CausalDiagnosis/frameworks/AssetOpsBench/agents/Agent_As_Tool_Paper/") for path in loaded)
     assert {path: run_identity_file_lists.lists_of(path) for path in loaded if run_identity_file_lists.lists_of(path) not in (("harness",), ("episode",)) and own not in run_identity_file_lists.lists_of(path)} == {}

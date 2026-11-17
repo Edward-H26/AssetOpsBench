@@ -137,7 +137,7 @@ def test_a_finished_run_covers_a_line_only_on_the_serving_setup_of_the_job_that_
 
 def test_the_training_tables_read_each_row_on_one_serving_setup():
     """A row of the training tables with a run beside the adapters reads the runs beside the adapters alone, and a row without one, the
-    baseline played by the top rung of the ladder, reads the server without them."""
+    baseline played by the reference line without the MCP on all six big layers, reads the server without them."""
     def episode(server, adapters, seed):
         return {"model": MODEL, "surface": "aob", "agent": f"causal_{MODEL}", "diagnostics_server": server, "lora_adapters": adapters, "seed": seed}
     mixed = [episode(True, adapters, seed) for adapters in (0, 2) for seed in SEEDS]
@@ -149,7 +149,7 @@ def test_the_training_tables_read_each_row_on_one_serving_setup():
 def test_the_agents_table_and_h2_prime_read_the_full_environment_on_the_server_without_adapters(tmp_path):
     """The CausalDiagnosis agent with the MCP on all six big layers as released, played on the server of the agents grid, where it
     passes, and again beside the adapters, where it fails: AGENTS holds both as rows of their own, the agents table reads the first,
-    and H2' pairs it with the agent without the MCP of the top rung on the same server, five pairs and not ten."""
+    and H2' pairs it with the agent without the MCP on all six big layers on the same server, five pairs and not ten."""
     runs = tmp_path / "runs"
     for name, row, adapters, passes in (("env_cd_mcp", design.CD_MCP, 0, True), ("train_cd_mcp", design.CD_MCP, 2, False),
                                         ("top_cd", design.CD, 0, False)):

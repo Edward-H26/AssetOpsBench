@@ -2382,9 +2382,9 @@ def test_the_agent_package_holds_no_band_of_its_own():
     """The normal ranges come from the profile alone (board.normal_ranges), so no module of the agent names a quantile, a percentile or the
     constant of CausalDiagnosis/datasets/dataset_loader/evidence_source.py that defines them, and a change of that constant reaches the agent through the profile."""
     package = Path(__file__).resolve().parents[1]
-    for path in sorted(package.glob("*.py")):
+    for path in sorted(p for p in package.rglob("*.py") if "tests" not in p.relative_to(package).parts):
         text = path.read_text(encoding="utf-8")
-        assert not re.search(r"BAND_QUANTILES|quantile|percentile|from envs|import envs", text), path.name
+        assert not re.search(r"BAND_QUANTILES|quantile|percentile|from CausalDiagnosis\.environment|import CausalDiagnosis\.environment", text), path.name
     board = Board(server=False)
     assert board.normal_ranges() == {}
     board.set_profile({"components": [], "levels": {}, "healthy": {}, "normal_ranges": {"PS1_mean": {"low": 1.0, "high": 2.0}}})
@@ -2798,7 +2798,7 @@ def test_a_read_takes_no_time_where_recorded_cycles_are_served():
     """On a board of the AssetOpsBench surface, which serves recorded cycles, a read takes no time: near the horizon a plan of two
     reads and a finish passes the check. The orders on either side of a read are created in one cycle, yet the read ends the run
     of orders, so the second order opens a visit of its own and pays its charge, on this surface as on one that plays its cycles
-    (servers/public_rules/visits.py); without the read the two orders form one visit."""
+    (utils/public_rules/visits.py); without the read the two orders form one visit."""
     board = _synthetic_board(read_first=False)
     board.reads_take_time = False
     board.status["time"] = board.horizon - 2
@@ -3657,7 +3657,7 @@ def test_every_place_that_counts_the_tail_of_a_repair_calls_the_one_rule():
 
 
 def test_the_package_of_public_rules_reads_public_values_alone():
-    """servers/public_rules, which the environment, the agent and the diagnostics server import, imports the standard library and
+    """utils/public_rules, which the environment, the agent and the diagnostics server import, imports the standard library and
     its own modules alone (no engine, hidden state, verifier, server or agent module) and holds no module-level data beyond
     constants: a module states rules, never state."""
     import ast
@@ -4211,7 +4211,9 @@ def test_no_text_states_the_visit_of_one_cycle():
     and the greedy policy's own plans, whose orders of one cycle do follow each other, are words about a plan, not the rule)."""
     root = Path(__file__).resolve().parents[4]
     old = re.compile(r"(created|orders) (in|of) one cycle (form|as one|so that one|forming)", re.I)
-    found = [f"{path.relative_to(root)}:{n}" for folder in ("src/agent", "src/servers", "src/envs", "docs", "CausalDiagnosis/configs")
+    found = [f"{path.relative_to(root)}:{n}" for folder in ("CausalDiagnosis/agents", "CausalDiagnosis/frameworks", "CausalDiagnosis/mcp_servers",
+                                                         "CausalDiagnosis/environment", "CausalDiagnosis/datasets", "CausalDiagnosis/configs",
+                                                         "CausalDiagnosis/docs", "src/agent", "src/servers", "docs")
              for path in sorted((root / folder).rglob("*")) if path.suffix in (".py", ".md", ".json") and "tests" not in path.parts
              for n, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1) if old.search(line)]
     assert not found, found

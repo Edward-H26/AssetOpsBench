@@ -1,4 +1,4 @@
-"""The visit rule of the environment (servers/public_rules/visits.py): the standard orders that an agent
+"""The visit rule of the environment (utils/public_rules/visits.py): the standard orders that an agent
 creates one after another, with no other call between them, form one technician visit with one visit charge, whatever the
 thinking time between the calls; any other call of the environment ends the run, a refused call included; a late order joins
 after the repairs of its visit that have begun. No test states a value computed from the rig data."""

@@ -158,13 +158,12 @@ def test_the_copied_environment_never_names_a_secret():
     assert not [name for name in ledger.ENV_NAMES if re.search(r"KEY|TOKEN|SECRET|PASSWORD|PASS\b", name)]
 
 
-def test_a_fork_inside_another_repository_has_no_commit(tmp_path, monkeypatch):
+def test_a_fork_inside_another_repository_has_no_commit(tmp_path):
     """On the cluster the fork is an upload without .git, so git must not report the commit of a repository around it."""
     outer = tmp_path / "outer"
     (outer / "fork").mkdir(parents=True)
     subprocess.run(["git", "init", "-q", str(outer)], check=True)
-    monkeypatch.setattr(ledger.run_data, "ROOT", outer / "fork")
-    assert ledger.code_identity.git_state(["CausalDiagnosis/experiments/run_verification/run_ledger/ledger_file.py"]) == (None, None)
+    assert ledger.code_identity.git_state(["CausalDiagnosis/experiments/run_verification/run_ledger/ledger_file.py"], outer / "fork") == (None, None)
 
 
 def _driver():
