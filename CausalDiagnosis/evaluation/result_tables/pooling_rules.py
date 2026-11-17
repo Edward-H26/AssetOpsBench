@@ -36,11 +36,25 @@ RIG_SURFACE_ROW = ("a model agent on a row of the environment table, or on an ar
                    "AssetOpsBench's iot, fmsr and wo servers with the task server")
 FILLER_RUN = ("a filler run, which played the development starts to keep the runs in flight of its grid job (run.json filler), "
               "while a table reads the runs of the grid lines alone")
+CHOSEN_STARTS = ("a run of chosen starts, one start state or named scenarios of its preset (run.json start_state or scenario_ids), "
+                 "while a cell of a table reads the start set of its preset")
 
 
 def stamped(meta):
     """Whether a run.json carries the stamp of a run that the start check did not register."""
     return meta.get("stamp") == STAMP
+
+
+def chosen_starts(record):
+    """Whether a run played chosen starts, the start state of --start-state or the scenarios of --scenario-ids, as its run.json
+    records them under start_state and scenario_ids, and the seeds block of its ledger while it runs (ledger_file.run_fields)."""
+    return record.get("start_state") is not None or record.get("scenario_ids") is not None
+
+
+def chosen_starts_line(names, quote=""):
+    """The words in which a table tool says how many runs of chosen starts it left out, and which."""
+    return (f"{len(names)} {'run' if len(names) == 1 else 'runs'} of chosen starts (run.json start_state or scenario_ids), which no "
+            f"cell of a table reads: {', '.join(f'{quote}{name}{quote}' for name in names)}")
 
 
 def surface_of(meta):
@@ -55,10 +69,13 @@ def refused(run_dir):
     as backend.kind for --servers aob --store memory, serves local tests and debugging only. A run of
     the retired mode gepa stays outside the paper, as does a run that samples trajectories for fine tuning. A model agent on a row preset, or on an arm of the rows (ROW_PRESETS of
     episode_launchers.py, run_configuration.py, run_folder_layout.py, servers_of_a_run.py, CausalDiagnosis/utils/csv_rows.py and CausalDiagnosis/utils/json_files.py), over the rig's action server plays a surface no row of the paper has, since the action server serves the reference policies, the gym and training,
-    while a reference policy there stays a reference and the static agent plays no tool."""
+    while a reference policy there stays a reference and the static agent plays no tool. A run of chosen starts (chosen_starts)
+    plays one start state or named scenarios and not the start set that a cell reads."""
     meta = read_json(Path(run_dir) / "run.json", {})
     if meta.get("filler"):
         return FILLER_RUN
+    if chosen_starts(meta):
+        return CHOSEN_STARTS
     if (meta.get("backend") or {}).get("kind") == "memory":
         return MEMORY_BACKEND
     if meta.get("mode") == "gepa":
@@ -409,14 +426,15 @@ def _read_once(name, runs_root, compute):
 
 
 def root_kind(runs_root):
-    """record, development, legacy or empty: the kind of the finished runs under a root that refused() lets through, with
-    development for a root that holds a stamped run. A root that holds runs of record beside others stops the tool that asks, as
-    pooling_refusals() does."""
+    """record, development, legacy or empty: the kind of the finished runs under a root that refused() lets through and of its runs
+    of chosen starts, with development for a root that holds a stamped run. A run of chosen starts enters no cell and still gives
+    its root its kind, so that a root of such runs alone opens its pages with the banner and never enters the results folder. A root
+    that holds runs of record beside others stops the tool that asks, as pooling_refusals() does."""
     def compute():
-        finished = [run_dir for run_dir in run_dirs(runs_root) if refused(run_dir) is None]
-        kinds = {kind_of(read_json(run_dir / "run.json", {})) for run_dir in finished}
+        counted = [run_dir for run_dir in run_dirs(runs_root) if refused(run_dir) in (None, CHOSEN_STARTS)]
+        kinds = {kind_of(read_json(run_dir / "run.json", {})) for run_dir in counted}
         if "record" in kinds and len(kinds) > 1:
-            pooling_refusals(finished)  # stops and names one run of each kind
+            pooling_refusals(counted)  # stops and names one run of each kind
         return "empty" if not kinds else "record" if kinds == {"record"} else "development" if "development" in kinds else "legacy"
     return _read_once("root_kind", runs_root, compute)
 
@@ -456,6 +474,12 @@ def pooling_left_out(runs_root):
     folders that excluded() lists with these reasons and that tables_from_runs/ names on stderr."""
     return dict(_read_once("pooling_left_out", runs_root,
                            lambda: pooling_refusals([run_dir for run_dir in run_dirs(runs_root) if refused(run_dir) is None])))
+
+
+def chosen_starts_left_out(runs_root):
+    """The finished run folders under the root that refused() leaves out as runs of chosen starts, in name order, which the table
+    tools count in what they print (chosen_starts_line)."""
+    return [run_dir.name for run_dir in run_dirs(runs_root) if refused(run_dir) == CHOSEN_STARTS]
 
 
 def folders_read(runs_root):

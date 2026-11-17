@@ -8,7 +8,7 @@ from CausalDiagnosis.utils import frameworks  # noqa: E402
 ROUTER_BASE_URL = "https://api.tokenrouter.com/v1"
 DEFAULT_MODEL = "MiniMax-M3"
 # the agent kinds the frameworks declare, read as data (utils/frameworks.py): a declared agent without the flag model_agent counts
-# as a model agent, so the guard of the test set and the serving check hold for it
+# as a model agent, so the serving check holds for it
 DECLARED_AGENTS = frameworks.agents()
 MODEL_AGENTS = (*(name for name, entry in DECLARED_AGENTS.items() if entry.get("model_agent", True)), "static", "causal")
 # the declared agents that reach the model on the completion route themselves, each played by the entry of its declaration

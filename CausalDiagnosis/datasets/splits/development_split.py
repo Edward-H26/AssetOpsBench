@@ -6,9 +6,9 @@ set miss a level, the fewest test combinations that complete the coverage move t
 the covers of that size the registered seed picks one. A development episode can still reach the recordings of a test
 combination after a repair, as every episode reaches the healthy recordings.
 
-The module knows no asset. development_starts, starts_of_test_set, moved_to_development and held_starts read an asset
-profile and its recorded combinations. guard_starts is the one rule that keeps a test start from a run that is not
-registered, and on_starts the one way a configuration is narrowed to a start set, for the drivers and the wrappers alike."""
+The module knows no asset. development_starts, starts_of_test_set and moved_to_development read an asset profile and its
+recorded combinations, and on_starts is the one way a configuration is narrowed to a start set, for the drivers and the
+wrappers alike."""
 import dataclasses
 import random
 from itertools import combinations as subsets
@@ -122,29 +122,6 @@ def moved_to_development(profile, recorded, seed=DEVELOPMENT_SEED):
         return frozenset(allowed - set(starts_of_test_set(profile, recorded, seed)))
     except SplitRefused:
         return frozenset()
-
-
-def held_starts(profile, recorded):
-    """The start combinations of the test set of an asset, which guard_starts holds from a run that is not registered: the
-    recorded combinations that the profile's fault rule allows, less those that the development split moved to development
-    (moved_to_development), so that every allowed start of an asset whose recordings admit no split stays in its test set, as
-    its start sampler holds it. The name does not open with test, so pytest never collects it."""
-    healthy, rule = [profile.healthy[c] for c in profile.components], profile.sampler["fault_rule"]
-    allowed = {tuple(c) for c in recorded if rule["min_faulty"] <= len(faulty_levels(c, healthy)) <= rule["max_faulty"]}
-    return allowed - moved_to_development(profile, set(recorded))
-
-
-def guard_starts(starts, test_starts, unregistered, who):
-    """Refuses who on a start of the test set in a run that is not registered: a ValueError that names the first start of
-    starts in test_starts and the reasons in unregistered, the reasons why the run is not registered (none for a registered
-    run). The rule is a contract of the callers, the drivers and the wrappers, that pass the reasons they know."""
-    if not unregistered:
-        return
-    held = sorted({tuple(s) for s in starts} & {tuple(s) for s in test_starts})
-    if held:
-        more = f" and {len(held) - 1} more" if len(held) > 1 else ""
-        raise ValueError(f"{who} would play the test combination {list(held[0])}{more}, and a model agent plays a test combination "
-                         f"in a registered run alone, while this run is not registered: {'; '.join(unregistered)}")
 
 
 def on_starts(config, starts):

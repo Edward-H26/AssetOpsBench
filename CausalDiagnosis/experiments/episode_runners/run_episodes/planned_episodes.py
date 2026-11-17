@@ -9,21 +9,34 @@ from . import play_one_episode
 
 
 # ----- the plan of a run -----
-def episode_plan(config, seeds, cycles, blocks):
+def episode_plan(config, seeds, cycles, blocks, scenario_ids=None):
     """[(folder name, seed, scenario or None, config of the episode)]. The anchored preset plays every scenario of the scenario
-    set that a framework declares for the asset of the preset (run_setup.scenario_set) under every seed, anchored at the scenario's date with the scenario text as the
+    set that a framework declares for the asset of the preset (run_setup.scenario_set), or those of scenario_ids alone (named_scenarios), under every seed, anchored at the scenario's date with the scenario text as the
     question, and stops with the command that fetches the file when it is missing; every other config plays the seeds as they are."""
     if config.anchors is None:
         return [(episode_name(seed), seed, None, config) for seed in seeds]
     anchors = scenario_set(config.asset_id)
     date0 = config.anchors.get("date0", anchors.DATE0)
     plan = []
-    for scenario in anchors.load_scenarios()["scenarios"]:
+    for scenario in named_scenarios(anchors.load_scenarios()["scenarios"], scenario_ids):
         anchored = anchors.anchor(scenario["date"], cycles, blocks, date0)
         episode_config = dataclasses.replace(config, start=anchors.start_of(anchored), question=scenario["text"])
         for seed in seeds:
             plan.append((episode_name(seed, scenario["id"]), seed, {**scenario, "anchor": anchored}, episode_config))
     return plan
+
+
+def named_scenarios(scenarios, scenario_ids):
+    """The scenarios of a scenario file in its order, those whose ids --scenario-ids names alone when it names any, refused by name
+    for an id that the file does not hold."""
+    if scenario_ids is None:
+        return scenarios
+    held = [scenario["id"] for scenario in scenarios]
+    unknown = [i for i in scenario_ids if i not in held]
+    if unknown:
+        raise SystemExit(f"--scenario-ids names {'/'.join(map(str, unknown))}, which the scenario file does not hold; its ids are "
+                         f"{'/'.join(map(str, held))}")
+    return [scenario for scenario in scenarios if scenario["id"] in scenario_ids]
 
 
 def chosen_seeds(a, config, cycles, blocks):
@@ -83,25 +96,106 @@ def training_checks(a, config):
                          f"--starts sampled, and --starts {a.starts} would play combinations its model trained on")
 
 
+# the start sets that choose the starts of a run by a search of seeds, which a pinned start would leave with one start to find
+CHOOSING_START_SETS = ("combinations", "sampled", "training")
+
+
+def start_word(start):
+    """A field start in the form of --start-state: the levels joined by /, then @ and the entry offset."""
+    return "/".join(map(str, start["combination"])) + f"@{start['entry_offset']}"
+
+
+def selector_checks(a, config):
+    """Refuses a selector where it cannot play what it names: --start-state, which fixes the start of every episode, beside a start
+    set that chooses the starts itself, on the development split and on a preset whose scenarios carry their own starts, and
+    --scenario-ids on a preset that anchors no scenario. A preset whose field start pins a start is refused alike beside a start set
+    that chooses the starts by a search of seeds, before the search, since every seed would draw the pinned start, unless the run
+    plays the development split, whose widening drops the pin (development_config)."""
+    if config.start is not None and a.starts in CHOOSING_START_SETS and a.training_split != DEVELOPMENT:
+        raise SystemExit(f"the preset {a.config} pins the start state {start_word(config.start)}, and --starts {a.starts} chooses the "
+                         "starts itself: play a pinned start with --starts seeds")
+    if a.start_state is not None:
+        if a.starts != "seeds":
+            raise SystemExit(f"--start-state fixes the start state of every episode, so it needs --starts seeds, and --starts {a.starts} "
+                             "chooses the starts itself")
+        if a.training_split == DEVELOPMENT:
+            raise SystemExit("--start-state plays the start state it names on the preset, and --training-split development plays the "
+                             "development starts")
+        if config.anchors is not None:
+            raise SystemExit("--start-state fixes the start state of every episode, and the anchored preset takes the start of each "
+                             "scenario from its date: --scenario-ids names the scenarios it plays")
+    if a.scenario_ids is not None and config.anchors is None:
+        raise SystemExit("--scenario-ids names scenarios of the scenario set of the anchored preset, and this preset anchors none")
+
+
 def development_config(config, blocks, cap=None):
     """The configuration of a run of --starts development or --training-split development: the preset with its fault rule and its
     allowed starts replaced by the range of fault counts and the starts of the development starts of its asset, or of cap of them
-    (capped_starts), so that reset draws them alone, disjoint from the test set, and run.json records them."""
+    (capped_starts), so that reset draws them alone, disjoint from the test set, and run.json records them. A start that the preset
+    pins in its field start names the start of the line's own play, so the widened configuration drops it and every seed draws a
+    development start, in a filler run and in the tables of the development starts alike."""
     try:
         development = development_starts(play_one_episode.get_profile(config.asset_id), set(blocks))
     except ValueError as e:  # development_split.SplitRefused
         raise SystemExit(f"--starts development plays the development starts of the asset, and the asset {config.asset_id} has none: {e}") from None
     if cap is not None:
         development = capped_starts(development, cap, [config.healthy[c] for c in config.components])
-    return on_starts(config, development)
+    return on_starts(dataclasses.replace(config, start=None), development)
 
 
 def played_config(a, config, blocks):
     """The configuration a run plays, chosen before any seed: for --starts development and for --training-split development the
-    preset widened to the development starts of its asset (development_config), else the preset itself."""
+    preset widened to the development starts of its asset (development_config), with --start-state the preset whose field start
+    names that start state (started_config), else the preset itself."""
     if a.starts == "development" or a.training_split == DEVELOPMENT:
         return development_config(config, blocks, a.start_cap)
+    if a.start_state is not None:
+        return started_config(a, config)
     return config
+
+
+def start_state_of(a, config):
+    """The field start of EpisodeConfig that --start-state names, {"combination": the levels in component order, "entry_offset":
+    the offset}, or None without the option. The option writes the level of every component of the asset in their order, each as
+    the asset file writes it, joined by /, then @ and the entry offset, one shell word that a grid line and GRID_EXTRA carry as it
+    is: 3/100/0/130@2 on the rig."""
+    text = getattr(a, "start_state", None)
+    if text is None:
+        return None
+    levels, at, offset = text.rpartition("@")
+    words = levels.split("/") if at else []
+    if len(words) != len(config.components) or not offset.isdigit():
+        raise SystemExit(f"--start-state {text}: write the level of each component in the order {'/'.join(config.components)}, joined "
+                         "by /, then @ and the entry offset")
+    combination = []
+    for component, word in zip(config.components, words):
+        level = next((level for level in config.levels[component] if str(level) == word), None)
+        if level is None:
+            raise SystemExit(f"--start-state {text}: {word} is no level of {component}, whose levels are "
+                             f"{'/'.join(map(str, config.levels[component]))}")
+        combination.append(level)
+    return {"combination": combination, "entry_offset": int(offset)}
+
+
+def started_config(a, config):
+    """The configuration of a run of --start-state: the preset with its field start set to the start state that the option names
+    (start_state_of), as a preset whose field start names it, refused by name when the fault rule of the preset does not allow the
+    combination. recorded_start refuses a combination without a recording at that offset once the data are loaded."""
+    start = start_state_of(a, config)
+    if not config.within_fault_rule(start["combination"]):
+        rule = config.fault_rule
+        raise SystemExit(f"--start-state {a.start_state}: the fault rule of the preset allows {rule['min_faulty']} to "
+                         f"{rule['max_faulty']} faulty components, and the combination holds {config.n_faulty(start['combination'])}")
+    return type(config).from_json({**config.to_json(), "start": start})
+
+
+def recorded_start(a, config, cycles, blocks):
+    """Refuses a run of --start-state, before its run folder exists, whose combination the data of the asset hold no recording of or
+    whose entry offset they do not serve, by the check that the environment applies to a preset whose field start names a start."""
+    try:
+        HydraulicRigEnv(cycles, blocks, config)
+    except ValueError as e:
+        raise SystemExit(f"--start-state {a.start_state}: {e}") from None
 
 
 def replicate_of(a, config):

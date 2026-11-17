@@ -35,9 +35,17 @@ def main(argv):
     if a.table:
         rows = write_tables.build_table(a.table, a.runs, a.out, a.resamples, a.alpha, a.seed, a.registered, a.departure, a.commit, fraction=a.fraction)
         print(f"wrote {Path(a.out) / (a.table + '.csv')}: {len(rows)} rows")
+        print_chosen_starts(a.runs)
         return
     tables_rows = write_tables.aggregate(a.runs, a.out, a.resamples, a.alpha, a.seed, a.readme, a.published, a.cluster, a.index, registered_path=a.registered,
                             departure=a.departure, commit=a.commit, fraction=a.fraction)
     print(f"wrote {a.out}: {len(tables_rows)} tables, {sum(len(rows) for _, rows in tables_rows)} rows from {len(pooling_rules.folders_read(a.runs))} run folders")
     for name, reason in sorted(pooling_rules.pooling_left_out(a.runs).items()):  # the runs no table read, also in INDEX.json excluded
         print(f"left out {name}: {reason}", file=sys.stderr)
+    print_chosen_starts(a.runs)
+
+
+def print_chosen_starts(runs_root):
+    """Prints on the standard error how many runs of chosen starts no table read, and which, which INDEX.json excluded names one by one."""
+    if chosen := pooling_rules.chosen_starts_left_out(runs_root):
+        print(f"left out {pooling_rules.chosen_starts_line(chosen)}", file=sys.stderr)

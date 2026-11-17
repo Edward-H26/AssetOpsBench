@@ -119,16 +119,16 @@ def test_state_keeps_the_episode_id_and_names_the_seed_by_default():
 
 def test_the_class_builds_without_arguments_for_the_openenv_server():
     """The server builds a session without arguments, which plays EpisodeConfig() on the development starts of its asset."""
-    from CausalDiagnosis.datasets.splits.development_split import development_starts, held_starts
+    from CausalDiagnosis.datasets.splits.development_split import development_starts, starts_of_test_set
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.gymnasium_wrapper import played_config
 
     env = HydraulicRigOpenEnv()
     assert env.gym.facts_path == str(FACTS) and env.gym.starts == "development"
-    assert env.gym.config == played_config(EpisodeConfig(), FACTS, "development", [])
+    assert env.gym.config == played_config(EpisodeConfig(), FACTS, "development")
     world = env.gym.env
     assert {tuple(c) for c in env.gym.config.allowed} == set(development_starts(world.profile, set(world.blocks)))
     env.reset(seed=0)
-    assert tuple(world.initial) not in held_starts(world.profile, world.blocks)
+    assert tuple(world.initial) not in starts_of_test_set(world.profile, world.blocks)
 
 
 def test_wrapper_imports_and_runs_without_openenv():

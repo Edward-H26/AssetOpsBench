@@ -25,18 +25,12 @@ from CausalDiagnosis.experiments.run_verification import invariant_digests, run_
 from CausalDiagnosis.utils.tests.planted_framework import planted
 parser = run_episodes.build_parser()
 choices = {action.dest: list(action.choices or ()) for action in parser._actions}
-try:
-    run_episodes.guard_test_set("planted_model", [(1, 1)], {(1, 1)}, ["a run that is not registered"])
-    guard = "passed"
-except SystemExit as refusal:
-    guard = str(refusal)
 raw = json.loads((ASSETS_DIR / "hyd_1" / "asset.json").read_text(encoding="utf-8"))
 root = "CausalDiagnosis/frameworks/Planted_Check/"
 print(json.dumps({
     "frameworks": list(frameworks.frameworks()),
     "agents": [a for a in run_episodes.AGENTS if a.startswith("planted")],
     "model_agents": [a for a in run_episodes.MODEL_AGENTS if a.startswith("planted")],
-    "guard": guard,
     "servers": choices["servers"], "judge": choices["judge"],
     "surface_of": servers_of_a_run.surface_of("planted_iot"),
     "agent_file": list(lists.lists_of(root + "agents/runner.py")),
@@ -68,7 +62,6 @@ def test_a_planted_framework_is_resolved_by_every_core_reader_with_no_core_edit(
     assert got["frameworks"] == sorted([*frameworks.frameworks(), "Planted_Check"])
     assert set(got["agents"]) == {"planted_check", "planted_model"}
     assert got["model_agents"] == ["planted_model"]  # an agent without the flag model_agent counts as a model agent
-    assert "--agent planted_model would play the test combination" in got["guard"]
     assert "planted" in got["servers"] and "planted_judge" in got["judge"] and got["surface_of"] == "planted"
     assert got["agent_file"] == ["agent:planted_model"] and got["other_file"] == ["framework"]
     assert got["roles"] == ["identity", "bound", "bound"]

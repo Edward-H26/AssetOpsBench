@@ -62,6 +62,13 @@ if [ "${SLURM_RESTART_COUNT:-0}" -gt 0 ]; then
   for a in "$d"_attempt*; do [ -d "$a" ] && COVERED+=("$a"); done
 fi
 if [ "${GRID_PENDING:-0}" = 1 ]; then
+  # pending_grid_lines.py matches the finished runs to the lines of the grid file, which hold no word of GRID_EXTRA, so a selector
+  # of GRID_EXTRA would leave every line pending and play it again
+  case " ${GRID_EXTRA:-} " in
+    *" --start-state"*|*" --scenario-ids"*)
+      echo "GRID_PENDING=1 matches the finished runs to the lines of $GRID_FILE alone, so a selector belongs on the grid line and not in GRID_EXTRA=$GRID_EXTRA" >&2
+      exit 2 ;;
+  esac
   COVERED=()
   for a in "$RUNS"/grid_*; do [ -d "$a" ] && COVERED+=("$a"); done
 fi

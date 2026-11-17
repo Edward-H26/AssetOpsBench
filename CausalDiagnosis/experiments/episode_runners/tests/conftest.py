@@ -19,25 +19,9 @@ from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path  # no
 
 
 def pytest_configure(config):
-    config.addinivalue_line("markers", "real_start_check: the test runs the start check and the guard of the test set of run_episodes.py as they are")
     config.addinivalue_line("markers", "registered_file: the test reads registered_analysis.json as it is and not the copy of the tests")
     config.addinivalue_line("markers", "offline_file: the test reads the offline table of the MCP in the results folder as it is and not "
                                        "the copy of the tests")
-
-
-@pytest.fixture(autouse=True)
-def unguarded_test_set(request, monkeypatch):
-    """The one seam of the start check, in test code alone: the tests play model agents against stub endpoints on test
-    combinations, so the guard of a test holds no test combination. The start check itself runs as it is, so a run of a test is
-    stamped as every run of a tree that is no clean repository on origin, and the tables read it as such. The tests that prove the check and the
-    guard carry the mark real_start_check and meet the functions of run_episodes/ as they are."""
-    if request.node.get_closest_marker("real_start_check"):
-        yield
-        return
-    from CausalDiagnosis.experiments.episode_runners import run_episodes
-
-    monkeypatch.setattr(run_episodes.start_check, "guarded_starts", lambda *args, **kwargs: set())
-    yield
 
 
 @pytest.fixture(scope="session")

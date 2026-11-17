@@ -96,13 +96,50 @@ def test_the_command_fillers_prints_one_line_per_line_of_the_grid_file_in_its_or
     assert capsys.readouterr().out.splitlines() == ["--config deterioration --agent causal", "--config real_time --agent oracle"]
 
 
+def test_the_filler_of_a_line_drops_its_start_state_and_its_scenarios():
+    """A filler plays the development starts of its line, so its arguments drop the selectors of the line in either form of an
+    option, with their values."""
+    assert grid_lines.filler_arguments("--config base --agent causal --start-state 3/100/0/130@2 --no-diagnostics") == \
+        "--config base --agent causal --no-diagnostics"
+    assert grid_lines.filler_arguments("--config anchored --agent oracle --scenario-ids=2001/2003") == "--config anchored --agent oracle"
+
+
+def test_the_filler_of_a_line_whose_preset_pins_a_start_plays_the_development_starts(tmp_path):
+    """A pin names the start of its line's own play: the line of a preset whose field start pins a start of the test set plays that
+    start, and its filler, on the development starts, drops the pin and plays the development starts that its seeds draw, with no
+    pin in its run.json. The runs are the oracle, which needs no model."""
+    import json
+
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+    from CausalDiagnosis.utils.paths import preset_path
+
+    if not Path(default_facts_path()).exists():
+        pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH")
+    if importlib.util.find_spec("mcp") is None:
+        pytest.skip("needs the mcp package")
+    _facts, _cycles, blocks = load_world()
+    pinned = list(starts_of_test_set(run_episodes.get_profile("hyd_1"), blocks)[0])
+    preset = tmp_path / "pinned.json"
+    preset.write_text(json.dumps({**read_json(preset_path("base")), "name": "pinned", "start": {"combination": pinned, "entry_offset": 0}}),
+                      encoding="utf-8")
+    line = f"--config {preset} --agent oracle"
+    own = Path(run_episodes.main([*line.split(), "--seeds", "1", "--out", str(tmp_path / "line")]))
+    filler = Path(run_episodes.main([*grid_lines.filler_arguments(line).split(), *DEVELOPMENT, "--filler", "--out", str(tmp_path / "fillers")]))
+    assert [json.loads(row["block"]) for row in read_rows(own)] == [pinned]
+    assert read_json(own / "run.json")["config"]["start"] == {"combination": pinned, "entry_offset": 0}
+    meta = read_json(filler / "run.json")
+    development = {tuple(combination) for combination in meta["config"]["allowed"]}
+    assert meta["filler"] is True and meta["config"]["start"] is None and tuple(pinned) not in development
+    assert sorted(tuple(json.loads(row["block"])) for row in read_rows(filler)) == sorted(development)
+
+
 def _runs_in_flight_of_record(monkeypatch, number):
     """Declares number runs in flight for every preset on the wall clock where registration() reads it, the name that run_episodes
     imports from design."""
     monkeypatch.setattr(run_episodes.start_check, "RUNS_IN_FLIGHT", number)
 
 
-@pytest.mark.real_start_check
 @pytest.mark.parametrize("kind", ["loop", "sampling"])
 def test_a_loop_of_gepa_and_a_sampling_run_on_a_wall_clock_preset_register_at_the_runs_in_flight_of_record(kind, tmp_path, monkeypatch):
     """The runs in flight of a run are the processes that play episodes against its served model at once, the runs of grid lines,
@@ -132,7 +169,6 @@ def test_a_loop_of_gepa_and_a_sampling_run_on_a_wall_clock_preset_register_at_th
         assert reasons == ([] if parallel == "4" else [f"the preset {name} has a clock and plays {played} runs in flight, not the registered 4"]), parallel
 
 
-@pytest.mark.real_start_check
 def test_a_filler_beside_a_registered_start_leaves_the_shared_label_and_grade_files_byte_equal(tmp_path, monkeypatch):
     """The tables job computes the tables of every line of the grid files on their own start set and on the development starts
     before the platform record (grid_tables of CausalDiagnosis/cluster_jobs/env.example.sh), so a filler, which plays its line on the development starts,

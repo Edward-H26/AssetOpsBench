@@ -90,18 +90,17 @@ class HydraulicRigOpenEnv(Environment):
     """The hydraulic rig gym behind the OpenEnv reset, step and state interface.
 
     The arguments default to EpisodeConfig() and the data file of its asset because the OpenEnv server builds one
-    instance per session by calling the class without arguments, so a session plays the development starts. starts and
-    unregistered pass to the Gymnasium wrapper (HydraulicRigGym). Every instance owns its environment and its oracle copy;
+    instance per session by calling the class without arguments, so a session plays the development starts. starts passes
+    to the Gymnasium wrapper (HydraulicRigGym). Every instance owns its environment and its oracle copy;
     the recorded cycles are shared read only.
     """
 
     SUPPORTS_CONCURRENT_SESSIONS = True
 
-    def __init__(self, config=None, facts_path=None, seed_offset=0, starts="development", unregistered=None):
+    def __init__(self, config=None, facts_path=None, seed_offset=0, starts="development"):
         super().__init__()
         config = config or EpisodeConfig()
-        self.gym = HydraulicRigGym(config, facts_path or default_facts_path(config), seed_offset, starts=starts,
-                                   unregistered=unregistered)
+        self.gym = HydraulicRigGym(config, facts_path or default_facts_path(config), seed_offset, starts=starts)
         self._state = HydraulicRigState()
 
     def reset(self, seed=None, episode_id=None, **kwargs):

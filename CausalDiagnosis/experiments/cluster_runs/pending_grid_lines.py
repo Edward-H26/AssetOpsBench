@@ -3,9 +3,10 @@
 On the test set, the start set that run_grid.sbatch plays by default, a line of the grid is one run per replicate (--replicate of
 run_episodes/), so the unit is the pair of a line and a replicate, and a line of another start set is one run.
 A pair counts as done when a run folder under one of the given roots carries run.json (written only when a run ends), its
-episodes are complete (one row of scores.csv per planned episode), its configuration, agent and switches equal the line's
-(as run_episodes/ resolves them, under the start set of --starts), on the test set also its replicate, the rule of its
-replicates, its master seed and its seed pool, under every start set its training variant and its fold and on the training
+episodes are complete (one row of scores.csv per planned episode), its configuration, agent and switches, the start state and
+the scenarios that the line names among them, equal the line's (as run_episodes/ resolves them, under the start set of --starts),
+on the test set also its replicate, the rule of its replicates, its master seed and its seed pool, under every start set its
+training variant and its fold and on the training
 starts its training sample, inside a serving job its serving setup that of the job (the LoRA adapters of HYD_ENDPOINT_FILE or of
 ENDPOINT_FILE, so that the lines without training of the part training never count as runs of the part environment), and it
 started at or after the cutoff given for its agent (--since agent=ISO time), so that runs of code that a later fix replaced do
@@ -45,7 +46,8 @@ from CausalDiagnosis.experiments.table_definitions.training_variants import is_m
 
 # what a run.json without the key played, the default of its switch
 ABSENT = {**{key: run_episodes.build_parser().get_default(key) for key in ("abstention_rule", "training_variant",
-                                                                             "training_fold")}, "lora_adapters": 0, "fraction": None}
+                                                                             "training_fold")}, "lora_adapters": 0, "fraction": None,
+          "start_state": None, "scenario_ids": None}
 DEFAULT_STARTS = "sampled"  # the start set of the grid, GRID_STARTS of run_grid.sbatch, which plays the test set unless told otherwise
 REPLICATES = tuple(range(1, REPLICATE_COUNT + 1))  # the replicates of the test set, GRID_REPLICATES of run_grid.sbatch
 
@@ -115,6 +117,8 @@ def expected(line, starts=DEFAULT_STARTS, model=None):
         fields.update(replicate=run_episodes.replicate_of(a, config), replicate_rule=REPLICATE_RULE, master_seed=a.master_seed, seed_pool=a.seed_pool,
                       fraction=None if a.fraction is None else fraction_value(a.fraction))
     fields["training_variant"], fields["training_fold"] = a.training_variant, a.training_fold
+    # the start state and the scenarios of the selectors, so that a run of another selection, or of none, never stands for the line
+    fields["start_state"], fields["scenario_ids"] = run_episodes.start_state_of(a, config), a.scenario_ids
     if starts == "training":  # the 34 sampling lines of an agent differ by their sample and their fold alone
         fields.update(training_sample=run_episodes.training_sample_of(a), master_seed=a.master_seed, seed_pool=a.seed_pool)
     if a.agent == "causal":

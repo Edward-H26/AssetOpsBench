@@ -11,6 +11,7 @@ usage, from the fork root with the fork's virtual environment first on PATH (the
       [--causal-no-branches] [--causal-single-hypothesis] [--causal-plan-length N] [--causal-no-expectations]
       [--causal-expectation-tolerance T] [--causal-e10-reads] [--causal-no-backtrack] [--causal-sequential]
       [--training-variant as_released|gepa|gepa_score_only|ft|ft_gepa|ft_unfiltered] [--training-fold H] [--starts training --training-sample K]
+      [--start-state LEVELS@OFFSET] [--scenario-ids ID/ID]
 
 Agents. agent_as_tool runs the paper-era Agent-As-Tool of AssetOpsBench (CausalDiagnosis/frameworks/AssetOpsBench/agents/Agent_As_Tool_Paper): IBM's ReAct
 supervisor on a vendored ReActXen with the paper's prompt, 28 examples, 10 steps and one reflection round, one ReAct
@@ -70,11 +71,13 @@ of --training-fold under sample --training-sample, one seed each (start_states.t
 the asset's rft.json in place of the temperature the agent asks for, in the mode training, whose runs are training data and enter
 no result table. --starts development plays the development starts, the recorded fault combinations outside the test set
 (development_split.development_starts), under the --seeds smallest seeds of each, or --start-cap of them, on the preset whose fault rule and allowed starts are replaced
-by those of the development starts, so no test combination is drawn. --training-split development plays the training path of a
+by those of the development starts and whose pinned start is dropped, so no test combination is drawn. --training-split development plays the training path of a
 trial before the runs of record on the same widened preset, with the folds of the development split (folds_development.json beside
-folds.json), so its sampling, its trained variants and the files they read lie on development combinations alone. Every run that
-the start check does not register carries the stamp development in run.json, and a model agent plays a test combination in a
-run of record alone. The commit a run records is its record.
+folds.json), so its sampling, its trained variants and the files they read lie on development combinations alone. --start-state
+plays every seed of --starts seeds at the one start state it names, as a preset whose field start names it plays, and
+--scenario-ids plays the scenarios of the anchored preset whose ids it names alone; no cell of a table reads a run of either.
+Every agent plays every start that its preset allows, the test set among them, in any run, and every run that the start check
+does not register carries the stamp development in run.json. The commit a run records is its record.
 """
 
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import FMSR_SERVER, IOT_SERVER, TASK_SERVER, WO_SERVER  # noqa: E402
@@ -113,11 +116,11 @@ from .harness_rule import (
     finish_stamp, run_limited)
 from .agent_runs import CAUSAL_SERVER, causal_surface, diagnostics_calls, record_causal, run_causal
 from .planned_episodes import (
-    capped_starts, chosen_seeds, development_config, episode_plan, played_config, replicate_of, training_checks,
+    capped_starts, chosen_seeds, development_config, episode_plan, played_config, replicate_of, start_state_of, training_checks,
     training_sample_of)
 from .start_check import (
-    FILLER_REASON, RUNS_IN_FLIGHT, SEED_STARTS, START_SETS, guard_test_set, guarded_starts, registration,
-    runs_in_flight, stamped_inputs, table_presets, tree_reasons)
+    FILLER_REASON, RUNS_IN_FLIGHT, SEED_STARTS, START_SETS, registration, runs_in_flight, stamped_inputs, table_presets,
+    tree_reasons)
 from .runner_setup import (
     ContextNotCounted, build_runner, causal_options, default_servers, diagnostics_models, is_marker,
     registered_servers, require_context_count, store_settings)

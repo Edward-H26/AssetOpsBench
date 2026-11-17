@@ -195,6 +195,60 @@ def test_of_two_finished_runs_of_one_condition_on_a_shared_seed_the_later_start_
     assert pooling_rules.pooling_left_out(other) == {}
 
 
+def test_runs_of_chosen_starts_leave_every_cell_as_it_is_and_every_table_tool_counts_them(tmp_path, capsys):
+    """A run played with --start-state or with --scenario-ids plays chosen starts, one start state or named scenarios, and not the
+    start set of its preset, so beside a run of the same preset, agent and model in one root, on shared seeds and with a later start,
+    it moves no cell: every table reads the plain run alone, as on a root of that run alone, INDEX.json names each run of chosen
+    starts with the reason, tables_from_runs/ and the leaderboard print how many they left out and which, and a run of chosen starts
+    in progress, which its ledger names in its seeds block, marks no line still running."""
+    alone_root, runs = tmp_path / "alone_runs", tmp_path / "runs"
+    for root in (alone_root, runs):
+        _run(root, "plain", [_main_row(s, agent="plan_execute_m") for s in range(4)], _finished(range(4)))
+    alone = {t.id: rows for t, rows in aggregate.aggregate(alone_root, tmp_path / "alone" / "aggregate", resamples=50, fraction="1")}
+    start = {"combination": [3, 100, 0, 130], "entry_offset": 2}
+    _run(runs, "one_start", [_main_row(s, agent="plan_execute_m", **{"pass": False}) for s in range(2, 6)],
+         _finished(range(2, 6), started="2026-12-02T00:00:00", start_state=start))
+    _run(runs, "scenarios", [_main_row(s, agent="plan_execute_m", **{"pass": False}) for s in range(4)],
+         _finished(range(4), started="2026-12-03T00:00:00", scenario_ids=[2001, 2003]))
+    tables = {t.id: rows for t, rows in aggregate.aggregate(runs, tmp_path / "out", resamples=50, fraction="1")}
+    assert tables == alone and [row["run"] for row in tables["RUNS"]] == ["plain"]
+    index = _index(tmp_path / "INDEX.json")
+    assert [i["run"] for i in index["inputs"]] == ["plain"]
+    assert index["excluded"] == [{"folder": name, "reason": pooling_rules.CHOSEN_STARTS} for name in ("one_start", "scenarios")]
+    line = "2 runs of chosen starts (run.json start_state or scenario_ids), which no cell of a table reads"
+    aggregate.main(["--runs", str(runs), "--out", str(tmp_path / "again" / "aggregate"), "--readme", str(tmp_path / "again" / "README.md"),
+                    "--published", str(tmp_path / "again" / "runs"), "--index", str(tmp_path / "again" / "INDEX.json"), "--resamples", "50"])
+    assert f"left out {line}: one_start, scenarios" in capsys.readouterr().err
+    leaderboard.main(["--aggregate", str(tmp_path / "again" / "aggregate"), "--out", str(tmp_path / "again" / "LEADERBOARD.md"), "--runs", str(runs)])
+    assert f"- Left out of every table: {line}: `one_start`, `scenarios`" in (tmp_path / "again" / "LEADERBOARD.md").read_text(encoding="utf-8")
+    progress = tmp_path / "progress"
+    for name, seeds in (("plain_20261102-130000", {}), ("one_start_20261102-140000", {"start_state": start}), ("scenarios_20261102-150000", {"scenario_ids": [2001]})):
+        (progress / name).mkdir(parents=True)
+        write_rows(progress / name / "scores.csv", [_main_row(0, agent="plan_execute_m")], COLUMNS)
+        (progress / name / "ledger.json").write_text(json.dumps({"status": "running", "seeds": {"starts": "seeds", **seeds}}), encoding="utf-8")
+    assert [run["run"] for run in leaderboard.runs_in_progress([progress])] == ["plain_20261102-130000"]
+
+
+def test_a_root_of_runs_of_chosen_starts_alone_is_a_development_root_and_one_beside_a_run_of_record_stops_the_tools(tmp_path):
+    """A run of a selector carries the stamp development, so a root of such runs alone, as the runs played for one start state or
+    one scenario are, is a development root although no cell reads them: its pages open with the banner and no table tool writes
+    it into the results folder; beside a run of record such a run stops every table tool, as any development run does."""
+    alone = tmp_path / "alone"
+    _run(alone, "one_start", [_main_row(s, agent="plan_execute_m") for s in range(2)],
+         _meta("a" * 64, "2026-12-01T00:00:00", stamp="development", start_state={"combination": [3, 100, 0, 130], "entry_offset": 2}))
+    assert pooling_rules.root_kind(alone) == "development" and pooling_rules.folders_read(alone) == []
+    with pytest.raises(SystemExit, match="never enter the results folder"):
+        pooling_rules.refuse_results_folder(alone, RESULTS / "tables")
+    aggregate.aggregate(alone, tmp_path / "out" / "aggregate", resamples=20, fraction="1")
+    assert (tmp_path / "out" / "aggregate" / "aggregate.md").read_text(encoding="utf-8").startswith(pooling_rules.DEVELOPMENT_BANNER)
+    mixed = tmp_path / "mixed"
+    _run(mixed, "reg", [_main_row(s, agent="plan_execute_m") for s in range(4)], _meta("a" * 64, "2026-12-02T00:00:00"))
+    _run(mixed, "scenarios", [_main_row(s, agent="plan_execute_m") for s in range(2)],
+         _meta("a" * 64, "2026-12-01T00:00:00", stamp="development", scenario_ids=[2001]))
+    with pytest.raises(SystemExit, match="holds runs of record and development runs, reg and scenarios"):
+        pooling_rules.root_kind(mixed)
+
+
 def test_the_replicate_runs_of_a_line_share_no_seed_so_all_count_while_a_replicate_played_again_leaves_its_earlier_run_out(tmp_path):
     """The five runs of a line, one per replicate, play distinct seeds of one condition, so the
     refusal of a shared seed never fires on them and all five read, while a replicate played again shares its seeds with its first

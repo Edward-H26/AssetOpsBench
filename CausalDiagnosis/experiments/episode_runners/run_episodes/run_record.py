@@ -220,6 +220,9 @@ def run_meta(a, runner, config, price_table, plan, judge_options, reasons=None):
         "serving": serving_of(a, judge_options), "lora_adapters": lora_adapters_of(a),
         "runs_in_flight": start_check.runs_in_flight(), "granted": granted(), "start_cap": getattr(a, "start_cap", None),
         "start_cap_seed": DEVELOPMENT_SEED if getattr(a, "start_cap", None) is not None else None,
+        # the start state and the scenarios of a run of a selector, which a run without one does not carry
+        **({"start_state": planned_episodes.start_state_of(a, config)} if getattr(a, "start_state", None) is not None else {}),
+        **({"scenario_ids": a.scenario_ids} if getattr(a, "scenario_ids", None) is not None else {}),
         # the prices the run charged, so that two runs of one price label and other prices never pool (the label of a run that names
         # no table is default whatever prices its preset holds)
         "prices_sha256": ledger.canonical_sha256(config.to_json().get("prices")), **stamp,

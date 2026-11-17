@@ -66,9 +66,9 @@ class EpisodeRunner:
         self.server_threads = {}  # server -> the threads its process ran at its start in check_servers_once, the baseline of its kind
         self.load_averages = None  # the 1, 5 and 15 minute load averages at check_servers_once
         self.tool_listings = {}  # {server: hash of the tool listing its process sent}, filled when the servers are listed
-        # the reasons of the start check: main() sets those of registration(), and a runner that another caller built, the loops of
-        # GEPA among them, asks the tree at its first episode (tree_reasons)
-        self.unregistered, self.test_starts = None, None
+        # the reasons of the start check, which main() and the loops of GEPA set from registration() before run.json, and which
+        # run_meta records as the stamp
+        self.unregistered = None
 
     def start(self, ep_dir, seed, episode_config):
         """The episode folder with its state file, released evidence, launchers, store and question, and in the generated_tokens
@@ -84,12 +84,6 @@ class EpisodeRunner:
             state = episode.start(ep_dir / STATE_FILE, seed, episode_config, self.facts_path)
         replayed = episode.replay(state, env_class=self.env_class)
         entry_offset = replayed.entry_offset
-        if self.agent in agent_kinds.MODEL_AGENTS:  # the guard of the test set, before any launcher is written
-            if self.unregistered is None:
-                self.unregistered = start_check.tree_reasons()
-            if self.test_starts is None:
-                self.test_starts = start_check.guarded_starts(self.config, self.blocks)
-            start_check.guard_test_set(self.agent, [tuple(replayed.initial)], self.test_starts, self.unregistered)
         launchers = write_launchers(ep_dir, self.servers, ranking_model=self.ranking_model, abstention=self.abstention, store=self.store,
                                     left_out=tuple(replayed.initial), models_path=self.models_path,
                                     data_file=(get_profile(self.config.asset_id).records["data_env"], self.facts_path))
@@ -562,4 +556,4 @@ class WallLimit:
 
 # Imported after the definitions: this module uses them only when a function runs, and they may load
 # this module first (the order of the package is in __init__.py).
-from . import harness_rule, agent_runs, planned_episodes, start_check
+from . import harness_rule, agent_runs, planned_episodes
