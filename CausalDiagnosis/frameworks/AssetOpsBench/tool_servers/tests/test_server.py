@@ -2,9 +2,11 @@
 launcher runs it, over the engine of the rows and the memory store: the databases created from the state file before the
 first call, the tool list, a call through the meter that writes the state file, the released evidence and the store
 file, a second process that submits the diagnosis through the task server, a third that reads the store file and creates
-a work order, the export and the drop, and the server over stdio from a launcher as the agent runners start it."""
+a work order, the export and the drop, the server over stdio from a launcher as the agent runners start it, and an anchored
+episode whose records fall on its day and whose tools take the asset id of its question."""
 import json
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
@@ -15,7 +17,7 @@ from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import episode_start_
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.bind_episode_databases import database_names, episode_prefix
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_tool_contract import TASK_SERVER, row_of, tools_of
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_layer import TOOLS
-from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.server import STORE_NAME, EpisodeServer, EpisodeStore
+from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.server import EPOCH, STORE_NAME, EpisodeServer, EpisodeStore
 from CausalDiagnosis.mcp_servers.Environment_Actions_MCP import episode_state as episode
 
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.tests import harness
@@ -24,6 +26,7 @@ from CausalDiagnosis.utils.paths import ROOT, SRC
 ASSET = {"site_name": "MAIN", "asset_id": "hyd_1"}
 CE = "CE_CoolingEfficiency_percent_1Hz"
 SETTINGS = {"kind": "memory"}
+DAY = "2022-09-12"  # the made-up day of an anchor, the date of no scenario record
 LAUNCHER = f'''import sys
 from pathlib import Path
 sys.path[:0] = {[str(ROOT), str(SRC)]!r}
@@ -116,3 +119,52 @@ async def test_a_launcher_serves_the_tools_over_stdio(world, tmp_path):
             assert refused.isError or "unknown sensors" in refused.content[0].text
     state = episode.load_state(state_path)
     assert [c["tool"] for c in state["tool_calls"]] == ["sites", "history"] and [a["type"] for a in state["actions"]] == ["aob_read", "aob_read"]
+
+
+def start_clocked_episode(folder, row, at, **overrides):
+    """An episode of a row's preset with the given fields replaced and its databases created, handed over at the instant at of
+    both clocks, so that a call stamped with that instant charges no thinking time."""
+    folder.mkdir()
+    state_path = folder / "episode.json"
+    rows.start(state_path, 7, harness.preset_config(row, **overrides), default_facts_path())
+    state = episode.load_state(state_path)
+    state.update(last_call_wall_time=at, episode_started_at=at, last_call_monotonic_time=at)
+    episode.save_state(state_path, state)
+    episode.hand_over(state_path, wall=at, mono=at)
+    EpisodeStore(state_path, SETTINGS).create()
+    return state_path
+
+
+def answer(reply):
+    """The JSON of an answer without the receipt line of the rows that print one."""
+    return json.loads(reply.text.rsplit("\n", 1)[0])
+
+
+async def test_an_anchored_episode_stamps_its_records_on_its_day_and_takes_the_asset_id_of_its_question(world, tmp_path):
+    """On a configuration anchored at a day, cycle 0 is the last minute of that day: the clock names the day and a datetime of
+    that date, the rows recorded before cycle 0 fall on that day, and a history of the whole days up to and including the day
+    returns them with cycle 0 and moves the clock by that one cycle. A call that names the asset by the alias of the anchors
+    answers as the same call on the asset's own id and keeps the alias in its log line. Without an anchor cycle 0 stays at
+    EPOCH and the alias names no asset."""
+    at = 1_000_000.0
+    state_path = start_clocked_episode(tmp_path / "anchored", "anchored", at, anchors={"date0": DAY, "asset_alias": "hp_1"})
+    prehistory = rows.replay(episode.load_state(state_path)).recorded_cycles()
+    meter = EpisodeStore(state_path, SETTINGS).meter(wall_clock=lambda: at, monotonic_clock=lambda: at)
+    now = answer(await meter.call(TASK_SERVER, "get_current_time", {}))
+    assert (now["time"], now["day"], now["current_datetime"]) == (0, DAY, f"{DAY}T23:59:00")
+    day = date.fromisoformat(DAY)
+    window = {"site_name": "MAIN", "sensors": [CE], "start": (day - timedelta(days=99)).isoformat(), "end": (day + timedelta(days=1)).isoformat()}
+    read = await meter.call("iot", "history", {**window, "asset_id": "hp_1"})
+    stamps = [o["timestamp"] for o in answer(read)["observations"]]
+    assert len(stamps) == len(prehistory) + 1 and all(s.startswith(DAY) for s in stamps) and stamps[-1] == f"{DAY}T23:59:00", read.text
+    logged = episode.load_state(state_path)["tool_calls"][-1]
+    assert (logged["time"], logged["arguments"]["asset_id"], logged["summary"]["rows"]) == (1, "hp_1", len(stamps))
+    assert answer(await meter.call("iot", "history", {**window, "asset_id": "hyd_1"})) == answer(read)
+    latest = answer(await meter.call("iot", "latest_reading", {"site_name": "MAIN", "asset_id": "hp_1"}))
+    assert latest["timestamp"] == f"{DAY}T23:59:00" and episode.load_state(state_path)["tool_calls"][-1]["time"] == 1
+
+    plain_path = start_clocked_episode(tmp_path / "plain", "anchored", at, anchors=None)
+    plain = EpisodeStore(plain_path, SETTINGS).meter(wall_clock=lambda: at, monotonic_clock=lambda: at)
+    now = answer(await plain.call(TASK_SERVER, "get_current_time", {}))
+    assert "day" not in now and now["current_datetime"] == EPOCH.isoformat()
+    assert "error" in answer(await plain.call("iot", "latest_reading", {"site_name": "MAIN", "asset_id": "hp_1"}))

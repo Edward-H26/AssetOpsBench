@@ -50,7 +50,7 @@ def fold_line_empty(config_name, fold, fraction, master_seed=42, training_split=
 def scenario_set(asset_id):
     """The scenario set that a framework declares for an asset under SCENARIO_SETS, the object its entry names, imported on
     first use, or None for an asset that no framework declares one for. The object gives what an anchored preset reads: DATE0,
-    ASSUMPTIONS, PROFILE, scenarios_path, load_scenarios, anchor and start_of. Two sets for one asset stop the run, since the
+    ASSET_ALIAS, ASSUMPTIONS, PROFILE, scenarios_path, load_scenarios, anchor and start_of. Two sets for one asset stop the run, since the
     preset names no set."""
     from CausalDiagnosis.utils import frameworks
 
