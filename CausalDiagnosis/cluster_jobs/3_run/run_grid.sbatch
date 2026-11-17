@@ -182,12 +182,11 @@ reap_slot() {
 }
 
 service_answers() {
-  # whether the served model still answers: one GET of its model list through failures.endpoint_health, read after a model run
-  # stopped with status 75, the class of a run whose last calls ended in harness errors
+  # whether the served model still answers: one GET of its model list through endpoint_health of attempt_error_classes.py, read
+  # after a model run stopped with status 75, the class of a run whose last calls ended in harness errors
   python - "$BASE_URL" <<'PY'
 import os, sys
-sys.path.insert(0, "benchmarks/hydraulic_rig")
-from failures import endpoint_health
+from CausalDiagnosis.experiments.episode_runners.attempt_error_classes import endpoint_health
 health = endpoint_health(sys.argv[1], os.environ.get("API_KEY", ""), 30)
 print(f"ENDPOINT_HEALTH ok {health['ok']} status {health['status']} seconds {health['seconds']} error {health['error']}")
 sys.exit(0 if health["ok"] else 1)
@@ -231,7 +230,7 @@ play_scheduled() {
   # Plays the keys of SCHEDULE, through the functions that START_UNIT, NAME_UNIT and WALL_UNIT name, in two phases, so that
   # the wall seconds of thinking stay clean: first every key whose configuration charges none, with GRID_PARALLEL runs alive (one by
   # default); then, once the last of them has ended, every key that charges wall seconds, one run alive, which the phase hands
-  # its runs as GRID_PARALLEL=1, the runs in flight that the start check of a preset with a clock reads (design.RUNS_IN_FLIGHT),
+  # its runs as GRID_PARALLEL=1, the runs in flight that the start check of a preset with a clock reads (experiment_tables.RUNS_IN_FLIGHT),
   # so that no other episode of the job shares the card with an episode whose wall seconds count. No filler runs.
   local position free=() wall=()
   for position in "${!SCHEDULE[@]}"; do

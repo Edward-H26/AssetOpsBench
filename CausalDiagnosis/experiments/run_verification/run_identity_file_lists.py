@@ -112,7 +112,7 @@ CODE_LISTS = {
     "episode": ("src/couchdb/", "CausalDiagnosis/configs/", "CausalDiagnosis/environment/",
                "CausalDiagnosis/mcp_servers/", "CausalDiagnosis/utils/", "src/servers/", "CausalDiagnosis/datasets/"),
     "reproduction": (),
-    "cluster": ("CausalDiagnosis/cluster_jobs/"),
+    "cluster": ("CausalDiagnosis/cluster_jobs/",),
 }
 UPSTREAM = ("src/",)  # every other file under src: the agents and tools of AssetOpsBench that no run loads
 # the files of each agent of --agent beyond the shared ones, by what its runner loads alone; static and the reference policies run

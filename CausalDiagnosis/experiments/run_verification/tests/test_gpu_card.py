@@ -86,8 +86,8 @@ def _of_record(tmp_path, monkeypatch, card=CARD, judge_card=None):
     monkeypatch.setattr(ledger.serving_endpoints, "SERVING_FILE", serving)
     monkeypatch.setenv("GPU_OF_RECORD", card["gpu_name"].replace("_", " "))
     monkeypatch.setenv("GPU_MIB_OF_RECORD", card["gpu_mib"])
-    for function in ("tree_record_reasons", "untracked_loaded", "data_reasons"):
-        monkeypatch.setattr(ledger, function, lambda *args, **kwargs: [])
+    for function in ("tree_record_reasons", "untracked_loaded", "data_reasons"):  # where the start check reads them
+        monkeypatch.setattr(ledger.code_identity, function, lambda *args, **kwargs: [])
     monkeypatch.setattr(ledger.code_identity, "open_reasons", lambda: [])
     return sampler
 

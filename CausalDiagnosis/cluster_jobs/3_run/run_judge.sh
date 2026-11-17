@@ -44,7 +44,7 @@ judge_facts() {
 
 judge_thinking() {
   # The replies of the judge that hold thinking under the request of the judge, as episode_judge.py --thinking counts them: the chat
-  # template decides whether the switch of judge.JUDGE_REQUEST turns thinking off, so every judge job checks it on its judge,
+  # template decides whether the switch of episode_judge.JUDGE_REQUEST turns thinking off, so every judge job checks it on its judge,
   # and only a count of 0 passes.
   local thinking
   thinking=$(python -m CausalDiagnosis.frameworks.AssetOpsBench.LLM_Judges.episode_judge --thinking --model "$SERVED_NAME" --base-url "$BASE_URL")

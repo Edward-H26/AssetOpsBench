@@ -136,9 +136,9 @@ def test_a_line_of_the_test_set_is_one_run_per_replicate_and_the_script_prints_t
 def test_the_grid_runner_plays_the_replicates_that_pending_lines_counts_and_names_each_on_the_driver(tmp_path):
     """run_grid.sbatch, behind run_lines.sh, plays every line once per replicate that play_plan of this script gives for
     GRID_FRACTION or GRID_REPLICATES, and hands the replicate to the driver, so a job and the job that continues it count the same pairs."""
-    hpc = CLUSTER_JOBS
+    hpc = CLUSTER_JOBS / "3_run"
     sbatch = (hpc / "run_grid.sbatch").read_text(encoding="utf-8")
-    assert 'grid_lines.py share "${GRID_FRACTION:-}" "${GRID_REPLICATES:-}"' in sbatch and "--replicate $" in sbatch
+    assert 'grid_job_lists share "${GRID_FRACTION:-}" "${GRID_REPLICATES:-}"' in sbatch and "--replicate $" in sbatch
     assert "1 2 3 4 5" not in sbatch.split("FRACTION_OPTION=\n", 1)[1].split("replicate_option()", 1)[0]
     assert "GRID_REPLICATES" in (hpc / "run_lines.sh").read_text(encoding="utf-8")
 

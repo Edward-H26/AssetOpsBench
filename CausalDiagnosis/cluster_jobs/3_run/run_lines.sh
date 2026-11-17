@@ -131,7 +131,7 @@ except Exception as exc:  # noqa: BLE001 - the opening call prints what it met a
     outcome = f"failed {type(exc).__name__}"
 seconds = time.monotonic() - started
 rates = []
-for path in sorted(glob.glob(os.path.join(fork, "src", "envs", "assets", "*", "asset.json"))):
+for path in sorted(glob.glob(os.path.join(fork, "CausalDiagnosis", "datasets", "*", "asset.json"))):
     clock = json.load(open(path)).get("clock") or {}
     if clock.get("think_seconds_per_cycle"):
         rates.append(f"{os.path.basename(os.path.dirname(path))} {seconds / clock['think_seconds_per_cycle']:.3f}")
