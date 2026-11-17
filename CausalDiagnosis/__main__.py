@@ -65,6 +65,8 @@ COMMANDS = {
                               "the laptop side of a sync of run folders from the cluster"),
         "upload-manifest": ("experiments.run_verification.upload_manifest",
                             "the manifest of an upload to the cluster and the commit it matches"),
+        "publish-check": ("experiments.run_verification.publish_check",
+                          "check run folders and results folders before they go to the branch of the runs"),
     },
     "evaluation": {
         "leaderboard": ("evaluation.result_tables.leaderboard", "the leaderboard page"),

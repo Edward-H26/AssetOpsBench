@@ -17,7 +17,7 @@ TRAINING_SPLIT_KEY = "training_split"  # the run.json key of the split, and that
 
 
 class AssetTraining(NamedTuple):
-    """The training files of one asset: its registered numbers and its split, the output of write_training_split.py fixed before any run."""
+    """The training files of one asset: its registered numbers and its split, the output of write_training_split.py."""
     asset_id: str
     config_file: Path
     config: dict

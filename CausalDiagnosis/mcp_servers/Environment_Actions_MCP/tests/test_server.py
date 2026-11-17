@@ -647,10 +647,11 @@ def test_do_nothing_and_greedy_through_the_tools_take_their_in_process_actions(t
 
 # ----- the server over stdio -----
 def isolated_launcher(path, src):
-    """The in-tree launcher with the fork's src put on the import path first, since a server process starts under python -I
-    (the thinking clock refuses the counted calls of a process that is not isolated) and -I ignores PYTHONPATH."""
+    """The in-tree launcher with the entries of src, joined by os.pathsep as in PYTHONPATH (the repository root and the fork's
+    src), put on the import path first, since a server process starts under python -I (the thinking clock refuses the counted
+    calls of a process that is not isolated) and -I ignores PYTHONPATH."""
     text = (Path(__file__).resolve().parents[1] / "launcher.py").read_text(encoding="utf-8")
-    path.write_text(f"import sys\nsys.path.insert(0, {src!r})\n" + text, encoding="utf-8")
+    path.write_text(f"import sys\nsys.path[:0] = {src.split(os.pathsep)!r}\n" + text, encoding="utf-8")
 
 
 @needs_mcp

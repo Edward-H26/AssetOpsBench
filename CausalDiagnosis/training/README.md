@@ -18,7 +18,7 @@ python -m CausalDiagnosis training train-lora --help
 python -m CausalDiagnosis training gepa-prompt-optimization --help
 ```
 
-Fine-tuning runs on the cluster in its own environment, which `cluster_jobs/0_setup/setup_train_env.sbatch` builds. The section Training in the environment of `CausalDiagnosis/docs/experiments.md` describes the training table and its pre-registered numbers.
+Fine-tuning runs on the cluster in its own environment, which `cluster_jobs/0_setup/setup_train_env.sbatch` builds. The section Training in the environment of `CausalDiagnosis/docs/experiments.md` describes the training table and its numbers.
 
 ## How to add to it
 

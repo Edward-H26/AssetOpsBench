@@ -1,6 +1,6 @@
 """The one reader of the registered analysis file, registered_analysis.json beside this module: what the experiment tests, what it
 only describes, and every number or rule that a table, a check of the development steps or the judge reads. The file is written by
-hand before any registered run and never generated, since it is the declaration that the generated tables are checked against.
+hand and never generated, since it is the declaration that the generated tables are checked against.
 Every reader of a registered value calls this module, and no other module opens the file. A value that is null is open with the
 user: value() stops and names it, and missing() lists every such key, which the start check of a run of record refuses to pass (run_episodes/)."""
 import hashlib

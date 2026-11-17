@@ -49,7 +49,8 @@ def test_every_function_of_the_asset_model_is_exported_or_called():
     import ast
     from pathlib import Path
 
-    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP import asset_view as asset_model
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP import asset_view
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief import diagnostics_model
 
     source = Path(asset_view.__file__)
     module = ast.parse(source.read_text(encoding="utf-8"))
@@ -57,11 +58,13 @@ def test_every_function_of_the_asset_model_is_exported_or_called():
     for top in module.body:
         used.update(node.func.id for node in ast.walk(top) if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
                     and node.func.id != getattr(top, "name", None))
-    for path in source.parent.glob("*.py"):
+    for path in sorted(source.parent.rglob("*.py")):
+        if "tests" in path.relative_to(source.parent).parts:
+            continue
         for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[-1] == "asset_model":
+            if isinstance(node, ast.ImportFrom) and (node.module or "").split(".")[-1] == "asset_view":
                 used.update(alias.name for alias in node.names)
-            elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "asset_model":
+            elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "asset_view":
                 used.add(node.attr)
     functions = [node.name for node in module.body if isinstance(node, ast.FunctionDef) and not node.name.startswith("_")]
     unused = [name for name in functions if name not in (*asset_view.__all__, *diagnostics_model.__all__) and name not in used]

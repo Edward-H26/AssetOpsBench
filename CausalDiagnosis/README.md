@@ -108,6 +108,7 @@ The table only starts the program, so `python -m CausalDiagnosis.<folder>.<modul
 | experiments | `check-grid-complete` | check that a finished job list ran in full |
 | experiments | `check-synced-runs` | the laptop side of a sync of run folders from the cluster |
 | experiments | `upload-manifest` | the manifest of an upload to the cluster and the commit it matches |
+| experiments | `publish-check` | check run folders and results folders before they go to the branch of the runs |
 | evaluation | `leaderboard` | the leaderboard page |
 | evaluation | `difficulty-table` | the difficulty table of the datasheet |
 | evaluation | `datasheet-statistics` | the counts and statistics of docs/dataset.md |

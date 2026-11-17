@@ -2,9 +2,6 @@ import json
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import CAUSAL_SERVER, tool_surface  # noqa: E402
 from CausalDiagnosis.utils.json_files import write_json  # noqa: E402
 from CausalDiagnosis.utils import frameworks  # noqa: E402
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import CausalLoopRunner  # noqa: E402
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import RigSurface  # noqa: E402
 from . import play_one_episode, harness_rule
 
 
@@ -20,7 +17,10 @@ def causal_surface(asset_id, store=None):
     """The surface of the CausalDiagnosis agent on the servers of a row, the AssetOpsBench servers when the row has a store and
     else the action server of the asset: named by the short noun of the asset's text with its example channel and by the
     statistics the asset serves, the plain one first, so that the texts of the agent hold no word of another asset. The driver
-    and the digest script build the agent's texts with it."""
+    and the digest script build the agent's texts with it. The agent's modules are imported here and in run_causal, not at the
+    top, so that a run of another agent or of a reference policy loads no file of the causal agent."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import RigSurface
+
     profile = play_one_episode.get_profile(asset_id)
     kind = (store or {}).get("kind")
     surface = next((tool_surface(name).agent_surface for name, entry in frameworks.surfaces().items() if kind in entry["stores"]), RigSurface)
@@ -31,6 +31,9 @@ def run_causal(backend, launchers, question, options, surface=None):
     """One run of the CausalDiagnosis agent with the ablation switches of the run, on the hydraulic rig's action server or
     on the surface given (the AssetOpsBench servers of --servers aob). The runner keeps what it recorded before a failure
     and reports the failure in its result, so a partial episode is still written and verified."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import CausalLoopRunner
+
     runner = CausalLoopRunner(llm=backend, server_paths=dict(launchers), options=CausalLoopOptions(**options), surface=surface)
     return harness_rule.run_limited(lambda: runner.run(question))
 

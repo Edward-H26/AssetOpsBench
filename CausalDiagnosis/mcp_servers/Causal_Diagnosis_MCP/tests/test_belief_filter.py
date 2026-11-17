@@ -570,8 +570,8 @@ def test_every_attribute_of_the_rule_cards_is_read_in_a_module_of_the_package():
     init = next(node for node in init.body if isinstance(node, ast.FunctionDef) and node.name == "__init__")
     assigned = {node.attr for node in ast.walk(init) if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Store)
                 and isinstance(node.value, ast.Name) and node.value.id == "self"}
-    read = {node.attr for path in PACKAGE.glob("*.py") for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
-            if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load)}
+    read = {node.attr for path in PACKAGE.rglob("*.py") if "tests" not in path.relative_to(PACKAGE).parts
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))) if isinstance(node, ast.Attribute) and isinstance(node.ctx, ast.Load)}
     assert "hold" in assigned and not assigned - read, f"Rules sets attributes that no module of the package reads: {sorted(assigned - read)}"
 
 

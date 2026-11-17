@@ -18,9 +18,9 @@ import json, sys
 from pathlib import Path
 from CausalDiagnosis.utils import frameworks
 frameworks.FRAMEWORKS = Path(sys.argv[1])
-from CausalDiagnosis.datasets.dataset_loader.asset_profile import ASSETS_DIR
-from CausalDiagnosis.experiments.episode_runners import run_episodes, run_setup
-from CausalDiagnosis.experiments.table_definitions import experiment_tables as lists
+from CausalDiagnosis.datasets.dataset_loader.profile_registry import ASSETS_DIR
+from CausalDiagnosis.experiments.episode_runners import run_episodes, servers_of_a_run
+from CausalDiagnosis.experiments.run_verification import run_identity_file_lists as lists
 from CausalDiagnosis.experiments.run_verification import invariant_digests, run_ledger
 from CausalDiagnosis.utils.tests.planted_framework import planted
 parser = run_episodes.build_parser()
@@ -38,7 +38,7 @@ print(json.dumps({
     "model_agents": [a for a in run_episodes.MODEL_AGENTS if a.startswith("planted")],
     "guard": guard,
     "servers": choices["servers"], "judge": choices["judge"],
-    "surface_of": run_setup.surface_of("planted_iot"),
+    "surface_of": servers_of_a_run.surface_of("planted_iot"),
     "agent_file": list(lists.lists_of(root + "agents/runner.py")),
     "other_file": list(lists.lists_of(root + "tool_servers/server.py")),
     "roles": [lists.role_of("agent:planted_model", "planted_model"), lists.role_of("agent:planted_model", "causal"),

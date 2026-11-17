@@ -18,6 +18,9 @@ from CausalDiagnosis.utils.paths import PACKAGE, ROOT, SRC
 LEFT_OUT = {
     "mcp_servers/Causal_Diagnosis_MCP/main.py": "the server of an episode, started by the launcher beside its state file",
     "mcp_servers/Environment_Actions_MCP/main.py": "the server of an episode, started by the launcher beside its state file",
+    "mcp_servers/Causal_Diagnosis_MCP/launcher.py": "the launcher of the server of an episode, started as a copy beside its released evidence, while the drivers write launchers of their own",
+    "mcp_servers/Environment_Actions_MCP/launcher.py": "the launcher of the server of an episode, started as a copy beside its state file, while the drivers write launchers of their own",
+    "experiments/cluster_runs/engine_record.py": "the record of the serving engine, started by the function engine_record of cluster_jobs/2_serve_model/serve_model.sbatch",
 }
 FRAMEWORKS = "frameworks"  # a framework's programs reach the table through its declaration
 

@@ -123,7 +123,7 @@ def test_two_runs_of_the_scripted_family_give_equal_digests_and_a_value_of_the_s
 
     monkeypatch.setattr(asset_digests, "process_presets", lambda: ["static"])
     monkeypatch.setattr(asset_digests, "SCRIPTED_SEEDS", 1)
-    monkeypatch.setattr(asset_digests, "rows_digests", lambda facts: {})
+    monkeypatch.setattr(families.ROWS, "scripted", lambda facts: {})
     first, second = (asset_digests.scripted_digests(None, {}, default_facts_path()) for _ in range(2))
     assert first == second and "scripted.static.seed000000.episode.json" in first
     written = run_episodes.play_one_episode.update_state

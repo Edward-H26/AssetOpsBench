@@ -11,8 +11,9 @@ as soon as its file is added, with no change here. A text states a level of a co
 - one whole number per component, in the order of the components and separated by commas, each a level of its component,
   which is a full combination without names. An asset with one component has no such sequence.
 
-The texts an agent reads, as files. Under CausalDiagnosis/agents and src/agent (the prompts, the controller rules, the in-context
-examples, the vendored engine with its prompt templates), CausalDiagnosis/mcp_servers and src/servers (the briefings, the tool
+The texts an agent reads, as files. Under CausalDiagnosis/agents, CausalDiagnosis/frameworks/AssetOpsBench/agents and src/agent
+(the prompts, the controller rules, the in-context examples, the vendored engine with its prompt templates),
+CausalDiagnosis/mcp_servers, CausalDiagnosis/frameworks/AssetOpsBench/tool_servers and src/servers (the briefings, the tool
 descriptions, the fixed sentences of a tool answer), CausalDiagnosis/utils, and the briefings and tool contracts of
 CausalDiagnosis/environment named in AGENT_TEXT_FILES, outside the tests folders, a Python file is read in two ways. The three named forms are searched in the
 whole file without its comments, code and string literals and docstrings alike, so that a rule written in code that names a
@@ -45,14 +46,15 @@ from pathlib import Path
 import pytest
 
 from CausalDiagnosis.utils.paths import ROOT
-AGENT_ROOTS = ("CausalDiagnosis/agents", "CausalDiagnosis/mcp_servers", "CausalDiagnosis/utils", "src/agent", "src/servers")  # Python files: the named forms in the code without comments, the runs in the literals with docstrings
+AGENT_ROOTS = ("CausalDiagnosis/agents", "CausalDiagnosis/frameworks/AssetOpsBench/agents", "CausalDiagnosis/mcp_servers",
+               "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers", "CausalDiagnosis/utils", "src/agent", "src/servers")  # Python files: the named forms in the code without comments, the runs in the literals with docstrings
 ENV_ROOTS = ("CausalDiagnosis/environment", "CausalDiagnosis/datasets")  # Python files: every string literal outside a docstring
 SKIPPED_PARTS = {"tests", "__pycache__"}
 GENERATED = {"models.json", "grades.json"}  # the tables the diagnostics server builds for itself, which no agent reads
 ASSETS = "CausalDiagnosis/datasets"  # the folder of the registered assets, one asset.json each
 ACCEPTED = "accepted_texts.json"  # the accepted coincidences of an asset, in the folder of its asset.json
 AGENT_TEXT_FILES = tuple("CausalDiagnosis/environment/Causal_Diagnosis_Environment/" + name for name in (
-    "briefing.py", "aob_briefing.py", "tool_contract.py", "aob_tool_contract.py", "tool_contract.json", "aob_tool_contract.json"))
+    "briefing.py", "tool_contract.py", "tool_contract.json"))
 # the texts an agent reads that live in the environment, read as under the agent roots
 ENTRY_KEYS = ("file", "text", "count", "why")
 WORD = "[A-Za-z0-9_]"

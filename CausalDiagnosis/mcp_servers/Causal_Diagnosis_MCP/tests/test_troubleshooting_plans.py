@@ -7,7 +7,7 @@ untouched, and the same branches on a replayed call; and on the real
 environment, a plan of two work orders that both cite the plan's prediction and are verified by one reading after the
 last closure. No test states a value computed from the rig data, except that the plan of the true start is verified as
 consistent on its own block."""
-from CausalDiagnosis.utils.paths import CONFIGS, preset_files
+from CausalDiagnosis.utils.paths import CONFIGS, preset_files, preset_path
 import itertools
 import json
 from pathlib import Path
@@ -482,7 +482,7 @@ def test_the_visit_rule_of_the_layer_and_of_the_server_agree_on_every_preset(wor
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers import compose
 
     cycles, blocks = world
-    path = CONFIGS / f"{preset}.json"
+    path = preset_path(preset)
     config = compose(json.loads(path.read_text(encoding="utf-8")))
     view = profile_view(HydraulicRigEnv(cycles, blocks, config).reset(0)["result"])
     for mode in ("standard", *(["emergency"] if config.emergency_on() else [])):

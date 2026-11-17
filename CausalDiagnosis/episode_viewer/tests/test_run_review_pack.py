@@ -135,6 +135,9 @@ def test_the_pack_of_every_replicate_run_of_a_line_names_the_leaderboard_line_th
 
 
 def test_the_pack_of_a_scripted_run_holds_both_pages_its_ledger_and_its_verify_line_outside_the_fork(tmp_path, monkeypatch, registered_root_numbers):
+    from CausalDiagnosis.utils.atomic_writes_and_locks import READ_ONLY_TABLES
+
+    monkeypatch.setenv(READ_ONLY_TABLES, "0")  # recorded here, so that teardown removes what the run of record sets
     run_episodes = _driver()
     # a pack is made of a run of record alone: the start check is stubbed to pass, and the tree is read as an upload is, without
     # git, so that its changes since the last commit leave no run out; the files the run loads are asked of git (rule 3), which a
@@ -144,7 +147,7 @@ def test_the_pack_of_a_scripted_run_holds_both_pages_its_ledger_and_its_verify_l
     scratch_repository(monkeypatch, tmp_path)
     run_dir = run_episodes.main(["--config", "static", "--agent", "scripted", "--seeds", "2", "--out", str(tmp_path / "runs")])
     results = tmp_path / "results"
-    aggregate.aggregate(tmp_path / "runs", results / "aggregate", resamples=50, departure=True, fraction="1")  # a few resamples, which INDEX.json states
+    aggregate.aggregate(tmp_path / "runs", results / "tables", resamples=50, departure=True, fraction="1")  # a few resamples, which INDEX.json states
     assert verify_results.main(["--runs", str(tmp_path / "runs"), "--results", str(results)]) == 0
     key = review_pack.rules_key_of(review_pack.load_config("static")[1])
     fixed = {"presets": {"static": key}, "rules": {key: {"separable": {"evaluation_seed": 900, "development_seed": 0},
