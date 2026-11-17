@@ -12,7 +12,7 @@
 # path on the development split, with HYD_TRAINING and RUNS of the trial, and unset the registered split. GRID_PARALLEL names
 # the loops in flight on the card, every loop at once when unset, and a registered job names it. On a preset whose clock charges
 # the wall seconds of thinking, the preset of training among them, the job keeps one loop alive and hands it GRID_PARALLEL=1,
-# since the driver registers a loop on such a preset only at the registered runs in flight (design.RUNS_IN_FLIGHT), so those
+# since the driver registers a loop on such a preset only at the registered runs in flight (experiment_tables.RUNS_IN_FLIGHT), so those
 # loops play one at a time, or in jobs of their own that name them with GEPA_AGENTS, GEPA_FOLDS and GEPA_CARDS.
 set -uo pipefail
 source "${HPC_DIR:?submit this script with CausalDiagnosis/cluster_jobs/submit.sh}/env.sh"
@@ -58,7 +58,7 @@ if [ "$VARIANT" = as_released ]; then CARDS=${GEPA_CARDS:-verifier score_only}; 
 # the folds come from the registered split unless GEPA_FOLDS names some, so that no fold list is typed here
 FOLDS=${GEPA_FOLDS:-$(python -m CausalDiagnosis.experiments.cluster_runs.grid_job_lists folds)} || exit 2
 [ -n "$FOLDS" ] || { echo "no fold to loop over: grid_job_lists.py folds printed none and GEPA_FOLDS is empty" >&2; exit 2; }
-# one loop alive on a preset whose clock charges the wall seconds of thinking, handed GRID_PARALLEL=1 (design.RUNS_IN_FLIGHT),
+# one loop alive on a preset whose clock charges the wall seconds of thinking, handed GRID_PARALLEL=1 (experiment_tables.RUNS_IN_FLIGHT),
 # the clock read by grid_job_lists.py from a grid file of one line, so that the shell composes no configuration, and the settings
 # line names the number the job was given beside the loops in flight
 echo "--config ${GEPA_CONFIG:-deterioration}" > "$LA/preset.txt"

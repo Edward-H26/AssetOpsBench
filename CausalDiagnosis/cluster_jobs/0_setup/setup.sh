@@ -12,6 +12,7 @@
 # share LOGS.
 set -uo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+while [ ! -f "$HERE/submit.sh" ] && [ "$HERE" != / ]; do HERE=$(dirname "$HERE"); done   # the folder of submit.sh and env.sh
 
 STEPS=(image agent_model judge_model environment data tables digests)
 
@@ -99,7 +100,7 @@ setup_chain() {
     job=$(recorded "$step" 2)
     state=$(queue_state "$job")
     if [ -n "$state" ]; then
-      echo "the job $job of the step $step is still in the queue ($state): read bash $HERE/setup.sh status" >&2
+      echo "the job $job of the step $step is still in the queue ($state): read bash $HERE/0_setup/setup.sh status" >&2
       return 4
     fi
   done
@@ -126,7 +127,7 @@ step_index() {
 
 setup_status() {
   local step job log state done_count=0
-  [ -f "$RECORD" ] || { echo "no setup chain of this clone: run bash $HERE/setup.sh" >&2; return 2; }
+  [ -f "$RECORD" ] || { echo "no setup chain of this clone: run bash $HERE/0_setup/setup.sh" >&2; return 2; }
   for step in "${STEPS[@]}"; do
     job=$(recorded "$step" 2)
     log=$(recorded "$step" 3)

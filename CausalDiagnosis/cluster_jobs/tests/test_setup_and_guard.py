@@ -4,7 +4,7 @@ from CausalDiagnosis.utils.paths import CLUSTER_JOBS, ROOT
 import re
 import subprocess
 
-from CausalDiagnosis.cluster_jobs.tests.test_cluster_jobs import SCRIPTS, SERVING_FILE, _in, _run, _stand_in, _tree
+from CausalDiagnosis.cluster_jobs.tests.test_cluster_jobs import DIGESTS_MODULE, SCRIPTS, SERVING_FILE, _in, _run, _stand_in, _tree
 
 CHAIN = ("setup.sh", "submit.sh", "pull_image.sbatch", "download_model.sbatch", "setup_env.sbatch", "fetch_data.sbatch",
          "precompute_tables.sbatch", "cpu_job.sbatch")
@@ -51,7 +51,7 @@ def test_setup_submits_seven_jobs_with_the_afterok_edges_of_the_chain(tmp_path):
     assert f"--dependency=afterok:{jobs['setup_env.sbatch'][0]}" in _call_of(calls, "fetch_data.sbatch")[0]
     assert f"--dependency=afterok:{jobs['fetch_data.sbatch'][0]}" in _call_of(calls, "precompute_tables.sbatch")[0]
     digests = _call_of(calls, "cpu_job.sbatch")[0]
-    assert f"--dependency=afterok:{jobs['precompute_tables.sbatch'][0]}" in digests and "asset_digests.py" in digests
+    assert f"--dependency=afterok:{jobs['precompute_tables.sbatch'][0]}" in digests and f"python -m {DIGESTS_MODULE} " in digests
     assert "--label clone" in digests and "CD_DIGESTS_DONE" in digests
     downloads = _call_of(calls, "download_model.sbatch")
     assert "--export=ALL,MODEL=org/judge-model" in downloads[1] and "MODEL=" not in downloads[0]

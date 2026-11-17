@@ -33,7 +33,7 @@ def aob_agent_texts(question, profile, envelope, facts, detail):
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import orientation_turn, planning_turn, summary_turn, system_prompt
 
     def prompts_of(surface):
-        return [system_prompt(PLAN_LENGTH, True, surface), system_prompt(PLAN_LENGTH, False, surface)]
+        return [system_prompt(PLAN_LENGTH, surface, True), system_prompt(PLAN_LENGTH, surface, False)]
 
     systems = [prompts_of(run_episodes.causal_surface(preset("static").asset_id, MEMORY_STORE))]
     parts = {"orientation": {}, "planning": {}, "summary": {}, "bindings": {}}

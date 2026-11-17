@@ -2,19 +2,20 @@
 replicate, the cut look on a
 seeded prefix of the start combinations, the units and the share of the launchers, the condition of a cut run, and one test through
 the path that ships with its control."""
-from CausalDiagnosis.utils.paths import CLUSTER_JOBS, PACKAGE
+from CausalDiagnosis.utils.paths import CLUSTER_JOBS, PACKAGE, ROOT
 import json
 import math
 import random
 import re
 import subprocess
+import sys
 from fractions import Fraction
 from types import SimpleNamespace
 
 import pytest
 
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate
-from CausalDiagnosis.experiments.cluster_runs import pending_grid_lines as pending_lines
+from CausalDiagnosis.experiments.cluster_runs import grid_job_lists, pending_grid_lines as pending_lines
 from CausalDiagnosis.evaluation.result_tables import pooling_rules
 from CausalDiagnosis.experiments.episode_runners import run_episodes
 from CausalDiagnosis.datasets.splits.development_split import coverage_order, faulty_levels
@@ -226,7 +227,7 @@ def test_the_episode_set_of_a_whole_run_reads_as_before_the_share():
     meta = {"starts": "sampled", "master_seed": 42, "seed_pool": 8, "replicate": 2}
     before = {k: meta.get(k) for k in ("starts", "master_seed", "seed_pool", "replicate")}
     assert pooling_rules.ABSENT.get("fraction") is None and pending_lines.ABSENT["fraction"] is None
-    source = (PACKAGE / "evaluation" / "result_tables" / "results_index" / "index_file.py").read_text(encoding="utf-8")
+    source = (PACKAGE / "evaluation" / "result_tables" / "index_file.py").read_text(encoding="utf-8")
     assert '**({"fraction": meta["fraction"]} if meta.get("fraction") is not None else {})' in source
     assert {**before} == before  # the episode set of inputs() adds the key for a cut run alone
 
@@ -258,12 +259,12 @@ def test_the_grid_runner_takes_its_replicates_and_the_option_from_the_share_help
     function = re.search(r"^replicate_option\(\) \{.*\}$", RUNNER, re.M).group(0)
     done = _bash(function, 'FRACTION_OPTION="--fraction 0.05"', 'replicate_option 1; replicate_option none; FRACTION_OPTION=', "replicate_option 2")
     assert done.stdout.splitlines() == ["--replicate 1 --fraction 0.05", "--replicate 2"], done.stderr
-    grid_lines = PACKAGE / "experiments" / "cluster_runs" / "grid_job_lists.py"
+    share_helper = [sys.executable, "-m", grid_job_lists.__name__, "share"]  # as run_grid.sbatch runs it, at the root of the tree
     for share, replicates, out in (("", "", "1\n\n"), ("0.05", "", "1\n--fraction 0.05\n"), ("0.4", "", "1 2\n\n"),
                                    ("", "1 3", "1 3\n\n")):
-        done = subprocess.run(["python3", str(grid_lines), "share", share, replicates], capture_output=True, text=True, timeout=60)
+        done = subprocess.run([*share_helper, share, replicates], capture_output=True, text=True, timeout=60, cwd=ROOT)
         assert done.returncode == 0 and done.stdout == out, (share, replicates, done.stderr)
-    done = subprocess.run(["python3", str(grid_lines), "share", "0.2", "1"], capture_output=True, text=True, timeout=60)
+    done = subprocess.run([*share_helper, "0.2", "1"], capture_output=True, text=True, timeout=60, cwd=ROOT)
     assert done.returncode != 0 and "set one" in done.stderr
 
 

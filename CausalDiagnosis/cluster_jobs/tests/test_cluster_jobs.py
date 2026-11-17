@@ -3,6 +3,9 @@ them alone as a CPU job on request and hands the checks of its runs to cluster_r
 bash with stand-ins for python, sacct and the functions around them, so no model, no Slurm and no episode takes part."""
 from CausalDiagnosis.utils.paths import CLUSTER_JOBS, GRIDS, PACKAGE, ROOT
 import hashlib
+import http.server
+import importlib
+import importlib.util
 import json
 import os
 import re
@@ -10,6 +13,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import threading
 
 import pytest
 from pathlib import Path
@@ -85,6 +89,34 @@ elif sys.argv[1:2] == ["serving"]:
 def test_every_script_of_the_folder_parses(script):
     done = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
     assert done.returncode == 0, done.stderr
+
+
+def _runnable(module):
+    """Whether python -m runs the module of the tree: a file module.py or a package with __main__.py."""
+    path = ROOT / module.replace(".", "/")
+    return path.with_suffix(".py").is_file() or (path / "__main__.py").is_file()
+
+
+def test_every_module_that_a_script_runs_and_every_name_that_it_imports_resolve_in_the_tree():
+    """Every module that a script of the folders runs with python -m is a module or a package with __main__.py of this tree, and
+    every module that the Python of a script imports a name from holds that name, so a module that a move or a split of the tree
+    left behind stops here and not in a job on the cluster."""
+    run, imported = set(), set()
+    for script in SCRIPTS:
+        text = script.read_text(encoding="utf-8")
+        run.update(re.findall(r"-m (CausalDiagnosis(?:\.\w+)+)", text))
+        imported.update((module, name.strip()) for module, names in re.findall(r"\bfrom ([A-Za-z_][\w.]*) import ([\w, ]+)", text)
+                        for name in names.split(","))
+    assert run and sorted(module for module in run if not _runnable(module)) == []
+    missing = []
+    for module, name in sorted(imported):
+        try:
+            found = importlib.util.find_spec(module) is not None and hasattr(importlib.import_module(module), name)
+        except ImportError:
+            found = False
+        if not found:
+            missing.append(f"{module}.{name}")
+    assert imported and missing == []
 
 
 def test_the_reference_runs_take_their_presets_from_the_grid_file_and_their_agents_from_the_design():
@@ -325,7 +357,7 @@ def test_the_page_lists_every_file_of_the_folder_and_its_commands_name_files_tha
     submitted = {line.split()[2] for line in _commands() if line.startswith("bash $H/submit.sh ")}
     assert submitted and sorted(name for name in submitted if name not in PLACE) == []
     modules = {name for line in _commands() for name in re.findall(r"\bCausalDiagnosis(?:\.\w+)+", line)}
-    assert modules and sorted(name for name in modules if not (ROOT / (name.replace(".", "/") + ".py")).exists()) == []
+    assert modules and sorted(name for name in modules if not _runnable(name)) == []
 
 
 def test_the_page_states_the_counts_that_the_design_implies():
@@ -414,8 +446,10 @@ def test_every_registered_row_registers_under_the_launch_that_the_page_documents
     values and the endpoints taken as of record, every run on a preset with a clock at the one run in flight that the wall phase
     of its job hands it and every other run at the N of its launch, as the job hands them down. A part on a preset of no table,
     the healthy control of the part main among them, or an option of a trial in a registered launch fails here, before any job."""
-    for name, value in (("tree_reasons", lambda: []), ("MODEL_AGENTS", frozenset()), ("stamped_inputs", lambda a, config: [])):
-        monkeypatch.setattr(run_episodes, name, value)
+    # set where registration() reads them, in the modules of the package run_episodes/, not on the package
+    for module, name, value in ((run_episodes.start_check, "tree_reasons", lambda: []), (run_episodes.agent_kinds, "MODEL_AGENTS", frozenset()),
+                                (run_episodes.start_check, "stamped_inputs", lambda a, config: [])):
+        monkeypatch.setattr(module, name, value)
     # the rules that a tree of the tests cannot pass stand as of record: rule 3 asks git about the loaded files, which a copy
     # outside a repository cannot answer, rule 5 reads the data of the clone, and rule 6 the copy of the registered file that the
     # tests read, which leaves two values open (tests/conftest.py)
@@ -1312,6 +1346,39 @@ def test_a_unit_stopped_on_harness_errors_ends_the_job_when_the_server_no_longer
         assert (folder / "calls").read_text(encoding="utf-8") == "probe\n", health
         down = "SERVICE_DOWN http://node/v1 after line_1_replicate_1 stopped with status 75"
         assert (down in done.stdout) == (status == 6) and (folder / "line_2_replicate_1.log").exists() == (status == 0), health
+
+
+class _ModelList(http.server.BaseHTTPRequestHandler):
+    """A stand-in endpoint that answers GET /v1/models with an empty model list and logs nothing."""
+
+    def do_GET(self):
+        self.send_response(200 if self.path == "/v1/models" else 404)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"data": []}')
+
+    def log_message(self, *args):
+        pass
+
+
+def test_the_probe_after_a_stopped_run_imports_its_health_check_from_the_tree_and_tells_an_answering_endpoint_from_a_dead_one():
+    """service_answers runs as the grid job runs it, the Python of the job at the root of the tree with the import path of
+    fork_python, against a stand-in that answers its model list, which gives status 0, and against a port where nothing listens,
+    which gives 1, each with its ENDPOINT_HEALTH line. The tests of the scheduler stand in for python, so a health check that the
+    tree lacks fails here alone."""
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _ModelList)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    env = {"PATH": os.pathsep.join([str(Path(sys.executable).parent), os.environ["PATH"]]),
+           "PYTHONPATH": os.pathsep.join([str(ROOT), str(ROOT / "src")])}
+    try:
+        for url, status, line in ((f"http://127.0.0.1:{server.server_port}/v1", 0, "ENDPOINT_HEALTH ok True status 200 "),
+                                  ("http://127.0.0.1:1/v1", 1, "ENDPOINT_HEALTH ok False status None ")):
+            done = subprocess.run(["bash", "-c", "\n".join([_function(RUNNER, "service_answers"), f"BASE_URL={url} service_answers"])],
+                                  capture_output=True, text=True, cwd=ROOT, env=env, timeout=60)
+            assert done.returncode == status and done.stdout.startswith(line), (url, done.stdout, done.stderr)
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def test_the_kind_of_a_job_follows_the_record_check_of_its_tree_and_its_start_set(tmp_path):

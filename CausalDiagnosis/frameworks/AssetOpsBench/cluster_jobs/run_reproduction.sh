@@ -92,7 +92,7 @@ JUDGE_ARGS=()
 if [ -n "$JUDGE_MODEL" ] && [ -n "${JUDGE_BASE_URL:-}" ]; then
   JUDGE_ARGS=(--judge-model "$JUDGE_SERVED_NAME" --judge-base-url "$JUDGE_BASE_URL" --workers "${AOB_JUDGE_WORKERS:-4}")
 else
-  echo "no judge in the run, so the run is scored without the judge; score.py can judge the folder later" >&2
+  echo "no judge in the run, so the run is scored without the judge; score_runs.py can judge the folder later" >&2
 fi
 
 # 5. The episodes, then the scores and the check of each port the run played.
