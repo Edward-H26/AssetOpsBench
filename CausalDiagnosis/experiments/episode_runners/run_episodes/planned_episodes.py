@@ -12,7 +12,8 @@ from . import play_one_episode
 def episode_plan(config, seeds, cycles, blocks, scenario_ids=None):
     """[(folder name, seed, scenario or None, config of the episode)]. The anchored preset plays every scenario of the scenario
     set that a framework declares for the asset of the preset (run_setup.scenario_set), or those of scenario_ids alone (named_scenarios), under every seed, anchored at the scenario's date with the scenario text as the
-    question, and stops with the command that fetches the file when it is missing; every other config plays the seeds as they are."""
+    question, the scenario's day as the day of cycle 0 and the asset id that the texts name as another id of the asset (anchors),
+    and stops with the command that fetches the file when it is missing; every other config plays the seeds as they are."""
     if config.anchors is None:
         return [(episode_name(seed), seed, None, config) for seed in seeds]
     anchors = scenario_set(config.asset_id)
@@ -20,7 +21,8 @@ def episode_plan(config, seeds, cycles, blocks, scenario_ids=None):
     plan = []
     for scenario in named_scenarios(anchors.load_scenarios()["scenarios"], scenario_ids):
         anchored = anchors.anchor(scenario["date"], cycles, blocks, date0)
-        episode_config = dataclasses.replace(config, start=anchors.start_of(anchored), question=scenario["text"])
+        episode_config = dataclasses.replace(config, start=anchors.start_of(anchored), question=scenario["text"],
+                                             anchors={"date0": scenario["date"], "asset_alias": anchors.ASSET_ALIAS})
         for seed in seeds:
             plan.append((episode_name(seed, scenario["id"]), seed, {**scenario, "anchor": anchored}, episode_config))
     return plan

@@ -51,6 +51,7 @@ SERVERS = {"iot": iot_server, "fmsr": fmsr_server, "wo": wo_server}
 # the AssetOpsBench tools every row lists, the hidden ones left out
 TOOLS = {server: layer_contract.tools_of(server) for server in AOB_SERVERS}
 READS = ("history", "latest_reading")
+ASSET_ARGUMENTS = ("asset_id", "asset_num")  # the arguments of the AssetOpsBench tools that name an asset
 DEFINITIONS_ONLY = Path(os.devnull)  # the rig's action server is built for its tool definitions alone, so no call reaches it
 
 
@@ -79,9 +80,17 @@ class MeterConfig:
     classes: dict  # fmsr class key -> component, as the documents of the asset file it
     statistics: tuple  # the served statistics, the plain one first
     episode: object = None  # the configuration of the episode, whose cards and clock the texts of the task tools follow
+    asset_alias: str = None  # another id of the asset, the one the question of an anchored episode names (EpisodeConfig.anchors)
 
     def child_asset(self, component):
         return layer_contract.child_asset(self.asset_id, component)
+
+    def served(self, arguments):
+        """The arguments as AssetOpsBench serves them: an argument that names an asset by the alias names the asset, so that a
+        call on the asset id of the question reads and writes as the same call on the asset's own id."""
+        if self.asset_alias is None:
+            return arguments
+        return {key: self.asset_id if key in ASSET_ARGUMENTS and value == self.asset_alias else value for key, value in arguments.items()}
 
     def component_of(self, asset_num, site_id):
         """The rig component of a child asset at the episode's site, the site compared in upper case on both sides."""
@@ -129,7 +138,8 @@ def meter_config(row, config, timeline, field_channels=None, task_tools=None):
                        components=tuple(config.components), field_channels=dict(field_channels),
                        sensor_groups={g: tuple(s) for g, s in config.sensor_groups.items()}, read_prices=dict(config.prices["read"]),
                        timeline=timeline, classes=classes, statistics=tuple(profile.statistics["served"]),
-                       episode=config if isinstance(config, EpisodeConfig) else None)
+                       episode=config if isinstance(config, EpisodeConfig) else None,
+                       asset_alias=(getattr(config, "anchors", None) or {}).get("asset_alias"))
 
 
 class MeterError(RuntimeError):
@@ -260,10 +270,11 @@ class Meter:
         """history and latest_reading. AssetOpsBench checks the arguments first, a check the clock does not change, and a
         call it answers with an error, or a call on another asset, is a free read."""
         probe = await self._aob("iot", tool, arguments)
+        served = self.config.served(arguments)
         if (probe.is_error or _error_of(probe.text) is not None or arguments.get("site_name") != self.config.site
-                or arguments.get("asset_id") != self.config.asset_id):
+                or served.get("asset_id") != self.config.asset_id):
             return await self._free(session, "iot", tool, arguments, before, {"type": "aob_read", "server": "iot", "tool": tool})
-        parsed = _validated("iot", tool, arguments)
+        parsed = _validated("iot", tool, served)
         fields = self._served_fields(tool, parsed)
         action = {"type": "read_recorded", "tool": tool, "sensor_group": self.config.group_of(fields),
                   "fields": [self.config.engine_field(f) for f in fields]}
@@ -287,7 +298,7 @@ class Meter:
     async def _order(self, session, arguments, before):
         """generate_work_order. A call AssetOpsBench or the work order database would refuse writes nothing and costs
         nothing, so it is a free read that returns AssetOpsBench's own error, and every other call is the engine's order."""
-        parsed = _validated("wo", "generate_work_order", arguments)
+        parsed = _validated("wo", "generate_work_order", self.config.served(arguments))
         if parsed is None or _order_problem(parsed):
             return await self._free(session, "wo", "generate_work_order", arguments, before,
                                     {"type": "aob_read", "server": "wo", "tool": "generate_work_order"})
@@ -338,7 +349,7 @@ class Meter:
 
     async def _aob(self, server, tool, arguments):
         try:
-            result = await SERVERS[server].mcp.call_tool(tool, arguments)
+            result = await SERVERS[server].mcp.call_tool(tool, self.config.served(arguments))
         except ToolError as exc:  # what an MCP client receives as an error result
             return Reply(str(exc), True)
         blocks = result[0] if isinstance(result, tuple) else result

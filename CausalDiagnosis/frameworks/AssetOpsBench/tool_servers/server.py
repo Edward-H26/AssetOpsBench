@@ -10,7 +10,7 @@ every call runs through the meter, so the text the agent reads is the text the l
 the databases, and after the last, to export the documents and drop the databases.
 """
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import mcp.types as types
@@ -30,8 +30,19 @@ from CausalDiagnosis.mcp_servers.Environment_Actions_MCP import episode_state as
 from CausalDiagnosis.mcp_servers.utils.service_loop import ServiceLoop
 from CausalDiagnosis.mcp_servers.utils.transcript_hooks import transcribed
 
-EPOCH = datetime(2026, 1, 1)  # the timestamp of cycle 0 in every episode, so that two runs of one seed write the same documents
+EPOCH = datetime(2026, 1, 1)  # the timestamp of cycle 0 in every episode without an anchor, so that two runs of one seed write the same documents
 STORE_NAME = "aob_store.json"  # the memory store of an episode between two server processes, beside its state file
+
+
+def episode_timeline(config):
+    """The timeline of the records of an episode: cycle 0 at EPOCH, and on a configuration with an anchor at the last cycle of
+    the day of cycle 0 (EpisodeConfig.date_of), the last minute of that day at one minute per cycle, so that the timestamps fall
+    on the day that the clock and the question name, cycle 1 opens the next day, and a window of whole days up to and including
+    that day ends with cycle 0."""
+    if config.anchors is None:
+        return Timeline(EPOCH, config.seconds_per_cycle)
+    next_day = datetime.fromisoformat(config.date_of(0)) + timedelta(days=1)
+    return Timeline(next_day - timedelta(seconds=config.seconds_per_cycle), config.seconds_per_cycle)
 
 
 class EpisodeStore:
@@ -47,7 +58,7 @@ class EpisodeStore:
         self.names = binding.database_names(binding.episode_prefix(self.state_path.parent))
         self.store_path = self.state_path.with_name(STORE_NAME) if settings["kind"] == "memory" else None
         self.store = self._open(settings)
-        self.timeline = Timeline(EPOCH, self.config.seconds_per_cycle)
+        self.timeline = episode_timeline(self.config)
         profile = get_profile(self.config.asset_id)
         self.field_channels = {profile.field_name(channel): channel for channel in profile.channels}
         self.producer = Producer(self.store, self.names, ProfileDocuments(profile, self.timeline), self.timeline, self.config.asset_id,

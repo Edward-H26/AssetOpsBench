@@ -223,8 +223,7 @@ def rows_texts(world, name, config, facts):
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import aob_tool_contract as layer_contract, episode_start_and_replay as rows
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_briefing import briefing
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_layer import meter_config
-    from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.server import EPOCH, EpisodeServer
-    from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.cycle_timestamps import Timeline
+    from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.server import EpisodeServer, episode_timeline
 
     cycles, blocks = world
     env = RecordedRigEnv(cycles, blocks, config)
@@ -232,7 +231,7 @@ def rows_texts(world, name, config, facts):
     profile = env.public_profile()
     out = {f"texts.rows.briefing.{name}.{level}": digest(briefing(profile, dataclasses.replace(config, guidance_level=level)))
            for level in (1, 2, 3)}
-    view = meter_config(layer_contract.row_of(config), config, Timeline(EPOCH, config.seconds_per_cycle)).profile_view(profile)
+    view = meter_config(layer_contract.row_of(config), config, episode_timeline(config)).profile_view(profile)
     out[f"texts.rows.profile.{name}"] = digest(view)
     with tempfile.TemporaryDirectory() as tmp:
         state_path = Path(tmp) / STATE_FILE

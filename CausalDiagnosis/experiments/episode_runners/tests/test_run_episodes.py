@@ -1112,6 +1112,23 @@ def test_scenario_ids_play_the_named_scenarios_of_the_anchored_preset_alone(tmp_
         run_episodes.build_parser().parse_args(["--scenario-ids", f"{ids[0]},{ids[1]}"])
 
 
+def test_an_anchored_episode_takes_the_day_of_its_scenario_at_cycle_0_and_the_asset_id_of_the_texts(tmp_path, monkeypatch):
+    """Each episode of the anchored preset takes its scenario's day as the day of its cycle 0 and the asset id that the texts of
+    the scenario set name as another id of its asset, while its start stays the anchor of that day counted from the first
+    recorded day of the preset, which the preset itself keeps."""
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+
+    ids = _scenario_file(tmp_path, monkeypatch)
+    _facts, cycles, blocks = load_world()
+    config = _parsed("--config", "anchored")[2]
+    plan = run_episodes.episode_plan(config, [0], cycles, blocks)
+    assert config.anchors == {"date0": anchors.DATE0} and [scenario["id"] for _name, _seed, scenario, _config in plan] == ids
+    for _name, _seed, scenario, episode_config in plan:
+        assert episode_config.anchors == {"date0": scenario["date"], "asset_alias": anchors.ASSET_ALIAS}
+        assert episode_config.date_of(0) == scenario["date"] and episode_config.question == scenario["text"]
+        assert episode_config.start == anchors.start_of(anchors.anchor(scenario["date"], cycles, blocks, anchors.DATE0))
+
+
 def test_the_cap_draws_k_development_starts_that_cover_every_faulty_level_and_is_the_same_for_the_same_seed():
     healthy = (0, 0, 0)
     starts = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1), (2, 0, 0)]

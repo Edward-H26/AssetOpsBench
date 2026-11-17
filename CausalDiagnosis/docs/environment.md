@@ -112,7 +112,7 @@ The IndustryAssetEQA facts file of the public EmbodiedQA repository, at commit `
 | `time_tools` | true | whether the task server of the AssetOpsBench rows lists the two time tools, the small switch `time_tools` of the real-time clock |
 | `guidance_level` | 1 | 1, 2 or 3, the level of the briefing |
 | `question` | null | a question that replaces the question sentence of the briefing |
-| `anchors` | null | `{"date0": <ISO date>}`, one recorded cycle per day, which puts a `day` into every answer |
+| `anchors` | null | `{"date0": <ISO date>}`, the day of cycle 0 with one recorded cycle per day, which puts a `day` into every answer and on the AssetOpsBench rows stamps cycle 0 one cycle before the end of that day, with an optional `"asset_alias"`, another id that the AssetOpsBench tools accept for the asset |
 | `verifier_scope` | `writes` | `writes` or `all`, recorded for the verifier and ignored by the environment |
 | `diagnostics_server` | true | recorded for the drivers and the briefing. The profile lists the tools of the CausalDiagnosis MCP only when it is true |
 

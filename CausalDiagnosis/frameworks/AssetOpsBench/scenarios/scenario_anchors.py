@@ -22,6 +22,7 @@ DATE0 = "2022-07-01"  # the first day of the hyd_1 file, cycle_index 0 of the fa
 SCENARIOS_FILE = "scenarios_17.json"
 SCENARIOS_ENV = "HYD_SCENARIOS_PATH"  # the fetched file, where the data folder of the asset lies elsewhere
 FETCH_COMMAND = "python -m CausalDiagnosis.frameworks.AssetOpsBench.scenarios.download_scenarios"
+ASSET_ALIAS = "hp_1"  # the asset id the scenario texts name, which assumption A1 maps onto the asset of the recordings
 PROFILE = hyd_1.tables()  # the asset of the recordings that assumption A1 maps the scenario dates onto
 ASSUMPTIONS = [
     "A1 (mapping): the asset hp_1 of the scenarios is the hyd_1 file of the AssetOpsBench repository, which lays the "
@@ -91,7 +92,7 @@ def start_of(anchored):
     return {"combination": list(anchored["combination"]), "entry_offset": (position + SEGMENT) % BLOCK_CAP}
 
 
-# The scenario set "anchored" of the declaration of AssetOpsBench (SCENARIO_SETS): this module itself, whose DATE0, ASSUMPTIONS,
+# The scenario set "anchored" of the declaration of AssetOpsBench (SCENARIO_SETS): this module itself, whose DATE0, ASSET_ALIAS, ASSUMPTIONS,
 # PROFILE, scenarios_path, load_scenarios, anchor and start_of the runner and the ledger read (run_setup.scenario_set). A test
 # that replaces one of them on the module reaches the runner too.
 ANCHORED = sys.modules[__name__]
