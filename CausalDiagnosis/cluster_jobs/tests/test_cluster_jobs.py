@@ -1163,7 +1163,7 @@ def test_a_requeued_job_plays_the_pending_pairs_only(tmp_path):
     assert (runs / "grid_55_attempt1").is_dir() and _logged(env, "played") == "--config base --agent causal --replicate 2\n"
     asked = Path(f"{_module_file(tree, pending_lines.__name__)}.args").read_text(encoding="utf-8")
     assert asked == (f"--grid {_jobs(tree) / 'grids' / 'local_one.txt'} --runs {runs / 'grid_55_attempt1'} --starts sampled "
-                     f"--model {TEMPLATE_SERVED_NAME}")
+                     f"--model {TEMPLATE_SERVED_NAME} --seeds 3 --first-seed 0")
     done = _lines(tree, env)
     assert _logged(env, "played") == "# one line\n--config base --agent causal\n"  # a first start plays the whole file
 
@@ -1176,7 +1176,7 @@ def test_a_requeued_job_asks_for_the_pairs_of_the_model_it_serves(tmp_path):
     done = _lines(tree, {**env, "SLURM_RESTART_COUNT": "1", "MODEL": "/models/served-model"})
     assert done.returncode == 0, done.stderr
     asked = Path(f"{_module_file(tree, pending_lines.__name__)}.args").read_text(encoding="utf-8")
-    assert asked.endswith("--starts sampled --model served-model"), asked
+    assert asked.endswith("--starts sampled --model served-model --seeds 3 --first-seed 0"), asked
 
 
 def test_with_grid_pending_a_job_plays_only_the_pairs_that_no_finished_run_of_its_runs_root_covers(tmp_path):
@@ -1192,26 +1192,87 @@ def test_with_grid_pending_a_job_plays_only_the_pairs_that_no_finished_run_of_it
     assert _logged(env, "played") == "--config base --agent causal --replicate 2\n"
     asked = Path(f"{_module_file(tree, pending_lines.__name__)}.args").read_text(encoding="utf-8")
     assert asked == (f"--grid {_jobs(tree) / 'grids' / 'local_one.txt'} --runs {runs / 'grid_40'} {runs / 'grid_41_attempt1'} "
-                     f"--starts sampled --model {TEMPLATE_SERVED_NAME}")
+                     f"--starts sampled --model {TEMPLATE_SERVED_NAME} --seeds 3 --first-seed 0")
     done = _lines(tree, {**env, "GRID_PENDING": "1", "GRID_STARTS": "development"})
     asked = Path(f"{_module_file(tree, pending_lines.__name__)}.args").read_text(encoding="utf-8")
-    assert done.returncode == 0 and asked.endswith(f"{runs / 'grid_41_attempt1'} --starts development --model {TEMPLATE_SERVED_NAME}"), done.stderr
+    assert done.returncode == 0 and asked.endswith(f"{runs / 'grid_41_attempt1'} --starts development --model {TEMPLATE_SERVED_NAME} "
+                                                   "--seeds 3 --first-seed 0"), done.stderr
     done = _lines(tree, env)
     assert done.returncode == 0 and _logged(env, "played") == "# one line\n--config base --agent causal\n"
 
 
-def test_with_grid_pending_a_selector_in_grid_extra_stops_the_job_before_its_first_line(tmp_path):
-    """GRID_PENDING=1 matches the finished runs to the lines of the grid file, which hold no word of GRID_EXTRA, so a selector in
-    GRID_EXTRA would leave every line pending and play it again: the job stops before its first line and says that a selector
-    belongs on the grid line, for either selector in either form, while without GRID_PENDING the same GRID_EXTRA plays the file."""
+# the pending tool of the tree in place of its stand-in: the module of this tree, run on the same words from the root of this tree
+REAL_PENDING = """import os, subprocess, sys
+env = {{name: value for name, value in os.environ.items() if name != "PYTHONPATH"}}
+sys.exit(subprocess.run([sys.executable, "-m", {module!r}, *sys.argv[1:]], cwd={root!r}, env=env).returncode)
+"""
+LINE_OF_ORACLE = "--config base --agent oracle"
+
+
+def _real_pending_tree(tmp_path):
+    """The tree of _lines_tree with its one grid line a line of the oracle and the pending tool of this tree behind its stand-in."""
     tree, runs, env = _lines_tree(tmp_path)
-    (runs / "grid_40").mkdir(parents=True)
-    for extra in ("--start-state=3/100/0/130@2", "--store couchdb --scenario-ids 2001"):
-        done = _lines(tree, {**env, "GRID_PENDING": "1", "GRID_EXTRA": extra})
-        assert done.returncode == 2 and "so a selector belongs on the grid line and not in GRID_EXTRA" in done.stderr, done.stderr
-        assert _logged(env, "runner_calls") is None and not Path(f"{_module_file(tree, pending_lines.__name__)}.args").exists(), extra
-    done = _lines(tree, {**env, "GRID_EXTRA": "--start-state=3/100/0/130@2"})
-    assert done.returncode == 0 and _logged(env, "played") == "# one line\n--config base --agent causal\n", done.stderr
+    (_jobs(tree) / "grids" / "local_one.txt").write_text(f"{LINE_OF_ORACLE}\n", encoding="utf-8")
+    _module_file(tree, pending_lines.__name__, REAL_PENDING.format(module=pending_lines.__name__, root=str(ROOT)))
+    return tree, runs, env
+
+
+def _finished_run(folder, starts, words):
+    """A finished run folder of the oracle line played on the start set with the words that its job added after the line: its run.json
+    as the driver records the fields that pending_grid_lines.py matches, its rows, and the command in its ledger."""
+    folder.mkdir(parents=True)
+    fields = pending_lines.expected(" ".join([LINE_OF_ORACLE, *words]), starts)  # the line as it played under its job
+    # a run.json holds no count of seeds per start, which the ledger of the run records
+    meta = {**{k: v for k, v in fields.items() if k != "seeds_per_start"}, "started": "2026-12-01T00:00:00",
+            "ended": "2026-12-01T01:00:00", "episodes_planned": 2}
+    (folder / "run.json").write_text(json.dumps(meta), encoding="utf-8")
+    (folder / "scores.csv").write_text("seed\n0\n1\n", encoding="utf-8")
+    (folder / "ledger.json").write_text(json.dumps({"status": "finished", "command": {
+        "argv": [*LINE_OF_ORACLE.split(), "--starts", starts, *words]}}), encoding="utf-8")
+
+
+def test_run_lines_passes_the_seeds_of_run_grid_with_its_defaults_and_grid_extra_to_the_pending_tool():
+    """run_grid.sbatch adds its seeds and GRID_EXTRA after every line, and run_lines.sh passes the same words, from the same variables
+    with the same defaults, to pending_grid_lines.py, so the tool plans each line with the episodes that the job plays."""
+    lines = (CLUSTER_JOBS / "3_run" / "run_lines.sh").read_text(encoding="utf-8")
+    count, first = re.search(r'^SEEDS="--seeds \$\{GRID_SEEDS:-(\d+)\} --first-seed \$\{GRID_FIRST_SEED:-(\d+)\}', RUNNER, re.M).groups()
+    assert f'--seeds "${{GRID_SEEDS:-{count}}}" --first-seed "${{GRID_FIRST_SEED:-{first}}}" ${{GRID_EXTRA:-}} > "$PLAY"' in lines
+    assert "${GRID_EXTRA:-}" in _function(RUNNER, "run_unit")
+
+
+# the two jobs that count finished runs, a requeued job, which counts the folder of its earlier attempt, and a job with
+# GRID_PENDING=1, which counts every grid folder of its runs root, each with the folder of the earlier job
+COUNTING_JOBS = {"requeue": ({"SLURM_RESTART_COUNT": "1"}, "grid_55"), "pending": ({"GRID_PENDING": "1"}, "grid_40")}
+# a start cap in GRID_EXTRA on the development starts and a start state in GRID_EXTRA on the start set seeds, with GRID_SEEDS
+EXTRA_WORDS = {"cap": ("development", "1", "--start-cap=12"), "selector": ("seeds", "2", "--start-state=3/100/0/130@2")}
+
+
+@pytest.mark.parametrize("extra", EXTRA_WORDS)
+@pytest.mark.parametrize("job", COUNTING_JOBS)
+def test_a_job_that_counts_finished_runs_plays_again_no_run_that_finished_with_its_seeds_and_grid_extra(tmp_path, job, extra):
+    """A requeued job and a job with GRID_PENDING=1 plan every line with the words that they add after the line, so a finished run of
+    the line played with the seeds of the job and the start cap or the start state of GRID_EXTRA covers its line, and the job plays
+    nothing again. The pending tool of this tree runs behind the stand-in."""
+    (variables, earlier), (starts, seeds, words) = COUNTING_JOBS[job], EXTRA_WORDS[extra]
+    tree, runs, env = _real_pending_tree(tmp_path)
+    _finished_run(runs / earlier / "done", starts, ["--seeds", seeds, "--first-seed", "0", words])
+    done = _lines(tree, {**env, **variables, "GRID_STARTS": starts, "GRID_SEEDS": seeds, "GRID_EXTRA": words})
+    assert done.returncode == 0 and "nothing pending in" in done.stdout, (done.stdout, done.stderr)
+    assert _logged(env, "runner_calls") is None
+
+
+@pytest.mark.parametrize("extra, played", [("cap", ["--seeds", "1", "--first-seed", "0", "--start-cap=8"]),
+                                           ("cap", ["--seeds", "2", "--first-seed", "0", "--start-cap=12"]),
+                                           ("selector", ["--seeds", "2", "--first-seed", "0", "--start-state=3/100/0/130@3"])],
+                         ids=["cap", "count", "selector"])
+def test_a_finished_run_of_another_start_cap_count_of_seeds_or_selector_leaves_its_line_pending_on_a_requeue(tmp_path, extra, played):
+    """A finished run of the line under another start cap, another count of seeds per start or another start state than the job
+    plays now does not cover the line, so the requeued job plays it again. The pending tool of this tree runs behind the stand-in."""
+    starts, seeds, words = EXTRA_WORDS[extra]
+    tree, runs, env = _real_pending_tree(tmp_path)
+    _finished_run(runs / "grid_55" / "other", starts, played)
+    done = _lines(tree, {**env, "SLURM_RESTART_COUNT": "1", "GRID_STARTS": starts, "GRID_SEEDS": seeds, "GRID_EXTRA": words})
+    assert done.returncode == 0 and _logged(env, "played") == f"{LINE_OF_ORACLE}\n", (done.stdout, done.stderr)
 
 
 def test_run_lines_ends_with_the_status_of_the_runner(tmp_path):

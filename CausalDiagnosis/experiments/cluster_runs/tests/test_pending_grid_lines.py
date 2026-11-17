@@ -1,12 +1,17 @@
 """pending_grid_lines.py: a line is done only by a finished, complete, matching run that started after its agent's cutoff."""
 from CausalDiagnosis.utils.paths import CLUSTER_JOBS
 import json
+from pathlib import Path
+
+import pytest
 
 from CausalDiagnosis.experiments.cluster_runs import pending_grid_lines as pending_lines
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment import start_state_seeds as start_states
+from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 
 GRID = CLUSTER_JOBS / "grids" / "grid_agents.txt"
 ONE = (1,)  # the first replicate alone, for the tests of the matching rules that the replicates leave as they were
+needs_data = pytest.mark.skipif(not Path(default_facts_path()).exists(), reason="no data file in this clone, as ASSETS_WITHOUT_DATA=1 states")
 
 
 def first(*lines):
@@ -74,6 +79,72 @@ def test_a_run_of_a_selector_counts_for_the_line_of_its_selection_alone(tmp_path
     assert pending_lines.expected(both)["scenario_ids"] == pending_lines.expected(f"{anchored} --scenario-ids=2001/2003")["scenario_ids"] == [2001, 2003]
     _run(tmp_path / "both", "c", both, "2026-11-02T10:40:00")
     assert pending_lines.pending([anchored, both, one], [tmp_path / "both"], {}, replicates=ONE) == first(anchored, one)
+
+
+def _played(root, name, line, starts, words):
+    """A finished run folder of the line played with the words that its job added after it: the run.json fields that the tool
+    matches, as the driver records them, and the command in its ledger, which holds the count of seeds per start."""
+    folder = root / name
+    folder.mkdir(parents=True)
+    fields = pending_lines.expected(" ".join([line, *words]), starts)  # the line as it played under its job
+    # a run.json holds no count of seeds per start, which the ledger of the run records
+    meta = {**{k: v for k, v in fields.items() if k != "seeds_per_start"}, "started": "2026-11-02T10:40:00",
+            "ended": "2026-11-02T11:40:00", "episodes_planned": 2}
+    (folder / "run.json").write_text(json.dumps(meta), encoding="utf-8")
+    (folder / "scores.csv").write_text("seed\n0\n1\n", encoding="utf-8")
+    (folder / "ledger.json").write_text(json.dumps({"status": "finished", "command": {"argv": [*line.split(), "--starts", starts, *words]}}),
+                                        encoding="utf-8")
+
+
+def test_a_run_covers_a_line_only_with_the_start_cap_and_the_seeds_that_the_line_plays_under_the_words_of_its_job(tmp_path, capsys):
+    """The words that the job adds after every line, its seeds and GRID_EXTRA, plan the line as the job plays it: on the development
+    starts a finished run covers the line only under its own start cap and count of seeds per start, which the command of its ledger
+    records, on the start set seeds only under its own seeds from its own first seed, and on the test set the seeds of the job choose
+    no episode, so their count is not compared there. The script takes every option that it does not know as such a word."""
+    line = "--config base --agent oracle"
+    _played(tmp_path / "development", "a", line, "development", ["--seeds", "1", "--first-seed", "0", "--start-cap=12"])
+    for words, pending in ((["--seeds", "1", "--start-cap=12"], []), (["--seeds", "1", "--start-cap=8"], [line]),
+                           (["--seeds", "2", "--start-cap=12"], [line]), (["--seeds", "1"], [line])):
+        assert pending_lines.pending([line], [tmp_path / "development"], {}, starts="development", run_options=words) == pending, words
+    _played(tmp_path / "seeds", "b", line, "seeds", ["--seeds", "2", "--first-seed", "0"])
+    for words, pending in ((["--seeds", "2", "--first-seed", "0"], []), (["--seeds", "2", "--first-seed", "1"], [line]),
+                           (["--seeds", "3", "--first-seed", "0"], [line])):
+        assert pending_lines.pending([line], [tmp_path / "seeds"], {}, starts="seeds", run_options=words) == pending, words
+    _run(tmp_path / "test_set", "c", line, "2026-11-02T10:40:00")
+    assert pending_lines.pending([line], [tmp_path / "test_set"], {}, replicates=ONE, run_options=["--seeds", "5", "--first-seed", "4"]) == []
+    grid = tmp_path / "grid.txt"
+    grid.write_text(f"{line}\n", encoding="utf-8")
+    for extra, out in ((["--start-cap=12"], ""), (["--start-cap=8"], f"{line}\n")):
+        pending_lines.main(["--grid", str(grid), "--runs", str(tmp_path / "development"), "--starts", "development", "--seeds", "1", *extra])
+        assert capsys.readouterr().out == out, extra
+
+
+@needs_data
+def test_the_seeds_that_a_line_is_matched_on_are_those_that_the_driver_plays_on_every_start_set():
+    """expected() names the seeds that choose the episodes of a line, and the driver plays them (planned_episodes.chosen_seeds on
+    the played configuration): under three seed words, on every start set and on the anchored preset, two plans of a line whose
+    played seeds are equal agree on the seed fields that the tool compares and two whose played seeds differ do not, and a list of
+    seeds that the tool compares is the list that the run records, so that a job replays no run of its line and counts no run of
+    other episodes."""
+    from CausalDiagnosis.experiments.episode_runners import run_episodes
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+
+    _, cycles, blocks = load_world()
+    words = (["--seeds", "1", "--first-seed", "0"], ["--seeds", "2", "--first-seed", "0"], ["--seeds", "1", "--first-seed", "1"])
+    for line, starts in (("--config base --agent oracle", "seeds"), ("--config base --agent oracle", "combinations"),
+                         ("--config base --agent static", "development"), ("--config base --agent oracle", "sampled"),
+                         ("--config base --agent causal --training-fold 1", "training"), ("--config anchored --agent static", "seeds"),
+                         ("--config anchored --agent static", "combinations"), ("--config anchored --agent static", "sampled")):
+        played, compared = [], []
+        for seeds in words:
+            a = run_episodes.build_parser().parse_args([*line.split(), *seeds, "--starts", starts])
+            config = run_episodes.planned_episodes.played_config(a, run_episodes.configure(a)[1], blocks)
+            played.append(list(run_episodes.planned_episodes.chosen_seeds(a, config, cycles, blocks)))
+            fields = pending_lines.expected(line, starts, run_options=seeds)
+            compared.append({k: fields[k] for k in ("seeds", pending_lines.SEEDS_PER_START) if k in fields})
+            assert compared[-1].get("seeds", played[-1]) == played[-1], (line, starts, seeds)
+        for i, j in ((0, 1), (0, 2), (1, 2)):
+            assert (played[i] == played[j]) == (compared[i] == compared[j]), (line, starts, words[i], words[j])
 
 
 def test_a_run_under_another_cut_or_without_the_key_of_the_rule_is_matched_as_it_played(tmp_path):

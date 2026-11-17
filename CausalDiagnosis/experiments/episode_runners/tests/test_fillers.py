@@ -72,7 +72,7 @@ def test_a_filler_covers_no_line_of_a_grid_of_the_development_starts(played, tmp
     for folder, pending in zip(played, ([], [LINE])):
         root = tmp_path / folder.name
         shutil.copytree(folder, root / folder.name)
-        assert pending_lines.pending([LINE], [root], {}, starts="development") == pending
+        assert pending_lines.pending([LINE], [root], {}, starts="development", run_options=DEVELOPMENT[2:]) == pending
 
 
 def test_the_filler_of_every_line_of_the_registered_grids_passes_the_checks_of_the_development_starts():

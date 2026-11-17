@@ -3,8 +3,9 @@
 On the test set, the start set that run_grid.sbatch plays by default, a line of the grid is one run per replicate (--replicate of
 run_episodes/), so the unit is the pair of a line and a replicate, and a line of another start set is one run.
 A pair counts as done when a run folder under one of the given roots carries run.json (written only when a run ends), its
-episodes are complete (one row of scores.csv per planned episode), its configuration, agent and switches, the start state and
-the scenarios that the line names among them, equal the line's (as run_episodes/ resolves them, under the start set of --starts),
+episodes are complete (one row of scores.csv per planned episode), its configuration, agent and switches, the start state, the
+scenarios, the start cap and the seeds with which the line plays under the job among them, equal the line's (as run_episodes/
+resolves them, under the start set of --starts),
 on the test set also its replicate, the rule of its replicates, its master seed and its seed pool, under every start set its
 training variant and its fold and on the training
 starts its training sample, inside a serving job its serving setup that of the job (the LoRA adapters of HYD_ENDPOINT_FILE or of
@@ -17,9 +18,14 @@ played, is printed with --resume and the run folder, so that the job that plays 
 episode (run_episodes/ --resume).
 
 A grid line names no model: the job adds the model it serves after the line (run_grid.sbatch), so --model names that model, which
-a finished run of a model agent records, and run_lines.sh passes the served name of its job.
+a finished run of a model agent records, and run_lines.sh passes the served name of its job. Nor does a line name the other words
+that the job adds after it, the seeds of run_grid.sbatch (--seeds, --first-seed) and the words of GRID_EXTRA: every option that
+this script does not know is such a word, as for precompute_grid_tables.py, and run_lines.sh passes them, so that each line is
+planned with the episodes that the job plays. The seeds compared are those that choose the episodes (planned_episodes.chosen_seeds):
+the list of --seeds from --first-seed on the start set seeds and on an anchored preset, which run.json holds, and the count of
+--seeds per start on the combinations and the development starts, which the command that the ledger of the run recorded holds.
 
-    python -m CausalDiagnosis.experiments.cluster_runs.pending_grid_lines --grid <grid file> --runs runs/<run folder> [--starts sampled] [--fraction 0.05 | --replicates 1 2 3 4 5] --since <agent>=<ISO time> [--model <served name>]
+    python -m CausalDiagnosis.experiments.cluster_runs.pending_grid_lines --grid <grid file> --runs runs/<run folder> [--starts sampled] [--fraction 0.05 | --replicates 1 2 3 4 5] --since <agent>=<ISO time> [--model <served name>] [<words that the job adds to every line>]
 
 On the test set the share of --fraction (start_states.DEFAULT_FRACTION when neither option is given) names the replicates: a
 whole share r/5 the replicates 1 to r, a cut look below one replicate the first, each unit with --fraction (play_plan).
@@ -47,7 +53,7 @@ from CausalDiagnosis.experiments.table_definitions.training_variants import is_m
 # what a run.json without the key played, the default of its switch
 ABSENT = {**{key: run_episodes.build_parser().get_default(key) for key in ("abstention_rule", "training_variant",
                                                                              "training_fold")}, "lora_adapters": 0, "fraction": None,
-          "start_state": None, "scenario_ids": None}
+          "start_state": None, "scenario_ids": None, "start_cap": None}
 DEFAULT_STARTS = "sampled"  # the start set of the grid, GRID_STARTS of run_grid.sbatch, which plays the test set unless told otherwise
 REPLICATES = tuple(range(1, REPLICATE_COUNT + 1))  # the replicates of the test set, GRID_REPLICATES of run_grid.sbatch
 
@@ -99,11 +105,13 @@ def wiring_line(line):
     return "--agent" in words[:-1] and words[words.index("--agent") + 1] in WIRING_AGENTS
 
 
-def expected(line, starts=DEFAULT_STARTS, model=None):
+def expected(line, starts=DEFAULT_STARTS, model=None, run_options=()):
     """The run.json fields a finished run of the line carries under the start set of the grid, on the test set those of the
     replicate the line names, the first when it names none. model is the model the job serves, which run_grid.sbatch passes
-    after the line, so it stands in for the model of the line of a model agent; None keeps the model of the line."""
-    args = line.split()
+    after the line, so it stands in for the model of the line of a model agent; None keeps the model of the line. run_options are
+    the other words that the job adds after every line, its seeds and GRID_EXTRA, so that the fields are those of the episodes that
+    the line plays under the job."""
+    args = [*line.split(), *run_options]
     if "--agent" not in args:
         args += ["--agent", "plan_execute"]
     a = run_episodes.build_parser().parse_args(args + ["--starts", starts])
@@ -119,6 +127,12 @@ def expected(line, starts=DEFAULT_STARTS, model=None):
     fields["training_variant"], fields["training_fold"] = a.training_variant, a.training_fold
     # the start state and the scenarios of the selectors, so that a run of another selection, or of none, never stands for the line
     fields["start_state"], fields["scenario_ids"] = run_episodes.start_state_of(a, config), a.scenario_ids
+    # the start cap and the seeds that choose the episodes, as planned_episodes.chosen_seeds reads them on each start set
+    fields["start_cap"] = a.start_cap
+    if starts == "seeds" or config.anchors is not None:
+        fields["seeds"] = list(range(a.first_seed, a.first_seed + a.seeds))
+    elif starts in ("combinations", "development"):
+        fields[SEEDS_PER_START] = a.seeds
     if starts == "training":  # the 34 sampling lines of an agent differ by their sample and their fold alone
         fields.update(training_sample=run_episodes.training_sample_of(a), master_seed=a.master_seed, seed_pool=a.seed_pool)
     if a.agent == "causal":
@@ -142,6 +156,9 @@ def job_setup():
 
 
 IDENTITY_ERA_KEYS = ("model", "surface", "backend_kind")  # compared only on a run that records an identity
+# the count of --seeds per start of the combinations and the development starts, which run.json does not hold and the command that
+# the ledger of a run recorded does (recorded_seeds), so it is compared only on a run whose ledger holds that command
+SEEDS_PER_START = "seeds_per_start"
 
 
 def observed(meta, key):
@@ -179,12 +196,28 @@ def finished_runs(roots):
                 yield meta, meta_path.parent
 
 
-def matches(meta, fields, since):
+def recorded_seeds(folder):
+    """The --seeds of the command that the ledger of a finished run recorded, the count per start of the combinations and the
+    development starts, or None for a run without a ledger or with a command that no longer parses."""
+    path = Path(folder) / ledger.LEDGER
+    argv = (json.loads(path.read_text(encoding="utf-8")).get("command") or {}).get("argv") if path.exists() else None
+    if not argv:
+        return None
+    try:
+        return run_episodes.build_parser().parse_known_args(argv)[0].seeds
+    except SystemExit:
+        return None
+
+
+def matches(meta, fields, since, seeds_per_start=None):
     """Whether a finished run counts for a line: its fields equal the line's, it started at or after the cutoff of its agent, and
     its identity is that of its agent in the tree that asks, so a run of earlier code is pending again. A run written before the
-    identity existed is compared on the fields of that time and its cutoff alone, as before."""
+    identity existed is compared on the fields of that time and its cutoff alone, as before. seeds_per_start is the count of
+    --seeds of the run's recorded command (recorded_seeds), and without it that count is not compared."""
     identity = pooling_rules.identity_of(meta)
-    if any(observed(meta, k) != v for k, v in fields.items() if identity is not None or k not in IDENTITY_ERA_KEYS):
+    if any(observed(meta, k) != v for k, v in fields.items() if k != SEEDS_PER_START and (identity is not None or k not in IDENTITY_ERA_KEYS)):
+        return False
+    if seeds_per_start is not None and fields.get(SEEDS_PER_START, seeds_per_start) != seeds_per_start:
         return False
     if identity is not None and identity != tree_identity(meta.get("agent")):
         return False
@@ -229,15 +262,16 @@ def empty_cut(unit, starts=DEFAULT_STARTS):
     return fold_line_empty(a.config, a.training_fold, a.fraction, a.master_seed, a.training_split)
 
 
-def pending(lines, roots, since, starts=DEFAULT_STARTS, replicates=REPLICATES, model=None, option=""):
-    runs = [meta for meta, _ in finished_runs(roots)]
+def pending(lines, roots, since, starts=DEFAULT_STARTS, replicates=REPLICATES, model=None, option="", run_options=()):
+    """The pending units of the lines, each planned with run_options, the words that the job adds after every line."""
+    runs = [(meta, recorded_seeds(folder)) for meta, folder in finished_runs(roots)]
     progress = list(runs_in_progress(roots, starts))
     out, taken = [], set()
     for unit in units(lines, starts, replicates, option):
         if empty_cut(unit, starts):
             continue
-        fields = expected(unit, starts, model)  # once per run of the grid, which five replicates per line make many
-        if any(matches(meta, fields, since) for meta in runs):
+        fields = expected(unit, starts, model, run_options)  # once per run of the grid, which five replicates per line make many
+        if any(matches(meta, fields, since, seeds) for meta, seeds in runs):
             continue
         # of the runs in progress that play the pair, the one with the most finished episodes, each taken up by one pair alone
         candidates = [(len(record.get("episodes") or {}), str(folder)) for record, folder, recorded in progress
@@ -265,10 +299,11 @@ def main(argv):
                     help="whole replicates of the test set named by hand in place of the share, GRID_REPLICATES of run_grid.sbatch")
     ap.add_argument("--model", default=None,
                     help="the model the job serves, SERVED_NAME of the serving job, which run_grid.sbatch adds after every line of a model agent")
-    a = ap.parse_args(argv)
+    # every other option is a word that the job adds after every line, its seeds and the words of GRID_EXTRA
+    a, run_options = ap.parse_known_args(argv)
     since = dict(item.split("=", 1) for item in a.since)
     replicates, option = play_plan(a.fraction, a.replicates)
-    for unit in pending(grid_lines(a.grid), a.runs, since, a.starts, replicates, a.model, option):
+    for unit in pending(grid_lines(a.grid), a.runs, since, a.starts, replicates, a.model, option, run_options):
         print(unit)
 
 
