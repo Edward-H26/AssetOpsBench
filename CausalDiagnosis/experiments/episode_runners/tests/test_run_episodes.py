@@ -8,6 +8,7 @@ import csv
 import importlib.util
 import inspect
 import json
+import re
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -870,7 +871,7 @@ def test_a_model_agent_on_a_row_preset_plays_assetopsbench_servers_unless_asked_
     assert parser.parse_args(["--config", "real_time", "--agent", "causal", "--servers", "rig"]).servers == "rig"
 
 
-# ----- the start check, the stamp, the guard of the test set and the cap of the development starts -----
+# ----- the start check, the stamp, the selectors of a start state and of scenarios, and the cap of the development starts -----
 
 def _parsed(*argv):
     a = run_episodes.build_parser().parse_args(list(argv))
@@ -886,54 +887,55 @@ def _no_repository(monkeypatch, tmp_path):
     monkeypatch.setattr(run_episodes.ledger.code_identity, "git_state", lambda paths, root=None: (None, None))
 
 
-@pytest.mark.real_start_check
-def test_a_model_agent_on_a_test_combination_is_refused_in_a_tree_that_is_no_repository(tmp_path, monkeypatch):
-    """No model agent plays a test combination outside a run of record. In a tree that is no repository the start check gives its
-    first reason, and main() stops before any run folder for every model agent, with the start, the agent and the reason."""
+def _scenario_file(tmp_path, monkeypatch, count=3):
+    """A file of count made-up scenarios under the pin of download_scenarios.py, each naming one day that the facts file holds, which
+    the anchored preset reads through HYD_SCENARIOS_PATH; returns their ids in the order of the file. No record of the dataset."""
+    from CausalDiagnosis.frameworks.AssetOpsBench.scenarios.download_scenarios import source_block
+
+    days = [f"2022-09-{10 + i:02d}" for i in range(count)]
+    scenarios = [{"id": 900 + i, "date": day, "text": f"Made-up scenario {i} of hp_1 on {day}.", "failure_event": f"made-up fault at {day}"}
+                 for i, day in enumerate(days)]
+    path = tmp_path / "made_up_scenarios.json"
+    path.write_text(json.dumps({"source": source_block(), "dates": days, "scenarios": scenarios}), encoding="utf-8")
+    monkeypatch.setenv(anchors.SCENARIOS_ENV, str(path))
+    return [scenario["id"] for scenario in scenarios]
+
+
+def test_a_model_agent_plays_a_test_combination_in_a_run_that_is_not_registered(tmp_path, monkeypatch):
+    """Every agent plays every start that its preset allows in any run. In a tree that is no repository the start check gives its
+    first reason, and main() passes it for every model agent on every test combination of the preset and for the causal agent on
+    every scenario of the anchored preset, so each run stops before its run folder only where the model needs its key, which is
+    unset here, with no model call."""
     _no_repository(monkeypatch, tmp_path)
-    for agent in run_episodes.MODEL_AGENTS:
-        out = tmp_path / agent
-        with pytest.raises(SystemExit, match=f"--agent {agent} would play the test combination .* the tree is no git repository"):
-            run_episodes.main(["--config", "static", "--agent", agent, "--starts", "combinations", "--seeds", "1", "--out", str(out)])
+    _scenario_file(tmp_path, monkeypatch)
+    monkeypatch.delenv("API_KEY", raising=False)
+    lines = {agent: ["--config", "static", "--agent", agent, "--starts", "combinations", "--seeds", "1",
+                     *(["--servers", "aob"] if agent in run_episodes.PAPER_ERA_AGENTS else [])] for agent in run_episodes.MODEL_AGENTS}
+    lines["anchored"] = ["--config", "anchored", "--agent", "causal"]
+    for name, line in lines.items():
+        out = tmp_path / name
+        with pytest.raises(SystemExit, match="API_KEY is not set"):
+            run_episodes.main([*line, "--base-url", "http://127.0.0.1:9/v1/", "--out", str(out)])
         assert not out.exists()
 
 
-@pytest.mark.real_start_check
-def test_the_guard_also_stops_an_episode_that_another_caller_starts(tmp_path, monkeypatch):
-    """The loops of GEPA and every other caller build an EpisodeRunner themselves, so EpisodeRunner.start meets the guard on the
-    start combination of the episode before it writes a launcher."""
+def test_an_episode_that_another_caller_starts_plays_a_test_combination(tmp_path, monkeypatch):
+    """The loops of GEPA and every other caller build an EpisodeRunner themselves, and EpisodeRunner.start writes the launchers of
+    an episode of a model agent on a test combination in a run that is not registered."""
     _no_repository(monkeypatch, tmp_path)
     from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
 
     facts, cycles, blocks = load_world()
     _a, name, config = _parsed("--config", "static", "--agent", "plan_execute")
     runner = run_episodes.EpisodeRunner(config, name, "plan_execute", run_episodes.registered_servers("rig", config.diagnostics_server), cycles, blocks,
-                                        facts, "guarded", {"judge": None, "grade": False, "ranking_model": run_episodes.DEFAULT_RANKING_MODEL})
+                                        facts, "any_start", {"judge": None, "grade": False, "ranking_model": run_episodes.DEFAULT_RANKING_MODEL})
     seed = start_states.combination_seeds(run_episodes.HydraulicRigEnv(cycles, blocks, config), 1)[0]
-    with pytest.raises(SystemExit, match="--agent plan_execute would play the test combination"):
-        runner.start(tmp_path / "ep", seed, config)
-    assert not list((tmp_path / "ep").glob("*_server.py"))
+    _launchers, _question, _offset, start = runner.start(tmp_path / "ep", seed, config)
+    assert tuple(start) in starts_of_test_set(run_episodes.get_profile(config.asset_id), blocks)
+    assert list((tmp_path / "ep").glob("*_server.py"))
 
 
-def test_the_seam_of_the_conftest_takes_the_test_set_from_the_guard_and_leaves_the_start_check(tmp_path, monkeypatch):
-    """Outside the mark the guard of a test holds no test combination, while the start check runs as it is, so a run of a test
-    is stamped as every run of a tree that is no repository."""
-    _no_repository(monkeypatch, tmp_path)
-    a, name, config = _parsed("--config", "static", "--agent", "plan_execute")
-    assert run_episodes.start_check.guarded_starts(config, None) == set()
-    assert run_episodes.start_check.registration(a, config, name, default_facts_path())[0] == NO_REPOSITORY
-
-
-@pytest.mark.real_start_check
-def test_the_seam_of_the_conftest_is_off_under_the_mark_real_start_check():
-    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
-
-    _facts, _cycles, blocks = load_world()
-    _a, _name, config = _parsed("--config", "static", "--agent", "plan_execute")
-    assert run_episodes.start_check.guarded_starts(config, blocks)  # the test combinations of the asset, as the guard meets them
-
-
-@pytest.mark.real_start_check
 def test_a_reference_policy_and_the_scripted_check_run_stamped_on_test_combinations(tmp_path, monkeypatch):
     _no_repository(monkeypatch, tmp_path)
     for agent in ("oracle", "scripted"):
@@ -943,44 +945,13 @@ def test_a_reference_policy_and_the_scripted_check_run_stamped_on_test_combinati
         assert meta["asset_id"] == "hyd_1" and meta["code"]["identity"] and meta["prices_sha256"] and set(meta["platform"]) >= {"python", "installed_sha256", "lock_sha256"}
 
 
-@pytest.mark.real_start_check
 def test_a_development_run_is_stamped_and_names_its_reasons(tmp_path, monkeypatch):
     _no_repository(monkeypatch, tmp_path)
     a, name, config = _parsed("--config", "base", "--agent", "causal", "--starts", "development")
     reasons = run_episodes.start_check.registration(a, config, name, default_facts_path())
     assert reasons[0] == NO_REPOSITORY
-    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
-
-    _facts, cycles, blocks = load_world()
-    developed = run_episodes.development_config(config, blocks)
-    starts = {tuple(c) for c in developed.allowed}
-    run_episodes.guard_test_set("causal", starts, run_episodes.start_check.guarded_starts(config, blocks), reasons)  # development starts pass
 
 
-@pytest.mark.real_start_check
-def test_the_driver_and_the_wrappers_refuse_a_test_start_by_one_rule(tmp_path, monkeypatch):
-    """The guard of the driver and the Gymnasium wrapper hold the same test set (development_split.held_starts) and refuse its
-    first combination with the same sentence and the same reasons (development_split.guard_starts)."""
-    from dataclasses import replace
-
-    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
-    from CausalDiagnosis.environment.Causal_Diagnosis_Environment.gymnasium_wrapper import HydraulicRigGym
-
-    _no_repository(monkeypatch, tmp_path)
-    a, name, config = _parsed("--config", "base", "--agent", "causal")
-    reasons = run_episodes.start_check.registration(a, config, name, default_facts_path())
-    _facts, _cycles, blocks = load_world()
-    held = run_episodes.start_check.guarded_starts(config, blocks)
-    first = min(held)
-    with pytest.raises(SystemExit) as driver:
-        run_episodes.guard_test_set("causal", [first], held, reasons)
-    fixed = replace(config, start={"combination": list(first), "entry_offset": 0})
-    with pytest.raises(ValueError) as wrapper:
-        HydraulicRigGym(fixed, default_facts_path(), starts="test", unregistered=reasons)
-    assert reasons and str(driver.value).split(" would play ", 1)[1] == str(wrapper.value).split(" would play ", 1)[1]
-
-
-@pytest.mark.real_start_check
 def test_a_run_whose_rules_all_pass_is_of_record_and_one_changed_file_stamps_it(monkeypatch):
     """With the tree, the loaded files, the data and the open values all passing, a run of a table preset on a registered start set
     is of record; a path that differs from the commit is the reason that stamps it."""
@@ -1019,6 +990,128 @@ def test_a_registered_run_computes_no_table(tmp_path, monkeypatch):
     assert len(fitted) == 1 and read_json(stamped / "run.json")["stamp_reasons"] == ["a reason"]
 
 
+def _named_start(config, cycles, blocks, rank=1):
+    """(--start-state, the field start it names) of the first combination of the test set of the asset, at the entry offset of rank
+    rank among those that the data serve for it, so that the offset is no default."""
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
+
+    combination = starts_of_test_set(run_episodes.get_profile(config.asset_id), blocks)[0]
+    offsets = sorted({entry for _window, entry in run_episodes.HydraulicRigEnv(cycles, blocks, config).source.starts(combination)})
+    return "/".join(map(str, combination)) + f"@{offsets[rank]}", {"combination": list(combination), "entry_offset": offsets[rank]}
+
+
+def test_start_state_plays_every_seed_at_the_named_start_state_on_both_surfaces(tmp_path):
+    """--start-state plays every seed of --starts seeds at the start state it names, as a preset whose field start names it plays:
+    the oracle on the rig's action server and the scripted check on AssetOpsBench's servers start every episode at the named
+    combination and entry offset, run.json records the start state beside the configuration that holds it, and the run carries the
+    stamp development, since --starts seeds is no start set of a table. A run without the option carries neither."""
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+
+    _facts, cycles, blocks = load_world()
+    _a, _name, config = _parsed("--config", "base", "--agent", "oracle")
+    named, start = _named_start(config, cycles, blocks)
+    for surface, line in (("rig", ["--agent", "oracle", "--seeds", "2"]), ("aob", ["--agent", "scripted", "--servers", "aob", "--seeds", "1"])):
+        run_dir, rows, meta = _run(["--config", "base", *line, "--start-state", named, "--no-grade"], tmp_path / surface)
+        assert meta["start_state"] == meta["config"]["start"] == start and meta["stamp"] == "development"
+        assert "--starts seeds on the preset base is no registered start set of a table" in meta["stamp_reasons"]
+        assert read_json(run_dir / "ledger.json")["seeds"]["start_state"] == start, surface
+        assert rows and len(rows) == meta["episodes_planned"] and all(row["error"] == "" for row in rows), [row["error"] for row in rows]
+        for row in rows:
+            assert read_json(run_dir / f"seed{int(row['seed']):06d}" / HIDDEN / "log.json")[0]["hidden"] == start["combination"], surface
+            assert json.loads(row["block"]) == start["combination"] and int(row["entry_offset"]) == start["entry_offset"], surface
+    plain = _run(["--config", "base", "--agent", "oracle", "--seeds", "1", "--no-grade"], tmp_path / "plain")[2]
+    assert "start_state" not in plain and plain["config"]["start"] is None
+
+
+def test_start_state_refuses_by_name_what_it_cannot_play_before_the_run_folder(tmp_path):
+    """--start-state is refused before the run folder exists for a word of another form, a level that its component lacks, a
+    combination outside the fault rule of the preset, an entry offset that the data do not serve, a start set that chooses its own
+    starts, the development split and the anchored preset. A combination without a recording meets the check of the environment,
+    shown on the data with the block of that combination left out."""
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+
+    _facts, cycles, blocks = load_world()
+    _a, _name, config = _parsed("--config", "static", "--agent", "oracle")
+    named, start = _named_start(config, cycles, blocks)
+    healthy = [config.healthy[c] for c in config.components]
+    faulty = [next(level for level in config.levels[c] if level != config.healthy[c]) for c in config.components]
+    over = config.fault_rule["max_faulty"] + 1
+    assert over <= len(config.components)
+
+    def word(levels, offset=0):
+        return "/".join(map(str, levels)) + f"@{offset}"
+
+    cases = [(word(healthy[:-1]), [], "write the level of each component in the order " + "/".join(config.components)),
+             (word(["x", *healthy[1:]]), [], f"x is no level of {config.components[0]}"),
+             (word(faulty[:over] + healthy[over:]), [], "the fault rule of the preset allows"),
+             (named.split("@")[0] + "@999", [], "the start entry offset 999 is not among"),
+             (named, ["--starts", "combinations"], "so it needs --starts seeds, and --starts combinations chooses the starts itself"),
+             (named, ["--training-split", "development"], "--training-split development plays the development starts"),
+             (named, ["--config", "anchored"], "the anchored preset takes the start of each scenario from its date")]
+    for value, extra, refusal in cases:
+        out = tmp_path / "refused"
+        with pytest.raises(SystemExit, match=re.escape(refusal)):
+            run_episodes.main(["--config", "static", "--agent", "oracle", "--no-grade", "--start-state", value, *extra, "--out", str(out)])
+        assert not out.exists(), (value, extra)
+    a = run_episodes.build_parser().parse_args(["--config", "static", "--start-state", named])
+    started = run_episodes.played_config(a, config, blocks)
+    assert started.start == start
+    without = {combination: block for combination, block in blocks.items() if combination != tuple(start["combination"])}
+    with pytest.raises(SystemExit, match=re.escape(f"--start-state {named}: the start combination {start['combination']} has no recording")):
+        run_episodes.planned_episodes.recorded_start(a, started, cycles, without)
+
+
+def test_a_preset_that_pins_a_start_is_refused_by_name_beside_a_start_set_that_chooses_its_starts(tmp_path, monkeypatch):
+    """--starts combinations and --starts sampled choose the starts of a run by a search of seeds, in which every seed would draw
+    the start that a preset pins in its field start, so the driver refuses such a preset by name, with the start set to use, before
+    the run folder exists and before any search of seeds."""
+    from CausalDiagnosis.utils.paths import preset_path
+
+    def searched(*args, **kwargs):
+        raise AssertionError("a search of seeds ran for a pinned start")
+
+    for name in ("combination_seeds", "sampled_combination_seeds", "replicate_seeds"):
+        monkeypatch.setattr(run_episodes.start_states, name, searched)
+    pinned = tmp_path / "pinned.json"
+    pinned.write_text(json.dumps({**read_json(preset_path("static")), "name": "pinned", "start": {"combination": [3, 100, 0, 130], "entry_offset": 0}}),
+                      encoding="utf-8")
+    for starts in ("combinations", "sampled"):
+        out = tmp_path / starts
+        with pytest.raises(SystemExit, match=re.escape(f"the preset {pinned} pins the start state 3/100/0/130@0, and --starts {starts} chooses "
+                                                       "the starts itself: play a pinned start with --starts seeds")):
+            run_episodes.main(["--config", str(pinned), "--agent", "oracle", "--starts", starts, "--no-grade", "--out", str(out)])
+        assert not out.exists(), starts
+
+
+def test_scenario_ids_play_the_named_scenarios_of_the_anchored_preset_alone(tmp_path, monkeypatch):
+    """--scenario-ids plays the scenarios of the anchored preset whose ids it names, in the order of the scenario file whatever the
+    order of the option, and records them in run.json, while the plan without the option holds every scenario. It is refused by
+    name, before the run folder exists, for an id that the file does not hold and on a preset that anchors no scenario, and ids
+    joined by commas are no value of the option."""
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+
+    ids = _scenario_file(tmp_path, monkeypatch)
+    line = ["--config", "anchored", "--agent", "do_nothing", "--seeds", "1", "--no-diagnostics", "--no-grade"]
+    run_dir, rows, meta = _run([*line, "--scenario-ids", f"{ids[2]}/{ids[0]}"], tmp_path / "named")
+    assert [int(row["scenario_id"]) for row in rows] == [ids[0], ids[2]] == meta["scenario_ids"] and meta["episodes_planned"] == 2
+    assert sorted(meta["anchored"]["anchors"]) == sorted(f"scenario{i}_seed000000" for i in (ids[0], ids[2]))
+    assert read_json(run_dir / "ledger.json")["seeds"]["scenario_ids"] == [ids[0], ids[2]]
+    assert all(row["error"] == "" for row in rows), [row["error"] for row in rows]
+    _facts, cycles, blocks = load_world()
+    config = _parsed(*line)[2]
+    assert [scenario["id"] for _name, _seed, scenario, _config in run_episodes.episode_plan(config, [0], cycles, blocks)] == ids
+    for extra, refusal in ((["--scenario-ids", f"{ids[0]}/7"],
+                            f"--scenario-ids names 7, which the scenario file does not hold; its ids are {'/'.join(map(str, ids))}"),
+                           (["--config", "static", "--scenario-ids", str(ids[0])],
+                            "--scenario-ids names scenarios of the scenario set of the anchored preset, and this preset anchors none")):
+        out = tmp_path / "refused"
+        with pytest.raises(SystemExit, match=re.escape(refusal)):
+            run_episodes.main([*line, *extra, "--out", str(out)])
+        assert not out.exists(), extra
+    with pytest.raises(SystemExit):
+        run_episodes.build_parser().parse_args(["--scenario-ids", f"{ids[0]},{ids[1]}"])
+
+
 def test_the_cap_draws_k_development_starts_that_cover_every_faulty_level_and_is_the_same_for_the_same_seed():
     healthy = (0, 0, 0)
     starts = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1), (1, 1, 1), (2, 0, 0)]
@@ -1048,12 +1141,13 @@ def test_a_cap_below_what_the_coverage_needs_is_refused():
 
 def test_starts_development_plays_no_test_combination_on_any_registered_preset():
     from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
 
     _facts, cycles, blocks = load_world()
     for preset in sorted(run_episodes.table_presets()):
         _a, _name, config = _parsed("--config", preset, "--agent", "causal")
         developed = run_episodes.development_config(config, blocks)
-        assert not {tuple(c) for c in developed.allowed} & run_episodes.start_check.guarded_starts(config, blocks), preset
+        assert not {tuple(c) for c in developed.allowed} & set(starts_of_test_set(run_episodes.get_profile(config.asset_id), blocks)), preset
 
 
 def test_seeds_below_one_are_refused_and_a_marker_run_still_plans_no_episode(tmp_path):

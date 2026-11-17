@@ -50,6 +50,32 @@ def test_a_run_of_a_main_line_leaves_its_arm_pending_and_a_run_of_the_arm_leaves
             assert pending_lines.pending([main, arm], [root / "main", root / "arm"], {}, replicates=ONE) == []
 
 
+def test_a_run_of_a_selector_counts_for_the_line_of_its_selection_alone(tmp_path):
+    """A line of --start-state or of --scenario-ids carries its selection among the fields a run is matched on, in either spelling
+    of the option, so a run of the line without the selection, or of another one, leaves the line pending, and a run of the line
+    counts for it alone; a run.json written before the selectors reads as a run without one."""
+    plain = "--config static --agent oracle"
+    named, other = f"{plain} --start-state 3/100/0/130@2", f"{plain} --start-state=3/100/0/130@3"
+    assert pending_lines.expected(named)["start_state"] == {"combination": [3, 100, 0, 130], "entry_offset": 2}
+    assert pending_lines.expected(plain)["start_state"] is None and pending_lines.expected(plain)["scenario_ids"] is None
+    _run(tmp_path / "plain", "a", plain, "2026-11-02T10:40:00")
+    _run(tmp_path / "named", "b", named, "2026-11-02T10:40:00")
+    lines = [plain, named, other]
+    assert pending_lines.pending(lines, [tmp_path / "plain"], {}, replicates=ONE) == first(named, other)
+    assert pending_lines.pending(lines, [tmp_path / "named"], {}, replicates=ONE) == first(plain, other)
+    path = tmp_path / "plain" / "a" / "run.json"
+    meta = json.loads(path.read_text(encoding="utf-8"))
+    for key in ("start_state", "scenario_ids"):
+        meta.pop(key)
+    path.write_text(json.dumps(meta), encoding="utf-8")
+    assert pending_lines.pending(lines, [tmp_path / "plain"], {}, replicates=ONE) == first(named, other)
+    anchored = "--config anchored --agent oracle"
+    both, one = f"{anchored} --scenario-ids 2003/2001", f"{anchored} --scenario-ids=2001"
+    assert pending_lines.expected(both)["scenario_ids"] == pending_lines.expected(f"{anchored} --scenario-ids=2001/2003")["scenario_ids"] == [2001, 2003]
+    _run(tmp_path / "both", "c", both, "2026-11-02T10:40:00")
+    assert pending_lines.pending([anchored, both, one], [tmp_path / "both"], {}, replicates=ONE) == first(anchored, one)
+
+
 def test_a_run_under_another_cut_or_without_the_key_of_the_rule_is_matched_as_it_played(tmp_path):
     main, arm = "--config real_time --agent causal", "--config real_time --agent causal --abstention-rule fixed_cut"
     _run(tmp_path / "cut", "a", arm, "2026-11-02T10:40:00", abstention_cut=0.5)

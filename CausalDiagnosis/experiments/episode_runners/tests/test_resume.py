@@ -2,8 +2,10 @@
 plays the rest as an uninterrupted run of the same command would; an episode played without its row, a row without its ledger
 record and a row half written are set aside and played again; the ledger check and the replay accept the run; a folder that the
 command cannot take up is left as it is while the line plays from its first episode. pending_grid_lines.py names the run in progress,
-the fillers drop --resume and check_grid_complete.py names the run in progress of a grid folder. The runs are the oracle on the
-development starts, which needs no model, cut where a time limit or a lost node would stop the driver."""
+the fillers drop --resume and check_grid_complete.py names the run in progress of a grid folder. A run of --start-state and a run of
+--scenario-ids are taken up as any run, and a command of another selection takes up neither. The runs are the oracle on the
+development starts, which needs no model, cut where a time limit or a lost node would stop the driver, and the runs of the selectors
+the oracle at one start state and doing nothing on made-up scenarios of the anchored preset."""
 import csv
 import importlib
 import importlib.util
@@ -51,11 +53,11 @@ class Cut(Exception):
     """The end of a job, raised where a time limit or a lost node would stop the driver."""
 
 
-def _play(*arguments):
-    return Path(run_episodes.main([*LINE.split(), *DEVELOPMENT, *arguments]))
+def _play(*arguments, words=(*LINE.split(), *DEVELOPMENT)):
+    return Path(run_episodes.main([*words, *arguments]))
 
 
-def _cut(out, where):
+def _cut(out, where, words=(*LINE.split(), *DEVELOPMENT)):
     """The folder of a run of LINE under out that a job left partly played. At the boundary the job ends right after the ledger
     record of episode CUT; at row after the row of episode CUT + 1 and before its ledger record; at play after episode CUT + 1
     played and before its row, with the scratch folder of the tool listing left beside it; and torn at the boundary with the row of
@@ -84,7 +86,7 @@ def _cut(out, where):
         patch.setattr(ledger.ledger_file, "add_episode", add_episode)
         patch.setattr(run_episodes.EpisodeRunner, "play", play)
         with pytest.raises(Cut):
-            _play("--out", str(out))
+            _play("--out", str(out), words=words)
     run_dir = out / LABEL
     if where == "torn":
         data = (run_dir / "scores.csv").read_bytes()
@@ -125,6 +127,45 @@ def runs(tmp_path_factory):
         whole = _play("--out", str(root / "whole"))
         resumed = {where: _play("--resume", str(progress[where]), "--out", str(root / f"resumed_{where}")) for where in PLACES}
         yield {"whole": whole, "copy": copy, "resumed": resumed}
+
+
+@pytest.fixture(scope="module")
+def selected(tmp_path_factory):
+    """{selector: (the line, a copy of its run cut at the boundary in a grid folder, the run taken up into another --out, the
+    uninterrupted run)} for a line of --start-state and one of --scenario-ids, played with tables of their own as the runs of the
+    fixture runs are, the cut run first."""
+    if not Path(default_facts_path()).exists():
+        pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH")
+    if importlib.util.find_spec("mcp") is None:
+        pytest.skip("needs the mcp package")
+    from CausalDiagnosis.experiments.cluster_runs import precompute_grid_tables as precompute_tables
+    from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
+    from CausalDiagnosis.experiments.episode_runners.tests.test_run_episodes import _scenario_file
+
+    root = tmp_path_factory.mktemp("selected")
+    with pytest.MonkeyPatch.context() as patch:
+        for name, attribute in ports.generated_tables():
+            module = importlib.import_module(name)
+            shared = Path(getattr(module, attribute))
+            own = root / "tables" / name / shared.name
+            own.parent.mkdir(parents=True, exist_ok=True)
+            if shared.exists():
+                shutil.copyfile(shared, own)
+            patch.setattr(module, attribute, own)
+        precompute_tables.main(["--config", "base"])
+        patch.setattr(run_episodes.run_record, "run_label", lambda config_name, agent_label: LABEL)
+        ids = _scenario_file(root, patch, count=4)
+        lines = {"start_state": f"{LINE} --start-state 3/100/0/130@1 --seeds 3",
+                 "scenario_ids": f"--config anchored --agent do_nothing --seeds 1 --no-diagnostics --no-grade --scenario-ids {'/'.join(map(str, ids[1:]))}"}
+        played = {}
+        for selector, line in lines.items():
+            cut = _cut(root / f"cut_{selector}", "boundary", line.split())
+            copy = root / f"grid_{selector}" / LABEL
+            shutil.copytree(cut, copy)
+            whole = _play("--out", str(root / f"whole_{selector}"), words=line.split())
+            resumed = _play("--resume", str(cut), "--out", str(root / f"resumed_{selector}"), words=line.split())
+            played[selector] = (line, copy, resumed, whole)
+        yield played
 
 
 def _without_times(value, keys):
@@ -331,6 +372,38 @@ def test_pending_lines_names_the_run_in_progress_with_resume_and_nothing_once_th
         (folder / copy.name / ledger.LEDGER).write_text(json.dumps({**record, **changed}), encoding="utf-8")
         assert pending_lines.pending([LINE], [folder], {}, starts="development") == [LINE], name
     assert grid_lines.filler_arguments(f"{LINE} --replicate 2 --resume {copy}") == LINE
+
+
+@pytest.mark.parametrize("selector", ["start_state", "scenario_ids"])
+def test_a_run_of_a_selector_cut_at_the_boundary_and_taken_up_equals_the_uninterrupted_run(selected, selector):
+    """A run of --start-state and a run of --scenario-ids that a job cut after their second episode, taken up by a later job into
+    another --out, hold every file of the uninterrupted run of the same command, equal apart from the times and the process ids,
+    record the same selection in run.json and close a ledger that the ledger check accepts."""
+    _line, _copy, resumed, whole = selected[selector]
+    assert len(_names(whole)) == 3 and _names(resumed) == _names(whole)
+    assert _files(resumed) == _files(whole)
+    assert read_json(resumed / "run.json")[selector] == read_json(whole / "run.json")[selector] is not None
+    assert not (resumed / ledger.INTERRUPTED).exists() and verify_results.check_ledger(resumed) == ("checked", [])
+
+
+def test_a_command_of_another_selection_takes_up_no_run_of_a_selector(selected, tmp_path):
+    """The ledger holds the selection of a run, the start state in its configuration and the scenarios beside its seeds, so a
+    command of another start state or of other scenarios is refused the run in progress with the field that differs, and
+    pending_grid_lines.py names the run in progress with --resume for its own line alone."""
+    other = {"start_state": {"combination": [3, 100, 0, 130], "entry_offset": 2}, "scenario_ids": [901]}
+    for selector, (line, copy, _resumed, whole) in selected.items():
+        meta = read_json(whole / "run.json")
+        reasons = meta["stamp_reasons"]
+        progress = _in_progress(whole, tmp_path / selector)
+        assert ledger.resume_refusal(progress, meta, reasons) is None
+        changed = {**meta, selector: other[selector]}
+        if selector == "start_state":
+            changed["config"] = {**meta["config"], "start": other[selector]}
+        field = "configuration" if selector == "start_state" else "seeds"
+        assert ledger.resume_refusal(progress, changed, reasons) == f"the field {field} of its ledger differs from the command's", selector
+        elsewhere = line.replace("@1", "@2") if selector == "start_state" else line.rsplit("/", 1)[0]
+        assert elsewhere != line
+        assert pending_lines.pending([line, elsewhere], [copy.parent], {}, starts="seeds") == [f"{line} --resume {copy}", elsewhere], selector
 
 
 def test_check_grid_names_a_run_in_progress_of_a_grid_folder_with_its_recorded_episodes(runs):

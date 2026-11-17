@@ -28,6 +28,15 @@ FILLER_OUT = "--filler writes beside the grid folders and never into one, and --
 RESUME_FILLER = "--resume takes up a run that a job left partly played, and a filler never resumes"
 
 
+def scenario_id_list(text):
+    """The ids of --scenario-ids, one or several joined by /, one shell word that a grid line and GRID_EXTRA carry as it is, as
+    sorted distinct integers, so that two spellings of one set of scenarios record one value."""
+    words = text.split("/")
+    if not all(word.isdigit() for word in words):
+        raise argparse.ArgumentTypeError(f"{text!r} is no scenario id and no ids joined by /, such as 2001/2003")
+    return sorted({int(word) for word in words})
+
+
 def build_parser():
     ap = argparse.ArgumentParser(description="agents and reference policies on hydraulic rig episodes through the MCP servers")
     ap.add_argument("--config", default="static", help="a preset of CausalDiagnosis/configs/ or a JSON path")
@@ -48,6 +57,15 @@ def build_parser():
     ap.add_argument("--start-cap", type=int, default=None,
                     help="with --starts development: play this many of the development starts, drawn by the registered seed of the development "
                          "split so that every faulty level of a component that they hold is covered")
+    ap.add_argument("--start-state", default=None, metavar="LEVELS@OFFSET",
+                    help="with --starts seeds: play every seed at this start state, as a preset whose field start names it plays: the level "
+                         "of each component of the asset in their order joined by /, then @ and the entry offset (3/100/0/130@2 on the rig), "
+                         "refused when the fault rule of the preset does not allow the combination or the data hold no recording of it at "
+                         "that entry offset, and, as the field start of a preset, not held to the allowed starts of the preset; run.json and "
+                         "the ledger record it, and no cell of a table reads such a run")
+    ap.add_argument("--scenario-ids", type=scenario_id_list, default=None, metavar="ID/ID",
+                    help="with the anchored preset: play the scenarios of these ids alone, one id or several joined by /, refused for an id "
+                         "that the scenario file does not hold; run.json and the ledger record them, and no cell of a table reads such a run")
     ap.add_argument("--filler", action="store_true",
                     help="a filler run of a grid job, which plays the development starts in the slot of a finished run while a run "
                          "on the wall clock still plays, so that the job keeps its runs in flight (CausalDiagnosis/cluster_jobs/3_run/run_grid.sbatch); run.json "
@@ -198,7 +216,10 @@ def main(argv):
     refuse_bound_parts(a, config)
     facts_path, cycles, blocks = load_world(a.facts, config.asset_id)  # the world of the asset that the configuration names
     planned_episodes.training_checks(a, config)
+    planned_episodes.selector_checks(a, config)
     config = planned_episodes.played_config(a, config, blocks)
+    if a.start_state is not None:
+        planned_episodes.recorded_start(a, config, cycles, blocks)
     if a.fraction is not None and planned_episodes.replicate_of(a, config) is None:
         raise SystemExit("--fraction cuts a replicate of the test set, and an anchored preset plays its scenarios")
     a.seeds_list = planned_episodes.chosen_seeds(a, config, cycles, blocks)
@@ -206,10 +227,9 @@ def main(argv):
         # a fold that the prefix leaves empty plays nothing, which a first start of a grid meets as well as pending_grid_lines.py
         print(f"NOTHING_TO_PLAY the cut look {a.fraction} gives the fold {a.training_fold} no start combination", file=sys.stderr)
         raise SystemExit(0)
-    plan = planned_episodes.episode_plan(config, a.seeds_list, cycles, blocks)
-    # the start check and the guard of the test set over the whole plan, before any table is fitted and before the run folder exists
+    plan = planned_episodes.episode_plan(config, a.seeds_list, cycles, blocks, a.scenario_ids)
+    # the start check, before any table is fitted and before the run folder exists
     reasons = start_check.registration(a, config, config_name, facts_path)
-    start_check.guard_test_set(a.agent, (planned_episodes.start_combination(c, seed, cycles, blocks) for _, seed, _, c in plan), start_check.guarded_starts(config, blocks), reasons)
     hold_tables(reasons)
     runner, judge_options = runner_setup.build_runner(a, config_name, config, price_table, cycles, blocks, facts_path, registered=not reasons)
     runner.unregistered = reasons

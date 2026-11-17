@@ -1,12 +1,11 @@
 import os
-from CausalDiagnosis.datasets.splits.development_split import guard_starts, held_starts  # noqa: E402
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions.experiment_tables import ARM_PRESETS, LADDER, RUNS_IN_FLIGHT, AGENTS_PRESET, HEALTHY_CONTROL_PRESET, TRAINING_PRESET, TOKEN_PRESETS  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions.training_variants import DEVELOPMENT, adapter_of, block_of  # noqa: E402
-from . import agent_kinds, run_record, play_one_episode
+from . import agent_kinds, run_record
 
 
-# ----- the start check and the guard of the test set -----
+# ----- the start check -----
 START_SETS = ("seeds", "combinations", "sampled", "training", "development")  # the choices of --starts, which pending_grid_lines.py and precompute_grid_tables.py share
 STAMP = "development"  # run.json stamp of a run that the start check does not register
 REGISTERED_STARTS = ("sampled", "training")  # the start sets a registered run plays
@@ -81,23 +80,3 @@ def registration(a, config, config_name, facts_path):
     if stamped := stamped_inputs(a, config):
         reasons.append(f"--training-variant {a.training_variant} plays {' and '.join(stamped)} built from runs that carry the stamp {STAMP}")
     return reasons + filler
-
-
-def guarded_starts(config, blocks):
-    """The start combinations of the test set of the asset of a configuration, which the guard keeps from a model agent outside a
-    registered run: the recorded combinations that the fault rule of the asset allows, less those that the development split
-    moved to development (development_split.moved_to_development), so that every allowed start of an asset whose recordings
-    admit no split stays in its test set, as its start sampler holds it (development_split.held_starts)."""
-    return held_starts(play_one_episode.get_profile(config.asset_id), blocks)
-
-
-def guard_test_set(agent, starts, test_starts, reasons):
-    """Refuses a model agent on a start of the test set of its asset in a run that is not registered, naming the start, the
-    agent and the reasons of the start check. A reference policy, the scripted check and a registered run pass, and no option,
-    variable or preset turns the guard off."""
-    if agent not in agent_kinds.MODEL_AGENTS:
-        return
-    try:
-        guard_starts(starts, test_starts, reasons, f"--agent {agent}")  # the rule the wrappers apply too
-    except ValueError as e:
-        raise SystemExit(str(e)) from None

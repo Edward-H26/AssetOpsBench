@@ -86,7 +86,10 @@ def run_fields(meta, serve=serving_endpoints.served):
                               "mode": meta.get("mode"), "prices": meta.get("prices"), "price_table_source": meta.get("price_table_source"),
                               # the leaderboard reads it from the ledger of a run in progress, which has no run.json yet
                               TRAINING_VARIANT_KEY: meta.get(TRAINING_VARIANT_KEY) or AS_RELEASED},
-            "seeds": {key: meta.get(key) for key in ("starts", "master_seed", "seed_pool", "seeds", "episodes_planned")}}
+            # with the start state and the scenarios of a run that names them, which a job that takes the run up again must name
+            # alike (resume_refusal) and by which the leaderboard knows a run of chosen starts in progress (pooling_rules.chosen_starts)
+            "seeds": {**{key: meta.get(key) for key in ("starts", "master_seed", "seed_pool", "seeds", "episodes_planned")},
+                      **{key: meta[key] for key in ("start_state", "scenario_ids") if meta.get(key) is not None}}}
 
 
 def _record(run_dir, fields, started, command, job, code, after=None):

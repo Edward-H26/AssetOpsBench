@@ -224,6 +224,24 @@ def test_a_line_of_a_reference_agent_plays_without_the_model_so_its_pending_pair
         f"2 {runner} --config priced --agent causal --no-diagnostics --model m --base-url http://node/v1 --judge local --seeds 1 --replicate 3 --out ."]
 
 
+def test_a_selector_reaches_the_driver_as_one_word_through_grid_extra_and_a_grid_line(tmp_path):
+    """--start-state and --scenario-ids are one word each, the levels and the ids joined by /, so the comma list of --export, as the
+    page passes GRID_EXTRA, and the word splitting of run_grid.sbatch hand each to the driver whole, from GRID_EXTRA and from a line
+    of the grid file alike, and the driver's parser reads it."""
+    export = "ALL,RUN_AFTER_SERVE=$H/3_run/run_lines.sh,GRID_STARTS=seeds,GRID_EXTRA=--start-state=3/100/0/130@2"
+    extra = dict(item.split("=", 1) for item in export.split(",") if "=" in item)["GRID_EXTRA"]
+    driver = 'python() { shift 2; printf "%s\\n" "$@" > "$PWD/call_$HYD_GRID_LINE"; }'
+    units = (driver, "hostname() { echo node7; }", 'REFERENCE_AGENTS="oracle"',
+             re.search(r"^replicate_option\(\) \{.*\}$", RUNNER, re.M).group(0), _function(RUNNER, "reference_line"), _function(RUNNER, "run_unit"),
+             'LINES=("--config base --agent causal" "--config anchored --agent oracle --scenario-ids 2001/2003")',
+             'OUT=. SERVED_NAME=m BASE_URL=http://node/v1 JUDGE= SEEDS="--seeds 1 --starts seeds"')
+    done = _bash(tmp_path, *units, f'GRID_EXTRA={extra} run_unit "0 none"; run_unit "1 none"')
+    assert done.returncode == 0, done.stderr
+    first, second = (run_episodes.build_parser().parse_args((tmp_path / f"call_{i}").read_text(encoding="utf-8").splitlines()) for i in range(2))
+    assert (first.start_state, first.starts, first.scenario_ids) == ("3/100/0/130@2", "seeds", None)
+    assert (second.scenario_ids, second.start_state, second.config) == ([2001, 2003], None, "anchored")
+
+
 def test_the_checks_at_the_end_of_a_job_print_the_latency_keep_the_job_record_and_name_suspect_runs(tmp_path):
     """The job prints the latency of its model calls, keeps the record of its own job from
     Slurm's accounting beside its run folders, in the fields that cluster_run_checks.py reads the suspended time from, names the
@@ -1180,6 +1198,20 @@ def test_with_grid_pending_a_job_plays_only_the_pairs_that_no_finished_run_of_it
     assert done.returncode == 0 and asked.endswith(f"{runs / 'grid_41_attempt1'} --starts development --model {TEMPLATE_SERVED_NAME}"), done.stderr
     done = _lines(tree, env)
     assert done.returncode == 0 and _logged(env, "played") == "# one line\n--config base --agent causal\n"
+
+
+def test_with_grid_pending_a_selector_in_grid_extra_stops_the_job_before_its_first_line(tmp_path):
+    """GRID_PENDING=1 matches the finished runs to the lines of the grid file, which hold no word of GRID_EXTRA, so a selector in
+    GRID_EXTRA would leave every line pending and play it again: the job stops before its first line and says that a selector
+    belongs on the grid line, for either selector in either form, while without GRID_PENDING the same GRID_EXTRA plays the file."""
+    tree, runs, env = _lines_tree(tmp_path)
+    (runs / "grid_40").mkdir(parents=True)
+    for extra in ("--start-state=3/100/0/130@2", "--store couchdb --scenario-ids 2001"):
+        done = _lines(tree, {**env, "GRID_PENDING": "1", "GRID_EXTRA": extra})
+        assert done.returncode == 2 and "so a selector belongs on the grid line and not in GRID_EXTRA" in done.stderr, done.stderr
+        assert _logged(env, "runner_calls") is None and not Path(f"{_module_file(tree, pending_lines.__name__)}.args").exists(), extra
+    done = _lines(tree, {**env, "GRID_EXTRA": "--start-state=3/100/0/130@2"})
+    assert done.returncode == 0 and _logged(env, "played") == "# one line\n--config base --agent causal\n", done.stderr
 
 
 def test_run_lines_ends_with_the_status_of_the_runner(tmp_path):

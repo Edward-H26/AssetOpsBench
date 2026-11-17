@@ -10,7 +10,6 @@ import pytest
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger
 from CausalDiagnosis.evaluation.result_tables import index_file, pooling_rules
 from CausalDiagnosis.experiments.episode_runners import run_episodes
-from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
 from CausalDiagnosis.utils.json_files import read_json
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 
@@ -33,7 +32,6 @@ def _launch(served_name, dtype="bfloat16"):
 REGISTERED = ("--config", "base", "--agent", "causal", "--starts", "sampled", "--model", MODEL, "--base-url", URL)
 
 
-@pytest.mark.real_start_check
 @pytest.mark.parametrize("field, value, declared", [("dtype_launch", "auto", "dtype"), ("sglang", "0.5.20", "engine_version"),
                                                     ("weights_commit", "f" * 40, "weights_commit"),
                                                     ("launch_args", _launch(MODEL, "float16"), "launch_args")])
@@ -129,7 +127,6 @@ def test_the_platform_record_takes_the_served_names_of_the_endpoint_files_and_ca
     assert record == ledger.platform_command(facts_path=default_facts_path(), model=MODEL, judge_model=JUDGE)
 
 
-@pytest.mark.real_start_check
 def test_a_run_on_the_card_of_record_passes_the_start_check(tmp_path, monkeypatch, models):
     sampler = _of_record(tmp_path, monkeypatch)
     monkeypatch.setenv("HYD_ENDPOINT_FILE", str(_endpoint(tmp_path / "run.txt", sampler=sampler)))
@@ -137,22 +134,23 @@ def test_a_run_on_the_card_of_record_passes_the_start_check(tmp_path, monkeypatc
     assert run_episodes.start_check.registration(a, config, name, default_facts_path()) == []
 
 
-@pytest.mark.real_start_check
-def test_a_registered_run_on_another_card_is_refused_before_its_first_episode_and_both_cards_are_named(tmp_path, monkeypatch, models):
+def test_a_run_on_another_card_is_not_of_record_names_both_cards_and_plays_the_test_set(tmp_path, monkeypatch, models):
+    """A run on another card than the card of record is not of record and names both cards. It plays the test set all the same:
+    the driver passes its start check and stops before the run folder only where the model needs its key, which is unset here."""
     sampler = _of_record(tmp_path, monkeypatch)
     monkeypatch.setenv("HYD_ENDPOINT_FILE", str(_endpoint(tmp_path / "run.txt", card=OTHER, sampler=sampler)))
     a, name, config = _parsed(*REGISTERED)
     named = f"the model endpoint: the endpoint serves on {ledger.card_text(OTHER)}, and the card of record is {ledger.card_text(CARD)}"
     assert run_episodes.start_check.registration(a, config, name, default_facts_path()) == [named]
-    every = run_episodes.start_states.replicate_seeds  # one episode of the test set is enough for the guard
+    every = run_episodes.start_states.replicate_seeds  # one episode of the test set is enough
     monkeypatch.setattr(run_episodes.start_states, "replicate_seeds", lambda *args, **kwargs: every(*args, **kwargs)[:1])
+    monkeypatch.delenv("API_KEY", raising=False)
     out = tmp_path / "runs"
-    with pytest.raises(SystemExit, match=f"--agent causal would play the test combination .*{re.escape(named)}"):
+    with pytest.raises(SystemExit, match="API_KEY is not set"):
         run_episodes.main([*REGISTERED, "--out", str(out)])
     assert not out.exists()
 
 
-@pytest.mark.real_start_check
 def test_a_run_without_the_card_of_its_own_endpoint_is_not_of_record(tmp_path, monkeypatch, models):
     sampler = _of_record(tmp_path, monkeypatch)
     a, name, config = _parsed(*REGISTERED)
@@ -163,20 +161,15 @@ def test_a_run_without_the_card_of_its_own_endpoint_is_not_of_record(tmp_path, m
         elsewhere: f"the model endpoint: the endpoint file {elsewhere.resolve()} names http://node-b:30000/v1, not the endpoint of the run",
         tmp_path / "gone.txt": f"the model endpoint: the endpoint file {tmp_path / 'gone.txt'} does not exist",
     }
-    _facts, _cycles, blocks = load_world()
-    held = sorted(run_episodes.start_check.guarded_starts(config, blocks))[:1]
     for path, reason in cases.items():
         monkeypatch.setenv("HYD_ENDPOINT_FILE", str(path))
         reasons = run_episodes.start_check.registration(a, config, name, default_facts_path())
         assert reason in reasons, (path, reasons)
-        with pytest.raises(SystemExit, match=re.escape(reason)):
-            run_episodes.guard_test_set("causal", held, run_episodes.start_check.guarded_starts(config, blocks), reasons)
     monkeypatch.delenv("HYD_ENDPOINT_FILE")
     assert "the model endpoint: the endpoint has no endpoint file of its serving job, which would name its GPU card" in run_episodes.start_check.registration(
         a, config, name, default_facts_path())
 
 
-@pytest.mark.real_start_check
 def test_a_judge_in_the_run_is_held_to_the_serving_file_and_the_card_of_record(tmp_path, monkeypatch, models):
     """A run that judges in the run is of record only when the endpoint file of its judge equals the judge of the serving file and
     names the card of record, by the rule of the model endpoint, and a run that does not judge in the run never reads the judge's file."""
@@ -196,16 +189,12 @@ def test_a_judge_in_the_run_is_held_to_the_serving_file_and_the_card_of_record(t
     assert run_episodes.start_check.registration(without_judge, config, name, default_facts_path()) == []
 
 
-@pytest.mark.real_start_check
-def test_a_development_run_on_another_card_passes_the_guard(tmp_path, monkeypatch, models):
+def test_a_development_run_on_another_card_is_stamped_with_both_reasons(tmp_path, monkeypatch, models):
     sampler = _of_record(tmp_path, monkeypatch)
     monkeypatch.setenv("HYD_ENDPOINT_FILE", str(_endpoint(tmp_path / "run.txt", card=OTHER, sampler=sampler)))
     a, name, config = _parsed("--config", "base", "--agent", "causal", "--starts", "development", "--model", MODEL, "--base-url", URL)
     reasons = run_episodes.start_check.registration(a, config, name, default_facts_path())
     assert any(ledger.card_text(OTHER) in reason for reason in reasons) and any("--starts development" in reason for reason in reasons)
-    _facts, _cycles, blocks = load_world()
-    developed = run_episodes.development_config(config, blocks)
-    run_episodes.guard_test_set("causal", {tuple(c) for c in developed.allowed}, run_episodes.start_check.guarded_starts(config, blocks), reasons)
 
 
 def test_a_run_records_the_card_of_its_endpoint_and_the_sampler_at_its_end(tmp_path, monkeypatch, models):

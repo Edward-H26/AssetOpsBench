@@ -1,7 +1,7 @@
 """The Gymnasium wrapper (CausalDiagnosis.environment.Causal_Diagnosis_Environment.gymnasium_wrapper): determinism, the reward order of the oracle and the do
 nothing policy, truncation at the horizon and at the step cap, the information barrier of the observation text,
-the development starts it plays by default and the guard of the test set, gymnasium's checker, and the import without
-gymnasium."""
+the development starts it plays by default and the test set it plays with starts="test", gymnasium's checker, and the import
+without gymnasium."""
 from CausalDiagnosis.utils.paths import CONFIGS, preset_path
 import json
 import os
@@ -115,8 +115,8 @@ def test_reward_is_zero_before_the_end_and_the_oracle_beats_do_nothing():
 def test_the_gym_of_an_asset_that_declares_no_label_plays_to_a_verdict_without_one(tiny, tiny_recordings):
     """The default label of the gym is the declaration of the episode's asset, so an asset that declares none, as the tiny
     one, plays its episodes with no label, and every start counts as separable, while the rig keeps its own label. The
-    recordings of the tiny asset admit no development split, so its gym plays the test starts, as a registered run would."""
-    gym = HydraulicRigGym(tiny.default_config(), tiny_recordings, starts="test", unregistered=[])
+    recordings of the tiny asset admit no development split, so its gym plays the test starts."""
+    gym = HydraulicRigGym(tiny.default_config(), tiny_recordings, starts="test")
     for seed in range(3):
         _texts, rewards, _flags, info = play(gym, OraclePolicy(gym.env), seed)
         assert gym.label is None and info["verdict"]["grade"] is None and info["verdict"]["separable"] is True
@@ -296,15 +296,15 @@ def test_the_oracle_cost_of_a_seed_is_played_once_and_belongs_to_its_gym():
 @pytest.mark.parametrize("name", ["base", "deterioration"])
 def test_the_default_gym_plays_no_start_of_the_test_set(name):
     """Two hundred episodes of the gym built with its defaults on a preset start on development starts alone, none of the test
-    set that a model agent plays in a registered run alone (development_split.held_starts). The starts are drawn by the reset
-    of the environment the gym plays, without the oracle episode that the gym's own reset adds. The gym plays no clock that
-    charges thinking time, so a preset with one plays in the instant mode of its row, whose reset draws the start before the clock."""
-    from CausalDiagnosis.datasets.splits.development_split import held_starts
+    set (development_split.starts_of_test_set). The starts are drawn by the reset of the environment the gym plays, without the
+    oracle episode that the gym's own reset adds. The gym plays no clock that charges thinking time, so a preset with one plays
+    in the instant mode of its row, whose reset draws the start before the clock."""
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers.layer_2_real_time import THINKING_MODES
 
     config = preset(name)
     gym = HydraulicRigGym(replace(config, clock_mode="instant") if config.clock_mode in THINKING_MODES else config, FACTS, label_of=None)
-    held = held_starts(gym.env.profile, gym.env.blocks)
+    held = set(starts_of_test_set(gym.env.profile, gym.env.blocks))
     played = set()
     for seed in range(200):
         gym.env.reset(seed)
@@ -312,24 +312,28 @@ def test_the_default_gym_plays_no_start_of_the_test_set(name):
     assert held and played and not played & held
 
 
-def test_a_test_start_needs_the_empty_list_of_reasons_of_a_registered_run():
-    """starts="test" without a list of reasons is refused, naming a combination of the test set; with the empty list of a
-    registered run the gym plays the test set."""
-    from CausalDiagnosis.datasets.splits.development_split import held_starts
+def test_starts_test_plays_the_test_set_and_a_test_start_fixed_in_the_configuration():
+    """starts="test" plays the configuration as it is in any run: its reset draws a start of the test set, and a start of the test
+    set fixed in config.start is the start of every episode."""
+    from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
 
-    with pytest.raises(ValueError, match="would play the test combination .* not registered: the wrapper was built outside a registered run"):
-        HydraulicRigGym(EpisodeConfig(), FACTS, starts="test")
-    gym = HydraulicRigGym(EpisodeConfig(), FACTS, starts="test", unregistered=[], label_of=None)
+    gym = HydraulicRigGym(EpisodeConfig(), FACTS, starts="test", label_of=None)
+    held = starts_of_test_set(gym.env.profile, gym.env.blocks)
     gym.env.reset(0)
-    assert tuple(gym.env.initial) in held_starts(gym.env.profile, gym.env.blocks)
+    assert tuple(gym.env.initial) in held
+    fixed = HydraulicRigGym(replace(EpisodeConfig(), start={"combination": list(held[0]), "entry_offset": 0}), FACTS, starts="test",
+                            label_of=None)
+    for seed in range(3):
+        fixed.env.reset(seed)
+        assert tuple(fixed.env.initial) == held[0]
 
 
 def test_a_start_fixed_in_the_configuration_must_be_a_development_start():
-    from CausalDiagnosis.datasets.splits.development_split import development_starts, held_starts
+    from CausalDiagnosis.datasets.splits.development_split import development_starts, starts_of_test_set
 
     probe = make_env(EpisodeConfig(), FACTS)
     development = development_starts(probe.profile, set(probe.blocks))
-    held = sorted(held_starts(probe.profile, probe.blocks))
+    held = sorted(starts_of_test_set(probe.profile, probe.blocks))
     assert development and held
     # the development starts of hyd_1 lie outside the default fault rule, so the configuration's rule takes the start's count
     faulty = probe.config.n_faulty(development[0])

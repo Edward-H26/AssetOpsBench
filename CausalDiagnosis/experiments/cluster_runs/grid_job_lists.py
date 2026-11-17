@@ -50,8 +50,8 @@ from . import run_lines, grid_files
 
 
 # the options of a line that a filler run never plays, with their values
-FILLER_DROPPED = ("--starts", "--replicate", "--fraction", "--start-cap", "--training-variant", "--training-fold", "--training-sample",
-                  "--training-split", "--judge", "--resume")
+FILLER_DROPPED = ("--starts", "--replicate", "--fraction", "--start-cap", "--start-state", "--scenario-ids", "--training-variant",
+                  "--training-fold", "--training-sample", "--training-split", "--judge", "--resume")
 
 
 def filler_arguments(line):

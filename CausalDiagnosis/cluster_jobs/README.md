@@ -6,7 +6,7 @@ Names on this page follow the code and the texts that an agent reads, and the [g
 
 ## What this tree is
 
-A run is a run of record when it starts from a clone of a pushed commit and the start check of the driver finds no reason against it. The check asks that the tree equal its commit, that the commit stand on a branch of origin, that the data of record pass their pins, that the generated tables be those of the tree, and that the serving of each model equal the tracked serving file `CausalDiagnosis/experiments/table_definitions/serving_of_record.json`. `run_ledger/ record-check` asks the rules that need no run line and no endpoint, and prints `RECORD` with the commit, or `DEVELOPMENT` with one `REASON` line for each rule that fails. Any other run carries the stamp development, the driver refuses a model agent on a test combination, and no number of such a run is quoted. The commit that a run records is its record, and a fix becomes a new pushed commit whose rows play again.
+A run is a run of record when it starts from a clone of a pushed commit and the start check of the driver finds no reason against it. The check asks that the tree equal its commit, that the commit stand on a branch of origin, that the data of record pass their pins, that the generated tables be those of the tree, and that the serving of each model equal the tracked serving file `CausalDiagnosis/experiments/table_definitions/serving_of_record.json`. `run_ledger/ record-check` asks the rules that need no run line and no endpoint, and prints `RECORD` with the commit, or `DEVELOPMENT` with one `REASON` line for each rule that fails. Any other run carries the stamp development, and no number of such a run is quoted. The commit that a run records is its record, and a fix becomes a new pushed commit whose rows play again.
 
 ## Before the first job
 
@@ -89,6 +89,14 @@ bash $H/4_after_run/job_record.sh <folder that CD_RUN_LINES_DONE names>
 ```
 
 One development row plays one row of the main table on the development combinations, inside a serving job of the agent model that ends when its line has played. `GRID_ROW` names the row by its agent, `plan_execute`, `agent_as_tool` or `causal`, with `+mcp` for the row with the CausalDiagnosis MCP, and the job plays the grid file of one line that `grid_job_lists.py row` prints. A grid file of `grids` in `GRID_FILE` plays in the same way, and git ignores every file named `local_*.txt`. `GRID_PARALLEL` names the runs in flight of the lines without the wall clock, and the lines with the wall clock play after them one at a time, so that one run alone is alive while a wall-clock episode plays. Before its first line the job checks the digest label of the clone (`OPENING_DIGESTS_OK`), compares the endpoint file with the serving file, and times one chat call (`OPENING_CALL`). The job ends with `CD_RUN_LINES_DONE` and the folder of its runs, and `job_record.sh` writes the accounting record of the job beside the runs once the job has ended. Whoever runs the jobs reads the `run.json` of each run, which carries the stamp development, its `scores.csv` and the `CALL_LATENCY` lines of the log.
+
+A line of a grid file may also name one start state with `--start-state`, which plays with `GRID_STARTS=seeds`, or scenarios of the preset `anchored` with `--scenario-ids`, each one word with the levels or the ids joined by `/`, which `GRID_EXTRA` carries as well through the comma list of `--export`. A requeued job counts its finished runs against the lines of its grid file, which hold no word of `GRID_EXTRA`, so a job that may be requeued names its selector on its lines, and a job with `GRID_PENDING=1` stops before its first line when `GRID_EXTRA` holds a selector. The reference runs of a grid job play the preset of each line without the selector of the line, while a selector of `GRID_EXTRA` reaches them as every other run, so a reference on the start state or the scenarios of a line names its agent on a line of its own, such as `--config base --agent oracle --start-state 3/100/0/130@2`, and the job plays with `GRID_REFERENCE=0`. No cell of a table reads a run of a selector.
+
+```bash
+E=ALL,RUN_AFTER_SERVE=$H/3_run/run_lines.sh,GRID_ROW=causal+mcp
+E=$E,GRID_STARTS=seeds,GRID_SEEDS=1,GRID_EXTRA=--start-state=3/100/0/130@2
+bash $H/submit.sh serve_model.sbatch --export=$E
+```
 
 ### The two further tables on development combinations
 

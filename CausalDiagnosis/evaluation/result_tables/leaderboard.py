@@ -257,7 +257,8 @@ def runs_in_progress(roots):
     as a gym run under the decision rule, except a run of the online loop of GEPA, whose rows carry their GEPA call and which no line of
     the page counts. The training variant sits in run.json too, so the ledger, which the driver writes before the first episode,
     carries it, and a running run of a trained agent is left out as its finished run would be, and never read as the agent as
-    released still running."""
+    released still running. A run of chosen starts, which the seeds block of its ledger names (pooling_rules.chosen_starts), is left
+    out as its finished run is, so it marks no line still running."""
     found = []
     for root in roots:
         for scores in sorted(Path(root).glob("*/scores.csv")):
@@ -265,8 +266,11 @@ def runs_in_progress(roots):
             rows = [] if (run_dir / "run.json").exists() or not match else read_rows(run_dir)
             if not rows or rows[0].get("gepa_call") not in (None, ""):
                 continue
+            record = read_json(run_dir / ledger.LEDGER, {}) or {}
+            if pooling_rules.chosen_starts(record.get("seeds") or {}):
+                continue
             year, month, day, hour, minute, second = match.groups()
-            configuration = (read_json(run_dir / ledger.LEDGER, {}) or {}).get("configuration") or {}
+            configuration = record.get("configuration") or {}
             found.append({**rows[0], "run": run_dir.name, "mode": "gym", "abstention_rule": DRIVER_LEVELS["abstention_rule"],
                           "training_variant": configuration.get("training_variant") or AS_RELEASED,
                           "started": f"{year}-{month}-{day}T{hour}:{minute}:{second}", "state": progress_state(run_dir)})
@@ -491,9 +495,9 @@ STATUS_LINE = ("This page is a status board of the runs and no page of results, 
                "are those of `MAIN_TABLES.md` beside it.")
 
 
-def page(runs, since, running, left_out=()):
-    """The Markdown of the leaderboard from the rows of RUNS.csv, the cutoffs, the runs in progress and the runs that tables_from_runs/
-    left out so that no two runs pool, as (folder, reason)."""
+def page(runs, since, running, left_out=(), chosen_starts=()):
+    """The Markdown of the leaderboard from the rows of RUNS.csv, the cutoffs, the runs in progress, the runs that tables_from_runs/
+    left out so that no two runs pool, as (folder, reason), and the runs of chosen starts that no table reads, by folder."""
     placed, chosen = choose(runs, since, running)
     models = list(chosen)
     judges = sorted({run["judge_model"] for _, run in placed if run.get("judge_model")})
@@ -513,7 +517,8 @@ def page(runs, since, running, left_out=()):
            f"second scorer (judge models: {', '.join(judges) or 'none yet'})",
            f"- Runs counted: {cutoffs}, by the start time of the run",
            f"- Written on {date.today().isoformat()} from {sum(len(run['run'].split()) for _, run in placed)} counted run folders",
-           *(f"- Left out of every table: `{folder}`, {reason}" for folder, reason in left_out), "",
+           *(f"- Left out of every table: `{folder}`, {reason}" for folder, reason in left_out),
+           *([f"- Left out of every table: {pooling_rules.chosen_starts_line(chosen_starts, quote='`')}"] if chosen_starts else []), "",
            "Pass is the verifier's pass with its 95 percent interval from a bootstrap that resamples start combinations, which on the lines of En4 also needs the read gate of the verifier scope all. The judge success rate is the share of episodes the judge "
            "passes, shown once every episode of the run has a verdict. The cost ratio is the mean over the episodes of the cost, prices "
            "plus downtime, over the cost of the oracle policy on the same seed. The delay of an episode is the larger of its "
@@ -546,12 +551,13 @@ def main(argv):
     pooling_rules.select_commit(a.commit or (recorded.get("parameters") or {}).get("commit"))
     runs, running = read_runs(a.aggregate), runs_in_progress(a.runs)
     left_out = sorted((folder, reason) for root in a.runs for folder, reason in pooling_rules.pooling_left_out(root).items())
+    chosen_starts = sorted(name for root in a.runs for name in pooling_rules.chosen_starts_left_out(root))
     # the kind of the root behind the tables as the index of tables_from_runs/ records it, else of the folders searched: a page of a
     # development root opens with the banner and never lands in the results folder
     kinds = {recorded.get("root_kind"), *(pooling_rules.root_kind(root) for root in a.runs)}
     kind = "development" if "development" in kinds else recorded.get("root_kind")
     pooling_rules.refuse_results_folder_of_kind(kind, out)
-    text = "\n".join([*pooling_rules.head_lines(kind, recorded.get("record")), page(runs, since, running, left_out)])
+    text = "\n".join([*pooling_rules.head_lines(kind, recorded.get("record")), page(runs, since, running, left_out, chosen_starts)])
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text + "\n", encoding="utf-8")
     if index.exists():

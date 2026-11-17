@@ -20,7 +20,7 @@ def run_online(a, argv, settings, runner, config, price_table, stream, reflectio
     runner.label = drivers.run_record.run_label(runner.config_name, f"{run_folders.MODE}_{a.card}_{a.agent}_{a.training_variant}_f{a.training_fold}_{a.model}")
     settings.seeds_list = list(stream)
     # the reasons of the start check before run.json, so that a loop that is not registered carries the stamp, as a run of
-    # run_episodes/ does: the runner alone asks the tree at its first episode, after run.json of the loop is made
+    # run_episodes/ does
     runner.unregistered = drivers.start_check.registration(settings, config, runner.config_name, runner.facts_path)
     meta = drivers.run_meta(settings, runner, config, price_table, [], None)
     meta.update({"mode": run_folders.MODE, "gepa": loop_settings.gepa_meta(a, config.asset_id)})

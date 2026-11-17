@@ -11,8 +11,8 @@ scenarios
 tool_servers
 """
 
-# The agent kinds. model_agent: the agent calls a model (an agent without the flag counts as one, so the guard of the test set
-# and the serving check hold for it); route: the route of its model calls; surfaces: the tool surfaces it plays; trained: it
+# The agent kinds. model_agent: the agent calls a model (an agent without the flag counts as one, so the serving check holds for
+# it); route: the route of its model calls; surfaces: the tool surfaces it plays; trained: it
 # enters the training tables; paper_paradigm: it is a paradigm of the paper's tables; modules: the modules through which the
 # driver reaches its code, which the test of the agent files imports alone in a fresh interpreter.
 AGENTS = {

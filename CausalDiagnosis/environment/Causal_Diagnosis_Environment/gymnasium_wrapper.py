@@ -11,9 +11,7 @@ signal. A verifier that could not run gives no reward: the tuple then carries 0.
 truncated set and info["reward"] is None, so that a trainer can drop the episode instead of scoring it zero.
 
 The wrapper plays the development starts of the asset by default (development_split.development_starts), so a trainer
-never meets a start of the test set. starts="test" opens the test set to a caller that passes the reasons why its run is
-not registered, as the driver gives them, and an empty list means a registered run; the default list holds one reason,
-so a wrapper built outside a registered run is refused a test start (development_split.guard_starts).
+never meets a start of the test set, and starts="test" plays the configuration's own start set, the test set of a preset.
 
 gymnasium is optional and imported lazily. With it installed the class is a gymnasium.Env with Text spaces; without
 it the class is a duck typed stand in with the same reset and step methods. The package group rl of pyproject.toml
@@ -23,7 +21,7 @@ import json
 import string
 
 from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
-from CausalDiagnosis.datasets.splits.development_split import development_starts, guard_starts, held_starts, on_starts
+from CausalDiagnosis.datasets.splits.development_split import development_starts, on_starts
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import briefing
 
 from CausalDiagnosis.environment.reference_policies.policies import OraclePolicy
@@ -48,7 +46,6 @@ except ImportError:
 TEXT_MAX_LENGTH = 2**20  # a declared bound for the Text spaces, which describe the interface and are never sampled
 TRUNCATION_REASONS = ("horizon", "max_steps")  # ends by a limit of the clock or of the step cap, not by the state of the rig
 STARTS = ("development", "test")
-OUTSIDE_REGISTERED_RUN = "the wrapper was built outside a registered run"
 
 
 def parse_action(action):
@@ -86,17 +83,14 @@ def oracle_cost(env, seed):
     return verify(env.log, released_from_env(env), env.oracle(), cost_oracle=None)["cost"]
 
 
-def played_config(config, facts_path, starts, unregistered):
+def played_config(config, facts_path, starts):
     """The configuration a wrapper plays. starts="development": config narrowed to the development starts of its asset, within
-    config.allowed when that is set, and a start fixed in config.start must be one of them. starts="test": config as it is,
-    refused by guard_starts when a start it can draw lies in the test set and unregistered names a reason."""
+    config.allowed when that is set, and a start fixed in config.start must be one of them. starts="test": config as it is."""
     if starts not in STARTS:
         raise ValueError(f"starts must be one of {', '.join(STARTS)}, not {starts!r}")
-    env = make_env(config, facts_path)
     if starts == "test":
-        playable = [tuple(config.start["combination"])] if config.start is not None else env.candidates
-        guard_starts(playable, held_starts(env.profile, env.blocks), unregistered, "the wrapper")
         return config
+    env = make_env(config, facts_path)
     try:
         development = development_starts(env.profile, set(env.blocks))
     except ValueError as e:  # development_split.SplitRefused
@@ -134,11 +128,11 @@ class HydraulicRigGym(_EnvBase):
     credits a declaration of insufficient evidence that cites a reading on a start that both mark inseparable;
     with label_of None, or a label of None, every start counts as separable.
 
-    starts is "development" (the default) or "test", and unregistered the reasons why the caller's run is not registered,
-    by default one; played_config gives the configuration the gym plays, which config then holds.
+    starts is "development" (the default) or "test"; played_config gives the configuration the gym plays, which config then
+    holds.
     """
 
-    def __init__(self, config, facts_path, seed_offset=0, label_of=ports.start_label, starts="development", unregistered=None):
+    def __init__(self, config, facts_path, seed_offset=0, label_of=ports.start_label, starts="development"):
         from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers.layer_2_real_time import THINKING_MODES
         if config.clock_mode in THINKING_MODES:
             raise ValueError(f"the clock mode {config.clock_mode} charges thinking time, which an episode played in process does not "
@@ -146,8 +140,7 @@ class HydraulicRigGym(_EnvBase):
         super().__init__()
         self.facts_path = str(facts_path)
         self.starts = starts
-        self.config = config = played_config(config, self.facts_path, starts,
-                                             [OUTSIDE_REGISTERED_RUN] if unregistered is None else unregistered)
+        self.config = config = played_config(config, self.facts_path, starts)
         self.seed_offset = seed_offset
         self.label_of = label_of
         self.label = None
