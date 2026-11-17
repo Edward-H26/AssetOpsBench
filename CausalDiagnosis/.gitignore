@@ -9,6 +9,8 @@ results/published_runs/
 docs/walkthroughs/
 # the private file of the launchers in every run folder, which holds paths of this machine and credentials
 launch_private.json
+# the private file of every run folder, which holds the job and host of every start, the raw command and the endpoint files
+job.json
 # the calibration reports, the fitted models and the grade table, computed on the machine that uses them
 results/calibration_*.md
 mcp_servers/Causal_Diagnosis_MCP/offline/models.json
