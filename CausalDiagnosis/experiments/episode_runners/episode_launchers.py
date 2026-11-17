@@ -2,9 +2,9 @@
 with their tool sets, the configuration presets and price tables, the per episode launcher files, the run folder files
 and the columns of scores.csv.
 
-The agent runners spawn a server from its launcher path, as ``python -m <dotted path>`` from the repository root when the
-path lies inside the repository and as ``python <launcher path>`` otherwise, with almost no environment variables, so a
-launcher cannot rely on PYTHONPATH or on an installed package. Each episode folder therefore gets one small launcher file
+The agent runners spawn a server from its launcher path as ``python -I <launcher path>``, whether the run folder lies inside
+the repository or outside it, with almost no environment variables, so a launcher cannot rely on PYTHONPATH or on an
+installed package. Each episode folder therefore gets one small launcher file
 per server that puts the fork's ``src`` on the import path itself and binds the server process to the folder's state
 file, the same binding that ``CausalDiagnosis/mcp_servers/Environment_Actions_MCP/launcher.py`` and ``CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/launcher.py`` use.
 """

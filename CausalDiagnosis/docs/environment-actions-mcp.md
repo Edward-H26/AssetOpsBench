@@ -39,8 +39,8 @@ The runner turns each registered path into a command in `_make_stdio_params`:
 
 | Registered path | Command | Working directory |
 | --- | --- | --- |
-| Inside the fork | `python -m <dotted module path>` | The fork root |
-| Outside the fork | `python <launcher path>` | The working directory of the driver |
+| A module of a package of the fork, with `__init__.py` in every folder from the fork root down to it, as `src/servers/<name>/main.py` of AssetOpsBench | `python -m <dotted module path>` | The fork root |
+| Any other file, such as the launcher of an episode, inside or outside the fork | `python -I <launcher path>` | The working directory of the driver |
 
 The command is the literal `python` found on `PATH`, so the driver has to run with the environment's `bin` first on `PATH`, where `python` is an interpreter with the mcp package. Inside the fork the module path is built from folder names, so the driver turns the dots and slashes of a run label into underscores and refuses an `--out` folder inside the fork with a dot in its path.
 

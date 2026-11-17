@@ -260,12 +260,27 @@ def _parse_json(raw: str) -> dict | None:
 # ── MCP protocol helpers ──────────────────────────────────────────────────────
 
 
+def _package_module(server: Path) -> str | None:
+    """The dotted name of a server file that is a module of a regular package of the repo, ``__init__.py`` in every folder from
+    the repo root down to it, so that ``python -m`` from the root imports it with its package; None for any other file, such as
+    a launcher that a driver writes into the folder of an episode, which is no package wherever its run folder lies."""
+    try:
+        rel = server.relative_to(_REPO_ROOT)
+    except ValueError:
+        return None
+    if not all((_REPO_ROOT / folder / "__init__.py").is_file() for folder in rel.parents[:-1]):
+        return None
+    return str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
+
+
 def _make_stdio_params(server: Path | str) -> "StdioServerParameters":
     """Build StdioServerParameters for a server spec.
 
     - str  → entry-point name; invoked as ``uv run <name>`` from the repo root.
-    - Path → invoked as ``python -m module.path`` when under the repo root
-             (supports relative imports), or directly otherwise.
+    - Path → a module of a package of the repo (``_package_module``) is invoked
+             as ``python -m module.path`` from the repo root (supports relative
+             imports); any other file, such as the launcher of an episode inside
+             or outside the repo, as ``python -I <path>``.
     """
     from mcp import StdioServerParameters
 
@@ -275,24 +290,23 @@ def _make_stdio_params(server: Path | str) -> "StdioServerParameters":
             args=["run", server],
             cwd=str(_REPO_ROOT),
         )
-    try:
-        rel = server.relative_to(_REPO_ROOT)
-        module = str(rel.with_suffix("")).replace("/", ".").replace("\\", ".")
+    module = _package_module(server)
+    if module is not None:
         return StdioServerParameters(
             command="python",
             args=["-m", module],
             cwd=str(_REPO_ROOT),
         )
-    except ValueError:
-        return StdioServerParameters(command="python", args=["-I", str(server)])  # a launcher runs only isolated
+    return StdioServerParameters(command="python", args=["-I", str(server)])  # a launcher runs only isolated
 
 
 @contextlib.contextmanager
 def _server_errlog(server_path: Path | str, server_name: str | None):
     """Where a server started here writes its standard error: for a launcher file, the error log of its episode folder that
     CausalDiagnosis.agents.utils.mcp_sessions.open_sessions keeps for the servers it starts, so an unanswered tool call can be read against the
-    server's own record; for a server named by its package entry point, the caller's standard error."""
-    if not Path(str(server_path)).is_file():
+    server's own record; for a server named by its package entry point or started as a module of a package of the repo
+    (_package_module), the caller's standard error, so that no log lands in the source tree."""
+    if not Path(str(server_path)).is_file() or _package_module(Path(str(server_path))) is not None:
         yield sys.stderr
         return
     from CausalDiagnosis.agents.utils.mcp_sessions import error_log
