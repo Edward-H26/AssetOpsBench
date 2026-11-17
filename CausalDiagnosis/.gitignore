@@ -7,6 +7,8 @@ datasets/**/data/*
 results/runs/
 results/published_runs/
 docs/walkthroughs/
+# the private file of the launchers in every run folder, which holds paths of this machine and credentials
+launch_private.json
 # the calibration reports, the fitted models and the grade table, computed on the machine that uses them
 results/calibration_*.md
 mcp_servers/Causal_Diagnosis_MCP/offline/models.json
