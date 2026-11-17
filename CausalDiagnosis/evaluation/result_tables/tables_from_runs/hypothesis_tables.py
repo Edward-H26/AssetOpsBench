@@ -198,8 +198,8 @@ def helps_on_every_measure(row):
 # ----- the families of the full environment: H1 on the top layer, the full environment against the base layer, the schedule of candidate plans -----
 def h1_top_cells(episodes, ctx):
     """The comparisons of H1 asked again on the preset of training, where every big layer is on, before their correction, per model
-    and tool surface, from cells that exist: the rows without the MCP are the top rung of the ladder and the rows with it the rows
-    without training of the training table. Top-1 and pass, and the floor of each reference."""
+    and tool surface, from cells that exist: the rows without the MCP are the reference lines without it on all six big layers and the rows with it
+    the part environment, both on the server of grid_agents.txt. Top-1 and pass, and the floor of each reference."""
     top = [e for e in episode_selection.agent_episodes(episodes) if e.get("config") == H1_TOP_PRESET and episode_selection.at_main_levels(e)]
     cells = {}
     for (model, surface), eps in cell_statistics.groups(top, "model", "surface").items():

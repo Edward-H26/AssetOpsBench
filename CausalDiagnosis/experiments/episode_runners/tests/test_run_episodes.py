@@ -542,7 +542,7 @@ def test_the_driver_refuses_models_fitted_on_another_data_file_than_the_run_read
 def _stand_in_endpoint(fixed_reply=None):
     """A local OpenAI compatible endpoint that answers every chat completion with the next reply of the scripted plan
     (or with one fixed reply), so the model agents run through the real client, request and response path without a
-    model."""
+    model, and lists one model without a context length, as a router does, for the judge that reads its served context."""
     script = scripted_wiring_check.ScriptedBackend()
     script.start_episode()
     requests = []
@@ -564,6 +564,15 @@ def _stand_in_endpoint(fixed_reply=None):
                      "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}}
             data = json.dumps(reply).encode()
             self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):  # noqa: N802 - the http.server hook name
+            listed = self.path.rstrip("/").endswith("/models")
+            data = json.dumps({"object": "list", "data": [{"id": "stand-in", "object": "model"}]} if listed else {}).encode()
+            self.send_response(200 if listed else 404)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()

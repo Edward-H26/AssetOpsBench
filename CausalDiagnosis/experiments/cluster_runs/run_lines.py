@@ -174,7 +174,7 @@ def ablations():
 
 def misdiagnosis_price():
     """(comment, line) of the part misdiagnosis_price: the arms of APPENDED_ABLATIONS, the ablation L1 with the misdiagnosis price
-    at the budget on the place that design.ABLATION_PLACES gives it, whose rows the top rung of the ladder plays on that preset."""
+    at the budget on the place that design.ABLATION_PLACES gives it, whose rows the reference lines without the MCP play on that preset."""
     return [entry for name in APPENDED_ABLATIONS for entry in ablation(name)]
 
 

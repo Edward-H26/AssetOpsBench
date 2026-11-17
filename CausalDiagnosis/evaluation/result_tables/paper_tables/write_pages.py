@@ -16,7 +16,7 @@ def partial_sentence(read):
     test, and for a cut look below one replicate the estimates without intervals (counting.fraction_of_record)."""
     plan = aggregate.registered_of({})
     record = plan["counting"]["fraction_of_record"]
-    sentence = (f"Every line reads the fraction {read} of the test set, below the fraction of record {record}. No pre-registered test is run "
+    sentence = (f"Every line reads the fraction {read} of the test set, below the fraction of record {record}. No test is run "
                 "at such a read, so the table reports no p value and no Holm decision.")
     if aggregate.read_of(read, plan)["kind"] == "cut":
         sentence += " A read below one replicate takes its start combinations for coverage, so its cells print estimates without intervals."
@@ -38,15 +38,15 @@ def counting_sentences(sheet, table):
         tex.append(latex_page.tex_text(partial_sentence(read)))
     if any(state == table_cells.REFUSED for _, state, _, _, _ in marked):
         limit = aggregate.registered_of({})["counting"]["max_unscored_share"]
-        sentence = (f"A line whose cells read refused has more than {100 * limit:g} percent of its episodes unscored. The pre-registered counting "
+        sentence = (f"A line whose cells read refused has more than {100 * limit:g} percent of its episodes unscored. The counting "
                     "rule refuses such a line, so its cells and its tests are not reported.")
         page.append(sentence)
         tex.append(latex_page.tex_text(sentence))
     short = [(line, counts, held) for line, state, counts, _, held in marked if state == table_cells.INCOMPLETE]
     # a read below the fraction of record runs no test, so its incomplete lines enter no Holm procedure
-    holm = "" if read else (" Under the pre-registered counting rule, the tests of such a line are not run and are assigned a p value of one "
+    holm = "" if read else (" Under the counting rule, the tests of such a line are not run and are assigned a p value of one "
                             "in the Holm procedure.")
-    holm_many = "" if read else " Under the pre-registered counting rule, their tests are not run and are assigned a p value of one in the Holm procedure."
+    holm_many = "" if read else " Under the counting rule, their tests are not run and are assigned a p value of one in the Holm procedure."
     holm_tex, holm_many_tex = (latex_page.tex_text(text).replace(" p value", " $p$ value") for text in (holm, holm_many))
     form = "(incomplete, k of n, replicates H)" if any(held for _, _, held in short) else "(incomplete, k of n)"
     unknown = ("" if all(planned is not None for _, (_, planned), _ in short) else
@@ -77,7 +77,7 @@ def counts_table(sheet):
                                          table_cells.plain(f"{state}, replicates {held}" if held else state)])
              for label, marked in sheet.marked.items() for line, state, counts, share, held in marked]
     return table_cells.MainTable("counts", "Lines that ran fewer episodes than planned or are refused",
-                     "Every line of the tables above that ran fewer episodes than planned or that the pre-registered counting rule refuses, with "
+                     "Every line of the tables above that ran fewer episodes than planned or that the counting rule refuses, with "
                      "the table it stands in, the episodes it ran and planned, and the share of its episodes that are unscored. The tests that read "
                      "these lines are not run and are assigned a p value of one in the Holm procedure.",
                      ["Table", "Line", "Run", "Planned", "Unscored", "State"], "llcccc", [lines])

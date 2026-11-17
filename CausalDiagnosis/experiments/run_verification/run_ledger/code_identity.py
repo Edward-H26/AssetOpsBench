@@ -159,7 +159,7 @@ def code_files(meta):
     no longer equals the manifest's (a file copied over the upload), and the full SHA-256 of every file whose prefix
     run.json keeps, so the ledger hashes exactly the files the run recorded."""
     paths = sorted(recorded_code(meta))
-    commit, dirty = git_state(paths)
+    commit, dirty = git_state(paths, run_data.ROOT)
     files = {path: hashing.sha256_of(run_data.ROOT / path) for path in paths}
     manifest = run_data.ROOT / UPLOAD_MANIFEST
     uploaded = hashing.read_manifest(manifest) if manifest.is_file() else None

@@ -48,7 +48,7 @@ No episode contributes to this table yet.
 - What varies: the price table on all six big layers, En6: the full tier priced far above the rest (full_tier_high) against the default table, for the three agents without the CausalDiagnosis MCP
 - Hypothesis: conclusions on cost hold under the alternative tables
 - Metric: cost, normalized cost and pass per table, the paired difference of normalized cost and pass against default, Holm over the normalized cost differences
-- What a result would mean: the sensitivity the preregistration promised
+- What a result would mean: the sensitivity of the conclusions on cost to the price table
 
 | agent | model | diagnostics_server | prices | n | cost | cost_low | cost_high | cost_se | cost_n | cost_normalized | cost_normalized_low | cost_normalized_high | cost_normalized_se | cost_normalized_n | pass | pass_low | pass_high | pass_se | pass_n | cost_normalized_diff | cost_normalized_diff_low | cost_normalized_diff_high | cost_normalized_diff_se | cost_normalized_p | pass_diff | pass_diff_low | pass_diff_high | pass_diff_se | pass_p | status | pairs | clusters | holm_p | reject |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -589,4 +589,4 @@ No episode contributes to this table yet.
 
 No episode contributes to this table yet.
 
-The registered analysis file of these tables has the SHA-256 1893ecdf86d258349e8678b8fc7e585cce3477128d02343bbfb18891300bab8c.
+The registered analysis file of these tables has the SHA-256 56b566684da88ad8c398f315d683cead226d7f63117a3c61b3cfa2b4a7cba7e6.

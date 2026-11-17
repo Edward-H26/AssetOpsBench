@@ -1,9 +1,9 @@
 """The files a run loads (CausalDiagnosis/experiments/episode_runners/run_episodes/ over the lists of run_identity_file_lists.py): the modules through which the
 driver reaches each agent load only files of the list of that agent or of the harness list, the driver alone, all that a run of
-a reference policy or of static loads, loads no file of an agent list, a run whose driver process loaded a file of the roots
-outside every list stops before its run.json, and a run that ends well records the listed files it loaded. So a change of the
-files of one agent never changes the code identity of a run of another agent or of a reference policy. Run folders go under
-pytest's tmp_path, outside the repository."""
+a reference policy or of static loads, loads no file of an agent list, a run whose agent cannot be imported stops before its run
+folder, a run whose driver process loaded a file of the roots outside every list stops before its run.json, and a run that ends
+well records the listed files it loaded. So a change of the files of one agent never changes the code identity of a run of
+another agent or of a reference policy. Run folders go under pytest's tmp_path, outside the repository."""
 import importlib.util
 import json
 import os
@@ -53,6 +53,22 @@ def test_the_driver_alone_loads_no_file_of_an_agent_list():
     assert DRIVER.replace(".", "/") + "/__init__.py" in loaded
     assert {path: run_identity_file_lists.lists_of(path) for path in loaded
             if any(name.startswith(run_identity_file_lists.AGENT_LIST) for name in run_identity_file_lists.lists_of(path))} == {}
+
+
+@needs_a_run
+@pytest.mark.parametrize("agent", sorted(set(run_episodes.AGENT_ENTRY_MODULES) & set(run_episodes.MODEL_AGENTS)))
+def test_a_run_whose_agent_cannot_be_imported_stops_before_its_run_folder(agent, tmp_path, monkeypatch):
+    """The driver loads the modules of the agent of a run once, where the run takes its agent: a planted broken import of one of
+    them stops the run there, before its run folder and its first episode, even when the package was loaded by an earlier run."""
+    modules = run_episodes.AGENT_ENTRY_MODULES[agent]
+    for name in modules:
+        importlib.import_module(name)
+    monkeypatch.setitem(sys.modules, modules[-1], None)  # an import of the module raises ModuleNotFoundError from here on
+    monkeypatch.setenv("API_KEY", "stand-in-key")
+    out = tmp_path / "runs"
+    with pytest.raises(ImportError, match=re.escape(modules[-1])):
+        run_episodes.main(["--config", "static", "--agent", agent, "--starts", "development", "--seeds", "1", "--out", str(out)])
+    assert not out.exists()
 
 
 def test_the_rule_names_a_loaded_file_of_the_roots_that_lies_in_no_list(tmp_path, monkeypatch):

@@ -99,7 +99,7 @@ def declare_price_table():
     return Table("A9", "the price table on all six big layers, En6: the full tier priced far above the rest (full_tier_high) against the default table, for the three agents without the CausalDiagnosis MCP",
                  "conclusions on cost hold under the alternative tables",
                  "cost, normalized cost and pass per table, the paired difference of normalized cost and pass against default, Holm over the normalized cost differences",
-                 "the sensitivity the preregistration promised", ablation_tables.A9_COLUMNS, ablation_tables.table_a9,
+                 "the sensitivity of the conclusions on cost to the price table", ablation_tables.A9_COLUMNS, ablation_tables.table_a9,
                  rule="Read whether the ordering of agents by normalized cost holds under every price table.")
 
 

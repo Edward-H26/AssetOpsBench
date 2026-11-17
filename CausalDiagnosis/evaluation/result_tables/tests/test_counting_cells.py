@@ -13,7 +13,7 @@ from CausalDiagnosis.evaluation.result_tables import paper_tables as main_tables
 from CausalDiagnosis.experiments.table_definitions.experiment_tables import AGENT_ROWS, PE, PE_MCP
 from CausalDiagnosis.evaluation.result_tables.tests.test_paper_tables import FOLDERS, _aggregated, _caption, _every_table, _six_rows, _table, _two_folds  # noqa: F401  _two_folds, the autouse fixture of the folds
 
-REFUSED_SENTENCE = ("A line whose cells read refused has more than 2 percent of its episodes unscored. The pre-registered counting rule refuses "
+REFUSED_SENTENCE = ("A line whose cells read refused has more than 2 percent of its episodes unscored. The counting rule refuses "
                     "such a line, so its cells and its tests are not reported.")
 SHORT_TEX = r"$^\ddagger$"
 
@@ -109,7 +109,7 @@ def test_an_incomplete_row_keeps_its_cells_and_carries_its_played_and_planned_ep
     assert [row[1:] for row in rows if row[0] == marked] == [row[1:] for row in plain_rows if row[0] == f"+ {main_tables.MCP}"][:1]
     assert sum(row[0] == marked for row in rows) == 1
     caption = _caption(page, "agents")
-    assert caption.endswith("A line marked (incomplete, k of n) ran k of its n planned episodes. Under the pre-registered counting rule, the tests "
+    assert caption.endswith("A line marked (incomplete, k of n) ran k of its n planned episodes. Under the counting rule, the tests "
                             "of such a line are not run and are assigned a p value of one in the Holm procedure.")
     tex = _tex(results)
     assert rf"\quad + {main_tables.MCP}{SHORT_TEX}" in tex
@@ -167,7 +167,7 @@ def test_a_line_of_the_test_set_short_of_a_replicate_carries_the_replicates_it_h
     marked = f"+ {main_tables.MCP} (incomplete, 5 of 25, replicates 1)"
     assert sum(row[0] == marked for row in _table(page, "agents")) == 1
     assert ("A line marked (incomplete, k of n, replicates H) ran k of its n planned episodes in runs of the replicates H of the test set. "
-            "Under the pre-registered counting rule") in _caption(page, "agents")
+            "Under the counting rule") in _caption(page, "agents")
     assert f"5 of 25 with the replicates 1 for {PE_MCP[2]}." in _tex(results)
     assert ["tab:agents", PE_MCP[2], "5", "25", "0.0%", "incomplete, replicates 1"] in _table(page, "counts")
 
@@ -182,7 +182,7 @@ def test_every_line_of_a_partial_read_is_marked_and_runs_no_test(tmp_path):
     page = _rewritten(results, "AGENTS", lambda row: row.update(read="partial 0.4"))
     assert all(row[0].endswith(" (partial 0.4)") for row in _table(page, "agents"))
     caption = _caption(page, "agents")
-    assert ("Every line reads the fraction 0.4 of the test set, below the fraction of record 1.0. No pre-registered test is run at such a "
+    assert ("Every line reads the fraction 0.4 of the test set, below the fraction of record 1.0. No test is run at such a "
             "read, so the table reports no p value and no Holm decision.") in caption and "without intervals" not in caption
     assert "tab:counts" not in page and SHORT_TEX not in _tex(results) and "Holm procedure" not in caption
     page = _rewritten(results, "AGENTS", lambda row: row.update(read="partial 0.05"))
