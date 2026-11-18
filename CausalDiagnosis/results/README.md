@@ -394,7 +394,7 @@ Reading rule: Read the share restored with no unnecessary order beside pass; the
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
-## H1_TOP_pairs: the comparisons of H1 on the preset of training, all six big layers, from cells that exist: the rows without the MCP of the top layer and the rows with it without training of the training table
+## H1_TOP_pairs: the comparisons of H1 on the preset of training, all six big layers, from cells that exist: the rows without the MCP from the reference lines without it on all six big layers and the rows with it from the part environment of the agents grid, both on a server without LoRA adapters
 
 Hypothesis: the CausalDiagnosis agent does better than each common design on top-1 and pass where every big layer is on
 

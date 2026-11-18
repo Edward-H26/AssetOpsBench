@@ -513,7 +513,7 @@ No episode contributes to this table yet.
 
 ## H1_TOP_pairs
 
-- What varies: the comparisons of H1 on the preset of training, all six big layers, from cells that exist: the rows without the MCP of the top layer and the rows with it without training of the training table
+- What varies: the comparisons of H1 on the preset of training, all six big layers, from cells that exist: the rows without the MCP from the reference lines without it on all six big layers and the rows with it from the part environment of the agents grid, both on a server without LoRA adapters
 - Hypothesis: the CausalDiagnosis agent does better than each common design on top-1 and pass where every big layer is on
 - Metric: the paired differences of top-1 and pass with their 95 percent intervals, standard errors and exact sign flip p values, Holm run once with the family h2_prime over the registered size of their group agents_environment on the same model and tool surface, a test not run entering at one, and the floor of each reference
 - What a result would mean: the family h1_top, primary with h2_prime in the group agents_environment, which asks the question of the agent again on the full environment

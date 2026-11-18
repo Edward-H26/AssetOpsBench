@@ -2,7 +2,7 @@
 aggregated by tables_from_runs/, so that no recorded value enters: the six rows of design.AGENT_ROWS on layer 0 in their order
 with the oracle policy and the declaring policy under them, the still running and judge pending cells, the pass rate with
 its interval clustered by start, the cutoff and the episode set, the environment table on the presets of design.LADDER with
-the three agents without the CausalDiagnosis MCP, the ablation lines with the presets they follow, the runs that the page
+the three agents with the CausalDiagnosis MCP, the ablation lines with the presets they follow, the runs that the page
 leaves out with their reason, and the loud failure on a label, switch or preset that no row or ablation maps."""
 from CausalDiagnosis.utils.paths import CLUSTER_JOBS, RESULTS, preset_files
 import json

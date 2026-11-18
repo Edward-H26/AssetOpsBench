@@ -25,9 +25,10 @@ def _fresh(code, cwd=ROOT):
 
 def _fork_files(paths):
     """The files of the fork among the files under the root that a fresh interpreter loaded: the files of the interpreter's own
-    environment are left out, since the documented setup puts the .venv inside the root."""
+    environment outside the listed roots are left out, since the documented setup puts the .venv inside the root."""
     environment = Path(sys.prefix).resolve()
-    return [path for path in paths if (ROOT / path).is_file() and not (ROOT / path).resolve().is_relative_to(environment)]
+    return [path for path in paths if (ROOT / path).is_file()
+            and (run_identity_file_lists.in_roots(path) or not (ROOT / path).resolve().is_relative_to(environment))]
 
 
 def test_the_files_of_a_port_take_their_lists_by_rules_that_name_no_asset():
