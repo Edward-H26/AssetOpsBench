@@ -1,5 +1,6 @@
-"""The setup command of a clone (CausalDiagnosis/cluster_jobs/0_setup/setup.sh) and the guard of serve_model.sbatch against a model service that exits while
-the script of the job runs. The scripts run under stand-ins for sbatch and squeue, as in test_cluster_jobs.py."""
+"""The setup command of a clone (CausalDiagnosis/cluster_jobs/0_setup/setup.sh), the setting of the page that keeps its digest job and every serving job
+off the nodes of another processor kind, and the guard of serve_model.sbatch against a model service that exits while the script of the job runs.
+The scripts run under stand-ins for sbatch, squeue and sinfo, as in test_cluster_jobs.py."""
 from CausalDiagnosis.utils.paths import CLUSTER_JOBS, ROOT
 import re
 import subprocess
@@ -12,10 +13,10 @@ SERVING = '{"format": 1, "agent": {"hub_id": "org/agent"}, "judge": {"hub_id": "
 SETTINGS = {"ACCOUNT": "acct", "PARTITION_CPU": "cpu", "PARTITION_GPU": "gpu"}
 
 
-def _setup_tree(tmp_path, queue=""):
-    """A tree with the scripts of the chain and the serving file; sbatch numbers its jobs from 101 and writes each call as one
-    line of calls.txt; squeue prints QUEUE for any job."""
-    tree, root, fake, env = _tree(tmp_path, CHAIN)
+def _setup_tree(tmp_path, queue="", scripts=()):
+    """A tree with the scripts of the chain, the scripts named and the serving file; sbatch numbers its jobs from 101 and writes
+    each call as one line of calls.txt; squeue prints QUEUE for any job."""
+    tree, root, fake, env = _tree(tmp_path, (*CHAIN, *scripts))
     (tree / SERVING_FILE.relative_to(ROOT)).write_text(SERVING, encoding="utf-8")
     calls, counter = tmp_path / "calls.txt", tmp_path / "counter"
     counter.write_text("100", encoding="utf-8")
@@ -125,6 +126,48 @@ def test_setup_status_names_a_job_still_in_the_queue(tmp_path):
     _stand_in(tmp_path / "fakebin", "squeue", 'echo PENDING')
     done = _setup(tmp_path, tree, env, "status")
     assert done.returncode == 1 and re.search(r"^image \d+ PENDING$", done.stdout, re.M)
+
+
+def test_the_setting_that_the_page_names_keeps_the_digest_job_and_every_serving_job_off_the_nodes_of_another_processor_kind(tmp_path):
+    """The page keeps a job that plays lines with a served model on the processor kind of the node that wrote the digest label of
+    its clone, since its opening check stops on other digests, and names the setting of env.sh that keeps every job off the nodes
+    of another kind. The stop line that the page names is printed by the opening check of run_lines.sh, the setting is one of the
+    template, and under a stand-in for sbatch the setting reaches every job of the setup, its digest job among them, and a serving
+    job, also beside the nodes of record, while an empty setting leaves every job without an excluded node."""
+    from CausalDiagnosis.cluster_jobs.tests.test_cluster_jobs import ENV_SCRIPT, README
+
+    setup = README[README.index("\n## 0. Setup\n"):README.index("\n## 1. Checks\n")]
+    paragraph = next((block for block in setup.split("\n\n") if "processor kind" in block), "")
+    stop = re.search(r"stops with `([A-Z_]+)` before its first line", paragraph)
+    setting = re.search(r"`([A-Z_]+)` of `env\.sh` keeps every job off the nodes that it names", paragraph)
+    assert stop and setting, paragraph
+    stop, setting = stop.group(1), setting.group(1)
+    assert stop in _function((CLUSTER_JOBS / "3_run" / "run_lines.sh").read_text(encoding="utf-8"), "opening_checks")
+    assert re.search(rf"^{setting}=", ENV_SCRIPT, re.M) and f"| `{setting}` | " in README
+    tree, _root, fake, env, calls = _setup_tree(tmp_path, scripts=("serve_model.sbatch",))
+    card = re.search(r"^#SBATCH --gres=gpu:(\w+):", SERVE, re.M).group(1)
+    _stand_in(fake, "sinfo", f'printf "%s\\n" "card1 gpu:{card}:2" "card2 gpu:{card}:4"')
+
+    def excluded(line):
+        return [word for word in line.split() if word.startswith("--exclude=")]
+
+    def serving_job(**settings):
+        done = _run(tmp_path, {**env, **settings}, f'bash "{_in(tree, "submit.sh")}" serve_model.sbatch')
+        assert done.returncode == 0, done.stderr
+        return excluded(_call_of(calls, "serve_model.sbatch")[-1])
+
+    nodes = "other1,other2"
+    for value, expected in ((nodes, [f"--exclude={nodes}"]), ("", [])):
+        calls.write_text("", encoding="utf-8")
+        done = _setup(tmp_path, tree, {**env, setting: value})
+        assert done.returncode == 0, done.stderr
+        lines = calls.read_text(encoding="utf-8").splitlines()
+        digests = _call_of(calls, "cpu_job.sbatch")
+        assert len(lines) == 7 and len(digests) == 1 and "-J cd-digests" in digests[0]
+        assert [excluded(line) for line in lines] == [expected] * 7, lines
+        assert serving_job(**{setting: value}) == expected
+    # a job of record also leaves out the other nodes with the card of the serving job, and keeps the nodes of the setting out
+    assert serving_job(**{setting: nodes, "NODES_OF_RECORD": "card1"}) == [f"--exclude={nodes},card2"]
 
 
 def _function(text, name):
