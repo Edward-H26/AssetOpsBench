@@ -55,7 +55,9 @@ def test_setup_submits_seven_jobs_with_the_afterok_edges_of_the_chain(tmp_path):
     assert "--label clone" in digests and "CD_DIGESTS_DONE" in digests
     downloads = _call_of(calls, "download_model.sbatch")
     assert "--export=ALL,MODEL=org/judge-model" in downloads[1] and "MODEL=" not in downloads[0]
-    for parallel in ("pull_image.sbatch", "download_model.sbatch", "setup_env.sbatch"):
+    # both downloads fetch with the uv that the environment job installs, so they follow it as the data job does
+    assert all(f"--dependency=afterok:{jobs['setup_env.sbatch'][0]}" in line for line in downloads)
+    for parallel in ("pull_image.sbatch", "setup_env.sbatch"):
         assert all("--dependency" not in line for line in _call_of(calls, parallel))
     chain = [line for line in done.stdout.splitlines() if line.startswith("SETUP_CHAIN ")]
     assert len(chain) == 1 and len(chain[0].split()) == 8
@@ -89,7 +91,7 @@ def test_a_second_setup_skips_each_job_whose_done_line_exists_and_drops_its_edge
     done = _setup(tmp_path, tree, env)
     assert done.returncode == 0, done.stderr
     skipped = [line.split()[1] for line in done.stdout.splitlines() if line.startswith("SKIPPED ")]
-    assert skipped == ["image", "agent_model", "judge_model", "environment"]
+    assert skipped == ["image", "environment", "agent_model", "judge_model"]
     assert set(_submitted(done.stdout)) == {"fetch_data.sbatch", "precompute_tables.sbatch", "cpu_job.sbatch"}
     assert "--dependency" not in _call_of(calls, "fetch_data.sbatch")[0]
 

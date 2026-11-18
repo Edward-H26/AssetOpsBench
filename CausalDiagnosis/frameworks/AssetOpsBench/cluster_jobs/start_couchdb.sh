@@ -1,12 +1,13 @@
 # Functions of the jobs that run CouchDB, sourced after env.sh: start_couchdb starts CouchDB 3.5 under Apptainer on node local
 # disk at a free port and under an Erlang node name of its own, exactly as run_reproduction.sh needs it, and exports COUCHDB_URL,
 # COUCHDB_USERNAME, COUCHDB_PASSWORD and COUCHDB_IMAGE_SHA256, which the platform record of a run holds. The image is the
-# shared one when it is readable, else a copy of one's own under IMAGES, pulled once, and the job unpacks it once. The caller
-# kills $COUCH_PID in its exit trap. No database is loaded or reset here: each episode's producer creates its databases itself.
+# shared one when it is readable, else a copy of one's own under IMAGES, pulled once by the image job of the setup, which
+# calls couchdb_image through IMAGE_PULLS, and the job unpacks it once. The caller kills $COUCH_PID in its exit trap. No
+# database is loaded or reset here: each episode's producer creates its databases itself.
 
 couchdb_image() {
-  # The CouchDB image of the job, the shared one when it is readable, else a copy of one's own under IMAGES pulled once,
-  # and its SHA-256 in COUCHDB_IMAGE_SHA256. $1 is the job's node local folder.
+  # The CouchDB image of the job, the shared one when it is readable, else a copy of one's own under IMAGES pulled once by
+  # pull_image_once of functions.sh, and its SHA-256 in COUCHDB_IMAGE_SHA256. $1 is the job's node local folder.
   module load apptainer/1.4.5
   if [ -z "${COUCH_IMAGE:-}" ]; then
     COUCH_IMAGE=$IMAGES/couchdb-3.5.sif
@@ -14,9 +15,7 @@ couchdb_image() {
   fi
   export APPTAINER_TMPDIR=$1/apptainer APPTAINER_CACHEDIR=$1/apptainer-cache
   mkdir -p "$APPTAINER_TMPDIR" "$APPTAINER_CACHEDIR" "$(dirname "$COUCH_IMAGE")"
-  if [ ! -s "$COUCH_IMAGE" ]; then
-    apptainer pull "$COUCH_IMAGE" docker://couchdb:3.5 || { echo "could not pull couchdb:3.5 into $COUCH_IMAGE" >&2; exit 3; }
-  fi
+  pull_image_once "$COUCH_IMAGE" docker://couchdb:3.5 "$1" || { echo "could not pull couchdb:3.5 into $COUCH_IMAGE" >&2; exit 3; }
   COUCHDB_IMAGE_SHA256=$(sha256_of "$COUCH_IMAGE")
   export COUCHDB_IMAGE_SHA256
   echo "couchdb_image $COUCH_IMAGE"

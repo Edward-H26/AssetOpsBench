@@ -1,6 +1,7 @@
 """Modules of this package, one per line:
 
 atomic_writes_and_locks
+download_retry
 frameworks
 json_digest
 llm_backends

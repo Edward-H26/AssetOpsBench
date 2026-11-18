@@ -7,15 +7,19 @@
 # huggingface.co and the login node should not carry the transfer. The Hub cache lives on node local disk so that the
 # weights exist once, in $MODELS on scratch, since the home filesystem has a small quota. The job fetches the Hub commit that
 # the tracked serving file of record pins for MODEL (model_revision of env.sh), or HF_REVISION given as a full commit, refuses a model without one, takes a shared
-# copy only when it holds that commit, and stops when the files it fetched come from another commit. Check the free space
-# before submitting (df -h $MODELS): a model in BF16 needs two bytes per parameter. Submit as
+# copy only when it holds that commit, and stops when the files it fetched come from another commit. The download and the
+# listing of the Hub run under retry_fetch of functions.sh with the timeout of the fetches: the files that an attempt finished
+# stay in the model folder on scratch, so the next attempt and the next job fetch only the rest. The job fetches with the uvx of
+# the uv that setup_env.sbatch installs, which setup.sh starts before the downloads. Check the free space before submitting
+# (df -h $MODELS): a model in BF16 needs two bytes per parameter. Submit as
 #   bash $H/submit.sh download_model.sbatch                                  (the default MODEL of env.sh)
 #   MODEL=<Hugging Face id> bash $H/submit.sh download_model.sbatch          (another model, for example the judge)
 set -uo pipefail
 source "${HPC_DIR:?submit this script with CausalDiagnosis/cluster_jobs/submit.sh}/env.sh"
 require_model
 L=$(node_local_dir); trap 'rm -rf "$L"' EXIT
-export HF_HOME=$L/hf UV_CACHE_DIR=$L/uv-cache TMPDIR=$L/tmp; mkdir -p "$HF_HOME" "$UV_CACHE_DIR" "$TMPDIR"
+export HF_HOME=$L/hf UV_CACHE_DIR=$CACHE/uv TMPDIR=$L/tmp; mkdir -p "$HF_HOME" "$UV_CACHE_DIR" "$TMPDIR"
+export UV_HTTP_TIMEOUT=$FETCH_TIMEOUT HF_HUB_DOWNLOAD_TIMEOUT=$FETCH_TIMEOUT HF_HUB_ETAG_TIMEOUT=$FETCH_TIMEOUT
 export PATH=$(dirname "$UV_BIN"):$PATH
 TARGET=$MODELS/${MODEL##*/}
 # the check of the hashed files against the Hub's listing: every large file of the listing must be in the folder with its SHA-256
@@ -42,10 +46,12 @@ if [ ! -f "$TARGET/config.json" ] && [ -n "$SHARED" ] && [ -r "$SHARED_COPY/conf
     echo "the shared copy $SHARED_COPY holds the pinned commit $HF_REVISION; nothing to download"; echo "CD_DOWNLOAD_DONE $SHARED_COPY"; exit 0
   fi
 fi
+mkdir -p "$MODELS"
 job_header "model $MODEL into $TARGET"; df -h "$MODELS" | cat
 [ -n "${HF_TOKEN:-}" ] && echo "HF_TOKEN set (gated model)"
-# hf is the command line tool of huggingface_hub; uvx runs it in an ephemeral environment on node local disk
-uvx --from huggingface_hub hf download "$MODEL" --local-dir "$TARGET" --revision "$HF_REVISION" \
+command -v uvx >/dev/null || { echo "no uvx at $UV_BIN or on PATH: the environment job installs uv, run setup_env.sbatch first" >&2; exit 2; }
+# hf is the command line tool of huggingface_hub; uvx runs it in an ephemeral environment whose packages uv caches under CACHE
+retry_fetch "$TARGET" uvx --from huggingface_hub hf download "$MODEL" --local-dir "$TARGET" --revision "$HF_REVISION" \
   || { echo "the download of $MODEL into $TARGET failed with status $?, so no HUB_COMMIT.txt is written" >&2; exit 3; }
 ls -la "$TARGET" | head -40
 du -sh "$TARGET" | cat
@@ -56,7 +62,12 @@ COMMITS=$(for f in "$TARGET"/.cache/huggingface/download/*.metadata; do head -n 
 # record; each file the Hub keeps as a large file must have the SHA-256 that the Hub's listing of the pin names for it
 ( cd "$TARGET" && find . -type f ! -path './.cache/*' ! -name HUB_COMMIT.txt ! -name 'FILES.sha256*' | sed 's|^\./||' | LC_ALL=C sort \
   | while IFS= read -r f; do sha256sum "$f"; done ) > "$TARGET/FILES.sha256.partial" || { echo "the files of $TARGET could not be hashed" >&2; exit 3; }
-curl -sf ${HF_TOKEN:+-H "Authorization: Bearer $HF_TOKEN"} "https://huggingface.co/api/models/$MODEL/tree/$HF_REVISION?recursive=true" > "$L/listing.json" \
+hub_listing() {
+  # the Hub's listing of the files at the pin, written whole by each attempt
+  curl -sf --speed-limit 1 --speed-time "$FETCH_TIMEOUT" ${HF_TOKEN:+-H "Authorization: Bearer $HF_TOKEN"} \
+    "https://huggingface.co/api/models/$MODEL/tree/$HF_REVISION?recursive=true" > "$L/listing.json"
+}
+retry_fetch "$L/listing.json" hub_listing \
   || { echo "the Hub's listing of $MODEL at $HF_REVISION could not be read, so the files are not checked" >&2; exit 3; }
 python3 -c "$LISTING_CHECK" "$L/listing.json" "$TARGET/FILES.sha256.partial" || exit 3
 mv "$TARGET/FILES.sha256.partial" "$TARGET/FILES.sha256"

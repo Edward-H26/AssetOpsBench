@@ -6,7 +6,9 @@
 # The data of record on a CPU node: the one fetch and build command of the data of record, which keeps the archive from the
 # official page in DATA, downloaded once, and builds the files of record into the ignored data folder of this clone, then the
 # fetch of the scenario file of the anchored preset at its pinned revision into the same folder, where the runs of that
-# preset read it, then the check of the files of record against the pins of the tracked CHECKSUMS.txt.
+# preset read it, then the check of the files of record against the pins of the tracked CHECKSUMS.txt. Both fetches follow the
+# retry policy of every fetch (CausalDiagnosis/utils/download_retry.py, with the settings of functions.sh), and an archive whose
+# download broke off stays in DATA as a partial file, from which the next attempt or the next job goes on.
 #   bash $H/submit.sh fetch_data.sbatch
 set -uo pipefail
 source "${HPC_DIR:?submit this script with CausalDiagnosis/cluster_jobs/submit.sh}/env.sh"

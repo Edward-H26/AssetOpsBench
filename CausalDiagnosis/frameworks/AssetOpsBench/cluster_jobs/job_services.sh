@@ -4,4 +4,5 @@
 IMAGES=${IMAGES:-$ROOT/images}                        # the CouchDB image, pulled once
 source "$(dirname "${BASH_SOURCE[0]}")/start_couchdb.sh"
 DATA_FETCHES+=("python -m CausalDiagnosis.frameworks.AssetOpsBench.scenarios.download_scenarios")   # the scenario file of the anchored preset
+IMAGE_PULLS+=(couchdb_image)                          # the CouchDB image, pulled by the image job of the setup
 PLATFORM_RECORDS+=(couchdb_image)                     # the CouchDB image and its SHA-256 in the platform record

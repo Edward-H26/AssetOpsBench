@@ -18,6 +18,7 @@ CLONES=${CLONES:-$ROOT/clones}                        # one clone per pushed com
 ENVS=${ENVS:-$ROOT/envs}                              # one Python environment per lock file, named by the first 12 digits of its SHA-256
 DATA=${DATA:-$ROOT/data}                              # the archive of the data of record, fetched once by fetch_data.sbatch
 # IMAGES, the folder of the CouchDB image of the AssetOpsBench rows, has its default in the job_services.sh of that framework
+# CACHE and the rule of every fetch from outside the cluster, FETCH_TIMEOUT, FETCH_RETRIES and FETCH_PAUSE, have their defaults in functions.sh
 LOGS=${LOGS:-$ROOT/logs}                              # the log of every job and of every server
 ENDPOINTS=${ENDPOINTS:-$ROOT/endpoints}               # the endpoint file of every served model and the key file of every serving job
 SUITES=${SUITES:-$ROOT/suites}                        # the reports of run_suite.sbatch

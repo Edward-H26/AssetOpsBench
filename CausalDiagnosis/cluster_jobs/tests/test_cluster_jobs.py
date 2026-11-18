@@ -2499,6 +2499,48 @@ def test_the_image_job_ends_only_when_the_image_imports_sglang_at_the_version_of
     assert done.returncode == 3 and "not the version latest" in done.stderr
 
 
+# a stand-in of apptainer that records the command and the temporary and cache folders it sees
+APPTAINER_RECORDED = """echo "$1 TMPDIR=${APPTAINER_TMPDIR:-} CACHEDIR=${APPTAINER_CACHEDIR:-}" >> "$FAKE_LOG/apptainer_calls"
+case "$1" in
+  pull) echo image > "$2" ;;
+  exec) echo 0.5.19 ;;
+esac"""
+
+
+def test_every_apptainer_command_of_the_image_job_unpacks_on_the_node_local_folder_of_the_job(tmp_path):
+    """Without squashfuse apptainer unpacks a whole image for an exec, so every apptainer command of pull_image.sbatch, the version
+    check of an image already in place included, runs with APPTAINER_TMPDIR under the node local folder of the job, and the check
+    with its APPTAINER_CACHEDIR there as well, whether the job pulls the image or finds it. The pull keeps its layers in the cache
+    of the image under CACHE, so that a pull that broke off goes on from the layers it finished. Both hold whether the module of
+    apptainer sets nothing or, as a modulefile may, sets both variables on its load, which the export of the job must follow."""
+    tree, root, fake, env = _tree(tmp_path, ("pull_image.sbatch",))
+    log = tmp_path / "log"
+    log.mkdir()
+    _stand_in(fake, "apptainer", APPTAINER_RECORDED)
+    _stand_in(fake, "module", "exit 0")
+    # the free space check reads the node local folder of the job, so the stand-in of df records it
+    _stand_in(fake, "df", 'case " $* " in *" --output=avail "*) echo "$*" >> "$FAKE_LOG/df_calls"; echo Avail; echo 500G ;; *) echo "local free" ;; esac')
+    sif = tmp_path / "own" / "sglang.sif"
+    settings = {**env, "FAKE_LOG": str(log), "SHARED": "", "SIF": str(sif)}
+    # a module command is a shell function that changes the variables of the shell that calls it, exported here as bash exports one
+    setting = f'() {{ [ "$1" != load ] || export APPTAINER_TMPDIR="{tmp_path}/module/tmp" APPTAINER_CACHEDIR="{tmp_path}/module/cache"; }}'
+    for load, module in (("sets nothing", {}), ("sets both", {"BASH_FUNC_module%%": setting})):
+        sif.unlink(missing_ok=True)
+        for branch, commands in (("pulled", ["pull", "exec"]), ("in place", ["exec"])):
+            (log / "apptainer_calls").unlink(missing_ok=True)
+            done = subprocess.run(["bash", str(_in(tree, "pull_image.sbatch"))], capture_output=True, text=True, cwd=tmp_path,
+                                  env={**settings, **module}, timeout=60)
+            assert done.returncode == 0 and "CD_IMAGE_DONE" in done.stdout, (load, branch, done.stderr)
+            local = (log / "df_calls").read_text(encoding="utf-8").split()[-1]
+            lines = (log / "apptainer_calls").read_text(encoding="utf-8").splitlines()
+            calls = [{"command": line.split()[0], **dict(word.split("=", 1) for word in line.split()[1:])} for line in lines]
+            assert [call["command"] for call in calls] == commands, (load, branch, lines)
+            assert all(call["TMPDIR"].startswith(local + "/") for call in calls), (load, branch, local, lines)
+            assert calls[-1]["CACHEDIR"].startswith(local + "/"), (load, branch, local, lines)
+            if branch == "pulled":
+                assert calls[0]["CACHEDIR"] == f"{root}/cache/apptainer/sglang.sif", (load, lines)
+
+
 def test_the_loop_job_of_gepa_runs_under_the_shell_options_of_every_job_script():
     """serve_model.sbatch runs its RUN_AFTER_SERVE script with bash, so the loop job sets its own options, and an unset or
     misspelled variable stops it as it stops every other job script."""
@@ -2562,7 +2604,7 @@ def test_a_sync_that_stopped_halfway_is_built_again_and_no_job_takes_its_environ
     log.mkdir()
     (root / "tools" / "uv-0.11.7").mkdir(parents=True)
     _stand_in(root / "tools" / "uv-0.11.7", "uv", UV_SYNC)
-    settings = {**env, "FAKE_LOG": str(log)}
+    settings = {**env, "FAKE_LOG": str(log), "FETCH_RETRIES": "0"}  # one attempt per job, so each job is one sync
 
     def setup(**values):
         return subprocess.run(["bash", str(_in(tree, "setup_env.sbatch"))], capture_output=True, text=True, cwd=tmp_path,

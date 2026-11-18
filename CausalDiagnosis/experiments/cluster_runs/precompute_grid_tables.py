@@ -10,8 +10,9 @@ its first line, which writes nothing and stops the job on a missing table. A lau
 driver's own functions, so a table has the rules key of the run that reads it.
 
 A call computes the tables of one asset, that of --asset, over which every named preset is composed and which every line of
-the grid files plays: the models of the diagnostics server where its model code can fit the asset, and the label table and
-the grade table where the asset declares the label of diagnosability_label.py, which reads both. The label of another asset
+the grid files plays, since a line that names no asset takes it and a line that names another asset stops the call by name.
+The tables are the models of the diagnostics server where its model code can fit the asset, and the label table and the
+grade table where the asset declares the label of diagnosability_label.py, which reads both. The label of another asset
 computes the tables that its package declares on first use, by its own code.
 
     python -m CausalDiagnosis.experiments.cluster_runs.precompute_grid_tables --grid CausalDiagnosis/cluster_jobs/grids/grid_agents.txt --config real_time --config base
@@ -66,13 +67,16 @@ def configurations(grids, presets, starts=None, blocks=None, asset_id=None, run_
     policies play it, as run_episodes/ plays it on the start set starts with the run options of the launch (the words of
     GRID_EXTRA, such as --start-cap or --training-split): each command line is resolved by played(), the driver's own
     functions, so a line on the development starts with a start cap has the table of its run. The tables of a call are those
-    of one asset, asset_id or else the engine's default asset, so a line or a preset that plays another asset stops by name."""
+    of one asset, asset_id or else the engine's default asset: a line that names no asset plays the asset of the call, a line
+    keeps the asset it names, and a line or a preset that plays another asset than the call stops by name."""
     asset = asset_id or DEFAULT_ASSET
-    tail = [*(["--asset", asset_id] if asset_id else []), *(["--starts", starts] if starts else []), *run_options]
+    tail = [*(["--starts", starts] if starts else []), *run_options]
 
     def resolved(name, words):
         if "--agent" not in words:
             words = [*words, "--agent", "plan_execute"]
+        if asset_id and not any(word == "--asset" or word.startswith("--asset=") for word in words):
+            words = [*words, "--asset", asset_id]
         config = played([*words, *tail], blocks)
         if config.asset_id != asset:
             raise SystemExit(f"{name} plays the asset {config.asset_id}, and this call computes the tables of the asset {asset} "
@@ -111,7 +115,7 @@ def main(argv=None):
                     help="a preset of configs/ with an optional clock mode after a colon, preset[:mode], as the reference policies play it (repeatable)")
     ap.add_argument("--asset", default=None,
                     help=f"the registered asset whose tables the call computes, over whose defaults every preset is composed and "
-                         f"which every line plays (default: {DEFAULT_ASSET})")
+                         f"which every line plays, a line that names no asset taking it (default: {DEFAULT_ASSET})")
     ap.add_argument("--facts", default=None,
                     help="the data file of the asset (default: the file that the variable of its asset file names, else its release file)")
     ap.add_argument("--labels", type=Path, default=None, help="the label table file (default: the one the verifier reads)")

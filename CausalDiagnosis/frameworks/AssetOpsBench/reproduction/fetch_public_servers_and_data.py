@@ -26,12 +26,12 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from CausalDiagnosis.frameworks.AssetOpsBench.reproduction.scenario_file import LAYER_SCENARIO_SHA256, SCENARIO_SHA256, sha256_of
 from CausalDiagnosis.frameworks.AssetOpsBench.reproduction.scenario_sets import RECOVERED_UNLOCKS, SETS
+from CausalDiagnosis.utils import download_retry
 
 REPOSITORY = "https://github.com/IBM/AssetOpsBench.git"
 SERVERS_COMMIT = "c6b96755b8a182aa090ee028852cbc83279b2982"  # main-0.x
@@ -53,11 +53,17 @@ SPAN_GAP = timedelta(days=1)
 
 
 def fetch_tree(commit, paths, destination, repository=REPOSITORY):
-    """The given paths of one commit under destination, fetched shallowly by the commit's own hash. Returns its tree hash."""
+    """The given paths of one commit under destination, fetched shallowly by the commit's own hash under the retry policy of
+    every fetch (CausalDiagnosis/utils/download_retry.py), whose timeout ends a transfer that stalls. Returns its tree hash."""
     with tempfile.TemporaryDirectory(prefix="aob_fetch_") as clone:
         git = ["git", "-C", clone]
         subprocess.run([*git, "init", "-q"], check=True)
-        subprocess.run([*git, "fetch", "-q", "--depth", "1", repository, commit], check=True)
+
+        def fetched(timeout):
+            stall = ["-c", "http.lowSpeedLimit=1", "-c", f"http.lowSpeedTime={int(timeout)}"]
+            return subprocess.run([*git, *stall, "fetch", "-q", "--depth", "1", repository, commit], check=True)
+
+        download_retry.retried(fetched, f"git fetch {repository} {commit}")
         archive = Path(clone) / "tree.tar"
         with open(archive, "wb") as out:
             subprocess.run([*git, "archive", commit, "--", *paths], check=True, stdout=out)
@@ -175,7 +181,7 @@ def prepare(scenarios, out, fetch=fetch_tree, later_scenarios=None, rows_file=No
     trees = {"servers": fetch(SERVERS_COMMIT, SERVER_PATHS, work / "servers"), "data": fetch(DATA_COMMIT, (DATA_PATH,), work / "data")}
     later = Path(later_scenarios) if later_scenarios else work / "later_scenarios.jsonl"
     if not later_scenarios:
-        urllib.request.urlretrieve(FORMS_URL, later)
+        download_retry.download(FORMS_URL, later)
     if sha256_of(later) != FORMS_SHA256:
         raise SystemExit(f"{later} is not the scenario file of commit {FORMS_REVISION[:7]}")
     rows = {int(json.loads(line)["id"]): json.loads(line) for line in later.read_bytes().decode().split("\n") if line.strip()}

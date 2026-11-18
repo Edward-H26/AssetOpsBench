@@ -9,6 +9,7 @@ Small helpers that every folder may use. Nothing here imports another folder of 
 | `paths.py` | the one place that knows where things are: the folders of the repository, every generated location, and the lookup of a preset by name |
 | `json_digest.py` | the canonical digest of a JSON value |
 | `atomic_writes_and_locks.py` | writes that never leave a half-written file, and file locks |
+| `download_retry.py` | the one retry policy of every fetch from outside the machine: a timeout that a slow link passes, retries counted only while nothing arrives, and a download that goes on from the bytes it kept |
 | `llm_backends.py` | the model client of every agent and of the judge, built on AssetOpsBench's client |
 | `frameworks.py` | the registry of the frameworks under `frameworks/`: it reads each declaration as data and loads a framework only when a run names it |
 

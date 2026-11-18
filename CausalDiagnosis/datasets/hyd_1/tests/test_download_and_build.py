@@ -22,7 +22,7 @@ LABELS = [(3, 100, 0, 130, 0), (100, 100, 0, 130, 0), (100, 100, 0, 130, 1)]
 def no_network(monkeypatch):
     def refuse(*args, **kwargs):
         raise AssertionError("the network was used")
-    monkeypatch.setattr(fu.urllib.request, "urlopen", refuse)
+    monkeypatch.setattr(fu.download_retry.urllib.request, "urlopen", refuse)
 
 
 def sha(path):

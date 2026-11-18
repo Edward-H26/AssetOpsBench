@@ -10,7 +10,9 @@ Source: UCI Machine Learning Repository, dataset 447 "Condition monitoring of hy
 
 Nothing is downloaded without --download, so the archive is fetched only on an explicit request. --archive FILE builds from
 a copy of the archive on the machine, with no network, and --check only checks the two built files against their pins. A
-second run finds the files in place and fetches nothing. The command never writes CHECKSUMS.txt: a pin that the command
+second run finds the files in place and fetches nothing. The download follows the retry policy of every fetch
+(CausalDiagnosis/utils/download_retry.py), and a download that broke off keeps its bytes in a partial file beside the
+archive, from which the next attempt or the next run goes on. The command never writes CHECKSUMS.txt: a pin that the command
 wrote itself would pin nothing.
 usage: python3 -I -m CausalDiagnosis.datasets.hyd_1.download_and_build --download [--dest DIR]
        python3 -I -m CausalDiagnosis.datasets.hyd_1.download_and_build --archive FILE
@@ -19,7 +21,6 @@ import argparse
 import os
 import sys
 import tempfile
-import urllib.request
 import zipfile
 from pathlib import Path
 
@@ -27,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))  # the fork root, w
 from CausalDiagnosis.datasets.dataset_loader import recordings as records  # noqa: E402
 from CausalDiagnosis.datasets.hyd_1 import records as hyd_1  # noqa: E402
 from CausalDiagnosis.datasets.hyd_1 import build_features_and_blocks as build_blocks  # noqa: E402
+from CausalDiagnosis.utils import download_retry  # noqa: E402
 
 URL = "https://archive.ics.uci.edu/static/public/447/condition+monitoring+of+hydraulic+systems.zip"
 ARCHIVE_NAME = "condition+monitoring+of+hydraulic+systems.zip"
@@ -42,10 +44,8 @@ AGAIN = "Run `python -m CausalDiagnosis.datasets.hyd_1.download_and_build --down
 
 
 def download(url, target):
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=120) as resp, open(target, "wb") as out:
-        for chunk in iter(lambda: resp.read(1 << 20), b""):
-            out.write(chunk)
+    """The file at url in target, which keeps the bytes of a download that broke off for the next attempt or run."""
+    download_retry.download(url, target, {"User-Agent": USER_AGENT})
 
 
 def safe_extract(zip_path, dest):
@@ -119,18 +119,16 @@ def checked(archive, wanted, downloaded):
 
 
 def archive_for(dest, wanted):
-    """The checked archive in dest: the one that lies there, else a download from the official page."""
+    """The checked archive in dest: the one that lies there, else a download from the official page into a partial file in
+    dest, which a download that broke off leaves for the next run to go on from and which takes the name of the archive only
+    once its SHA-256 is the pin."""
     dest = Path(dest)
     archive = dest / ARCHIVE_NAME
     if archive.exists():
         return checked(archive, wanted, downloaded=False)
     dest.mkdir(parents=True, exist_ok=True)
     partial = dest / (ARCHIVE_NAME + ".part")
-    try:
-        download(URL, partial)
-    except BaseException:
-        partial.unlink(missing_ok=True)
-        raise
+    download(URL, partial)
     checked(partial, wanted, downloaded=True)
     os.replace(partial, archive)
     return archive

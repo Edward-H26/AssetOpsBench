@@ -4,17 +4,18 @@
 #   bash $H/0_setup/setup.sh            submits the chain, prints one SUBMITTED line per job, then SETUP_CHAIN <job ids>
 #   bash $H/0_setup/setup.sh status     one line per job: its CD_*_DONE line, PENDING or RUNNING, or the last line of a failed log;
 #                               SETUP_OK once all seven DONE lines exist
-# The chain: the image, the agent model, the judge model and the environment in parallel; then the data of record after the
-# environment, the tables after the data, and the digest label of the clone after the tables (each afterok on the one
-# before). A failed job leaves its dependents pending with the reason DependencyNeverSatisfied; status names it, and a
-# second setup.sh submits again every job whose DONE line this clone has not printed, and skips the others. The jobs of a
-# clone are recorded in ROOT/setup/<tree id>.jobs, one line per job (step, job id, log), since the logs of every clone
-# share LOGS.
+# The chain: the image and the environment in parallel; then the agent model, the judge model and the data of record after the
+# environment, whose uv the two downloads fetch with, the tables after the data, and the digest label of the clone after the
+# tables (each afterok on the one before). Every job with a dependency is submitted with --kill-on-invalid-dep=yes, so a
+# failed job takes the jobs after it out of the queue instead of leaving them pending for ever with the reason
+# DependencyNeverSatisfied; status names each of them FAILED, and a second setup.sh submits again every job whose DONE line
+# this clone has not printed, and skips the others. The jobs of a clone are recorded in ROOT/setup/<tree id>.jobs, one line
+# per job (step, job id, log), since the logs of every clone share LOGS.
 set -uo pipefail
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 while [ ! -f "$HERE/submit.sh" ] && [ "$HERE" != / ]; do HERE=$(dirname "$HERE"); done   # the folder of submit.sh and env.sh
 
-STEPS=(image agent_model judge_model environment data tables digests)
+STEPS=(image environment agent_model judge_model data tables digests)   # each after the step it waits for
 
 step_script() {
   case "$1" in
@@ -42,7 +43,7 @@ step_done_line() {
 step_after() {
   # The step whose job a step waits for, or nothing.
   case "$1" in
-    data) echo environment ;;
+    agent_model|judge_model|data) echo environment ;;
     tables) echo data ;;
     digests) echo tables ;;
   esac
@@ -76,7 +77,8 @@ queue_state() {
 submit_step() {
   # Submits STEP with its dependency, records it and prints the SUBMITTED line of submit.sh; the job id lands in JOB.
   local step=$1 dependency=$2 line options=()
-  [ -z "$dependency" ] || options+=("--dependency=afterok:$dependency")
+  # the scheduler's own option ends a job whose dependency can never be met, so no stranded job blocks a second setup.sh
+  [ -z "$dependency" ] || options+=("--dependency=afterok:$dependency" --kill-on-invalid-dep=yes)
   case "$step" in
     agent_model) options+=(-J cd-download-agent) ;;
     judge_model) options+=(-J cd-download-judge "--export=ALL,MODEL=$JUDGE_HUB_ID") ;;

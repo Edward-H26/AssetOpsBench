@@ -20,11 +20,75 @@ FORK=$(fork_root) || exit 2                          # the tree of these scripts
 GRIDS=$HPC_DIR/grids                                 # the grid files, the folder that GRIDS of CausalDiagnosis/utils/paths.py names
 PYTHON_VERSION=${PYTHON_VERSION:-$(head -n 1 "$FORK/.python-version" 2>/dev/null)}   # the Python of the lock
 CD_FUNCTIONS=1                                       # env.sh sourced this file, which an env.sh older than this file does not
+# Every fetch from outside the cluster follows one rule, that of CausalDiagnosis/utils/download_retry.py, whose defaults a test
+# compares with these. A compute node fetches over a link that breaks off and stalls, so an attempt waits at most FETCH_TIMEOUT
+# seconds for its next bytes wherever its tool takes a timeout, the timeout under which the training environment passed on a
+# compute node where the 30 seconds of uv's default timed out three times in a row, and a failed attempt is made again after
+# FETCH_PAUSE seconds, with FETCH_RETRIES retries in a row that bring nothing before the fetch fails, a count that starts again
+# whenever an attempt brought bytes, as huggingface_hub takes up a download that broke off. CACHE keeps on scratch what the
+# tools fetched, the packages of uv and the layers of an image not yet in place, so that a job that a broken link or its time
+# limit ended leaves them to the next.
+# A value set in env.sh or on the submit line wins over these defaults.
+CACHE=${CACHE:-$ROOT/cache}
+FETCH_TIMEOUT=${FETCH_TIMEOUT:-300}
+FETCH_RETRIES=${FETCH_RETRIES:-5}
+FETCH_PAUSE=${FETCH_PAUSE:-1}
+export FETCH_TIMEOUT FETCH_RETRIES FETCH_PAUSE           # the Python of a job fetches under the same rule
 mkdir -p "$LOGS" "$ENDPOINTS" "$DATA" 2>/dev/null || true
 
 sha256_of() {
   # The SHA-256 of a file, or nothing when the file cannot be read.
   sha256sum "$1" 2>/dev/null | cut -d' ' -f1
+}
+
+fetched_size() {
+  # The kilobytes under the path $1, a file or a folder, or 0 when it does not exist.
+  local kb
+  kb=$(du -sk "$1" 2>/dev/null | cut -f1)
+  echo "${kb:-0}"
+}
+
+retry_fetch() {
+  # retry_fetch PATH COMMAND [ARGUMENTS]: a fetch from outside the cluster, made again under the rule of the fetches above while
+  # it fails. PATH is where the command leaves what it fetched, its cache, partial file or folder, so an attempt that left PATH
+  # larger brought bytes. A retry prints FETCH_RETRY with the name of the command alone, since its arguments may hold a key,
+  # and a fetch that the rule gives up prints FETCH_FAILED and returns the status of its last attempt.
+  local path=$1 left=$FETCH_RETRIES before status
+  shift
+  while :; do
+    before=$(fetched_size "$path")
+    "$@" && return 0
+    status=$?
+    [ "$(fetched_size "$path")" -le "$before" ] || left=$FETCH_RETRIES
+    if [ "$left" -le 0 ]; then
+      echo "FETCH_FAILED $1 with status $status after $FETCH_RETRIES retries that brought nothing" >&2
+      return "$status"
+    fi
+    left=$((left - 1))
+    echo "FETCH_RETRY $((FETCH_RETRIES - left)) of $FETCH_RETRIES in $FETCH_PAUSE s, $1 ended with status $status" >&2
+    sleep "$FETCH_PAUSE"
+  done
+}
+
+pull_image_once() {
+  # pull_image_once SIF SOURCE LOCAL: the image SOURCE, such as docker://couchdb:3.5, into the file SIF, and nothing when SIF
+  # holds an image. The pull writes a partial file of its job, renamed to SIF once the pull ended, so that no job takes half an
+  # image, unpacks on the node local folder LOCAL, and keeps the layers in a cache of the image under CACHE, so that a pull that
+  # a broken link or the time limit ended goes on from the layers it finished. The cache goes once SIF is in place.
+  local sif=$1 origin=$2 local_dir=$3 cache partial
+  [ ! -s "$sif" ] || return 0
+  cache=$CACHE/apptainer/$(basename "$sif")
+  partial=$sif.partial.${SLURM_JOB_ID:-$$}
+  mkdir -p "$(dirname "$sif")" "$cache" "$local_dir/apptainer"
+  APPTAINER_CACHEDIR=$cache APPTAINER_TMPDIR=$local_dir/apptainer retry_fetch "$cache" apptainer_pull "$partial" "$origin" \
+    || { rm -f "$partial"; return 1; }
+  mv "$partial" "$sif" && rm -rf "$cache"
+}
+
+apptainer_pull() {
+  # One attempt of a pull of the image $2 into the file $1, which an attempt before it may have left.
+  rm -f "$1"
+  apptainer pull "$1" "$2"
 }
 
 node_local_dir() {
@@ -317,10 +381,12 @@ judge_args() {
 }
 
 # The services of the frameworks of this tree. The job_services.sh of every frameworks/<name>/cluster_jobs defines the
-# functions of the services that its rows need and adds its steps to two lists, so that no script of this folder names a
-# framework: DATA_FETCHES holds the commands that fetch_data.sbatch runs after the data of record, PLATFORM_RECORDS the
-# functions that platform_record.sh calls with a node local folder to record the images that the runs use.
+# functions of the services that its rows need and adds its steps to three lists, so that no script of this folder names a
+# framework: DATA_FETCHES holds the commands that fetch_data.sbatch runs after the data of record, IMAGE_PULLS the functions
+# that pull_image.sbatch calls with a node local folder to pull the images that the jobs of the framework start, and
+# PLATFORM_RECORDS the functions that platform_record.sh calls with a node local folder to record the images that the runs use.
 DATA_FETCHES=()
+IMAGE_PULLS=()
 PLATFORM_RECORDS=()
 for services in "$FORK"/CausalDiagnosis/frameworks/*/cluster_jobs/job_services.sh; do
   if [ -f "$services" ]; then source "$services"; fi
