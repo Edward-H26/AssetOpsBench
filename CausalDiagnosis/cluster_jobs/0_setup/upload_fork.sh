@@ -6,7 +6,9 @@
 # computes before the first line of a grid, and tar ships exactly that list.
 # The cluster then checks every file against the manifest, a copy of the manifest stays on the laptop under CausalDiagnosis/cluster_jobs/uploads/
 # named by its SHA-256, and files on the cluster that the manifest does not name (left by an earlier upload) are listed,
-# never deleted. Run on the laptop after `ssh insomnia` has a live master connection, into a folder no running job uses:
+# never deleted. The upload carries no env.sh, which the manifest leaves out, so the env.sh of the first clone is copied into
+# the folder CausalDiagnosis/cluster_jobs of the upload before its first job. Run on the laptop after `ssh insomnia` has a live
+# master connection, into a folder no running job uses:
 #   bash CausalDiagnosis/cluster_jobs/0_setup/upload_fork.sh <ROOT>/uploads/<tree>
 # then, for the commit an upload matches:
 #   .venv/bin/python -m CausalDiagnosis.experiments.run_verification.upload_manifest match CausalDiagnosis/cluster_jobs/uploads/<manifest sha256>.txt

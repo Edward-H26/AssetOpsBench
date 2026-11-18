@@ -588,6 +588,29 @@ def test_precompute_and_the_reference_policies_follow_the_asset(mounted, tmp_pat
     assert {row["verified"] for row in rows} == {"True"}
 
 
+def _configurations_of(tmp_path, line, asset_id):
+    """The configurations that the tables call of asset_id resolves for a grid file of the one line."""
+    grid = tmp_path / "grid.txt"
+    grid.write_text(line + "\n", encoding="utf-8")
+    _facts, _cycles, blocks = run_configuration.load_world(None, asset_id)
+    return precompute_tables.configurations([str(grid)], [], blocks=blocks, asset_id=asset_id)
+
+
+def test_a_grid_line_that_names_no_asset_takes_the_asset_of_the_tables_call(mounted, tmp_path):
+    """The tables call adds its --asset to a line that names none, so the line has the tables of the asset of the call; the
+    third case, a line of another asset, stops the call by name in test_precompute_and_the_reference_policies_follow_the_asset."""
+    [(_name, config)] = _configurations_of(tmp_path, "--config base --agent scripted", BENCH)
+    assert config.asset_id == BENCH
+
+
+def test_a_grid_line_keeps_the_asset_that_it_names(mounted, tmp_path):
+    """A line that names the asset of the call keeps its own words and has the tables of that asset, in either form of the
+    option."""
+    for line in (f"--config base --asset {BENCH} --agent scripted", f"--config base --asset={BENCH} --agent scripted"):
+        [(name, config)] = _configurations_of(tmp_path, line, BENCH)
+        assert config.asset_id == BENCH and name.endswith(f": {line}"), line
+
+
 def test_the_judge_reads_the_asset_of_its_episode(mounted, tmp_path):
     """The reference answer of the judge is composed from the asset that released.json of the episode names: its components, the
     codes of their levels, its work orders and its noun, and no name of hyd_1."""

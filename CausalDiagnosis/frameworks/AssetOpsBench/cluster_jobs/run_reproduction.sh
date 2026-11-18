@@ -64,13 +64,12 @@ job_header "mode $MODE out $OUT"
 # FMSR generate tools, and torch, transformers and granite-tsfm for the TSFM tools.
 for module in couchdb3 litellm torch transformers tsfm_public; do require_module "$module"; done
 
-# 2. The scenario file of the paper's 141 scenarios, downloaded once from its pinned Hugging Face commit, then layer B, built
-# once from IBM's public branches into a folder outside the clone. fetch_public_servers_and_data.py checks the SHA-256 and the driver reads its file.
+# 2. The scenario file of the paper's 141 scenarios, downloaded once from its pinned Hugging Face commit and checked against its
+# SHA-256 (fetch_scenario_file of scenario_file.py, under the retry policy of every fetch), then layer B, built once from IBM's
+# public branches into a folder outside the clone. fetch_public_servers_and_data.py checks the SHA-256 and the driver reads its file.
 SCEN=$DATA/aob_all_utterance_d925adb.jsonl
-SCEN_URL=$(python -c "from CausalDiagnosis.frameworks.AssetOpsBench.reproduction.scenario_file import SCENARIO_URL; print(SCENARIO_URL)")
-if [ ! -s "$SCEN" ]; then
-  curl -sSfL -o "$SCEN.part" "$SCEN_URL" && mv "$SCEN.part" "$SCEN" || { echo "could not download $SCEN_URL" >&2; exit 2; }
-fi
+python -c 'import sys; from CausalDiagnosis.frameworks.AssetOpsBench.reproduction.scenario_file import fetch_scenario_file; fetch_scenario_file(sys.argv[1])' "$SCEN" \
+  || { echo "could not download the scenario file of the paper into $SCEN" >&2; exit 2; }
 LAYER=${AOB_LAYER_B:-$DATA/aob_layer_b${AOB_RECOVERED_ROWS:+_recovered}}
 python -m CausalDiagnosis.frameworks.AssetOpsBench.reproduction.fetch_public_servers_and_data --scenarios "$SCEN" --out "$LAYER" || { echo "could not build layer B in $LAYER" >&2; exit 2; }
 

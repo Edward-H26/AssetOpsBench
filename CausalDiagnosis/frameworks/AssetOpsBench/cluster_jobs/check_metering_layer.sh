@@ -8,13 +8,16 @@
 # metering layer on that CouchDB and on the memory store and requires the same texts, tool_calls entries and documents, then
 # the latency probe on CouchDB. No model and no card take part. The report goes to RUNS/metering_layer/conformance_<job id>, with
 # RUNS the smoke folder unless RUN_KIND names another kind. The code is the tree of FORK, unless AOB_BASE_CODE names another
-# tree, such as an upload of upload_fork.sh that no other job runs from, and the Python is the environment of the lock.
+# tree, such as an upload of upload_fork.sh that no other job runs from, and the Python is the environment of the lock. The
+# test reads the data of record of that tree, so the job checks it first, as every job does, and stops on missing data before
+# CouchDB starts.
 #   bash $H/submit.sh check_metering_layer.sh
 set -uo pipefail
 source "${HPC_DIR:?submit this script with CausalDiagnosis/cluster_jobs/submit.sh}/env.sh"
 CODE=${AOB_BASE_CODE:-$FORK}
 fork_python
 [ "$CODE" = "$FORK" ] || export PYTHONPATH=$CODE:$CODE/src
+FORK=$CODE check_data
 cd "$CODE" || exit 2
 RUN_KIND=${RUN_KIND:-smoke} runs_root
 

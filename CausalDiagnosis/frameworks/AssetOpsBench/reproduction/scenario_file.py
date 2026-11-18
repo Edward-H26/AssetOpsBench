@@ -3,8 +3,10 @@ file, the runnable subset by family, the family and task kind of a scenario id, 
 
 The scenario rows are read at run time from the Hugging Face file the README names, and nothing of the dataset is stored here.
 """
+from CausalDiagnosis.utils import download_retry
 from CausalDiagnosis.utils.paths import SRC
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -31,6 +33,23 @@ def sha256_of(path):
     from CausalDiagnosis.datasets.dataset_loader.recordings import file_sha256  # the one SHA-256 of a file of the tree
 
     return file_sha256(path)
+
+
+def fetch_scenario_file(path):
+    """The pinned scenario file at path, fetched from SCENARIO_URL under the retry policy of every fetch when path holds no file
+    with SCENARIO_SHA256. The download goes into a partial file beside path, which keeps what arrived for the next attempt and
+    the next run, and takes the name path only once its SHA-256 is the pin."""
+    path = Path(path)
+    if path.is_file() and sha256_of(path) == SCENARIO_SHA256:
+        return path
+    partial = path.with_name(path.name + ".part")
+    download_retry.download(SCENARIO_URL, partial)
+    digest = sha256_of(partial)
+    if digest != SCENARIO_SHA256:
+        partial.unlink()
+        raise SystemExit(f"{SCENARIO_URL} gave a file with SHA-256 {digest}, not the pinned {SCENARIO_SHA256}")
+    os.replace(partial, path)
+    return path
 
 
 def load_scenarios(path, ids, pinned=True):

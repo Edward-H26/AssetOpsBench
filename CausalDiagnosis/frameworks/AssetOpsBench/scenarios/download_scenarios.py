@@ -3,16 +3,17 @@ usage: python -m CausalDiagnosis.frameworks.AssetOpsBench.scenarios.download_sce
 
 The scenarios are the records of data/asset/hydrolicpump_utterance.jsonl (spelled as in the dataset) of the dataset
 ibm-research/AssetOpsBench on Hugging Face, taken at the pinned revision REVISION. The SHA-256 of the bytes and the count of
-records are checked against the pin before anything is written, and a file that differs is refused. --from-file reads the same
-file of a local clone of the dataset under the same checks. The repository holds the pin and no record of the dataset.
+records are checked against the pin before anything is written, and a file that differs is refused. The fetch follows the
+retry policy of every fetch (CausalDiagnosis/utils/download_retry.py). --from-file reads the same file of a local clone of the
+dataset under the same checks. The repository holds the pin and no record of the dataset.
 """
+from CausalDiagnosis.utils import download_retry
 from CausalDiagnosis.utils.paths import SRC
 import argparse
 import hashlib
 import json
 import re
 import sys
-import urllib.request
 from datetime import date
 from pathlib import Path
 
@@ -35,10 +36,9 @@ def source_block():
     return {"dataset": DATASET, "file": SOURCE_FILE, "revision": REVISION, "sha256": SOURCE_SHA256, "records": RECORDS}
 
 
-def fetch(opener=urllib.request.urlopen):
+def fetch(opener=None):
     """The bytes of the source file. A test hands in its own opener, so that no test opens the network."""
-    with opener(urllib.request.Request(source_url(), headers={"User-Agent": USER_AGENT}), timeout=120) as response:
-        return response.read()
+    return download_retry.fetched(source_url(), {"User-Agent": USER_AGENT}, opener)
 
 
 def verified(raw):
@@ -82,7 +82,7 @@ def default_out():
     return scenarios_path()
 
 
-def main(argv=None, opener=urllib.request.urlopen):
+def main(argv=None, opener=None):
     ap = argparse.ArgumentParser(description=f"fetch the hydraulic scenarios of {DATASET} at revision {REVISION}")
     ap.add_argument("--out", type=Path, default=None,
                     help="the file to write (default: HYD_SCENARIOS_PATH, else scenarios_17.json in the data folder of the asset)")
