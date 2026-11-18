@@ -121,8 +121,9 @@ opening_checks() {
     echo "SERVING_DIFFERS the served model is not the one of the serving file of record, so the job plays no registered line" >&2; return 2
   fi
   python - "$(endpoint_url "$ENDPOINT_FILE")" "$SERVED_NAME" "$FORK" <<'PY'
-import glob, json, os, sys, time, urllib.request
+import json, os, sys, time, urllib.request
 base, model, fork = sys.argv[1:4]
+sys.path[:0] = [fork, os.path.join(fork, "src")]
 body = json.dumps({"model": model, "messages": [{"role": "user", "content": "Reply with the word ready."}]}).encode()
 request = urllib.request.Request(base.rstrip("/") + "/chat/completions", data=body, headers={
     "Content-Type": "application/json", **({"Authorization": "Bearer " + os.environ["API_KEY"]} if os.environ.get("API_KEY") else {})})
@@ -133,11 +134,20 @@ try:
 except Exception as exc:  # noqa: BLE001 - the opening call prints what it met and stops nothing
     outcome = f"failed {type(exc).__name__}"
 seconds = time.monotonic() - started
-rates = []
-for path in sorted(glob.glob(os.path.join(fork, "CausalDiagnosis", "datasets", "*", "asset.json"))):
-    clock = json.load(open(path)).get("clock") or {}
-    if clock.get("think_seconds_per_cycle"):
-        rates.append(f"{os.path.basename(os.path.dirname(path))} {seconds / clock['think_seconds_per_cycle']:.3f}")
+# the thinking rate of every asset of the tree as its loader reads it, from the clock under the defaults of its asset file; an
+# asset without a clock is left out, and one whose profile cannot load prints what it met and leaves the rates of the others
+def rate(asset_id):
+    try:
+        think = get_profile(asset_id).default_config().think_seconds_per_cycle
+    except Exception as exc:  # noqa: BLE001 - as the call itself, a rate prints what it met and stops nothing
+        return f"{asset_id} unknown, {type(exc).__name__}"
+    return f"{asset_id} {seconds / think:.3f}" if think else None
+try:
+    from CausalDiagnosis.datasets.dataset_loader import dataset_packages
+    from CausalDiagnosis.datasets.dataset_loader.profile_registry import get_profile
+    rates = [part for part in map(rate, dataset_packages.asset_ids()) if part]
+except Exception as exc:  # noqa: BLE001 - as the call itself, the rates print what they met and stop nothing
+    rates = [f"unknown, {type(exc).__name__}"]
 print(f"OPENING_CALL {outcome} seconds {seconds:.3f} cycles " + ("; ".join(rates) or "none"))
 PY
 }

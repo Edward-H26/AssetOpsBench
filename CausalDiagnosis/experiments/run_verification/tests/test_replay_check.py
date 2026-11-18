@@ -738,15 +738,26 @@ def test_a_run_whose_only_differences_are_generated_tables_is_certified_with_the
     assert not list(recording.glob("replay_*.json"))
 
 
-def test_certify_writes_only_on_a_clone_of_the_run_s_commit(scripted, tmp_path, monkeypatch):
-    """certify refuses a tree at another commit than the run's and a tree that is no repository of its own, names both, and writes
-    no certificate; on a clone of the run's commit it writes the certificate named by that commit."""
+def test_certify_writes_only_on_a_clone_of_the_run_s_commit(scripted, tmp_path, monkeypatch, capsys):
+    """certify cannot certify on a tree at another commit than the run's or on a tree that is no repository of its own, such as an
+    upload: it says so with the clone to certify on, writes no certificate and ends with NOT_HERE, which the command of
+    verify_results_folder.py returns, apart from the status 1 of a replay that differs, which wins on such a tree too; on a clone
+    of the run's commit it writes the certificate named by that commit."""
     for name, here, reason in (("elsewhere", "d" * 40, f"stands at commit {'d' * 12}"), ("upload", None, "is no repository of its own")):
         run = _copy(scripted("rig"), tmp_path / name)
         _played_at(run, monkeypatch, here=here)
         status, result, path = replay_check.certify(run)
-        assert (status, path) == (1, None) and not list(run.glob("replay_*.json")), name
-        assert any(reason in problem and COMMIT[:12] in problem for problem in result["problems"]), result["problems"]
+        assert (status, path) == (replay_check.NOT_HERE, None) and not list(run.glob("replay_*.json")), name
+        assert any(f"cannot certify here, since the tree {reason}" in problem and COMMIT[:12] in problem for problem in result["problems"]), result["problems"]
+    capsys.readouterr()
+    assert verify_results.main(["--certify", str(run)]) == replay_check.NOT_HERE
+    assert f"{run.name}: cannot certify here, since the tree is no repository of its own" in capsys.readouterr().out
+    lines = transcript.read(run / EPISODE)
+    answer = next(place for place, line in enumerate(lines) if line["kind"] == "call")
+    _write_transcript(run / EPISODE, [{**line, "answer_sha256": "0" * 64} if place == answer else line for place, line in enumerate(lines)], False)
+    status, result, path = replay_check.certify(run)
+    assert (status, path) == (1, None) and not list(run.glob("replay_*.json"))
+    assert f"{run.name}/{EPISODE}: line {answer} differs in answer_sha256" in result["problems"], result["problems"]
     run = _copy(scripted("rig"), tmp_path / "clone")
     _played_at(run, monkeypatch)
     status, _result, path = replay_check.certify(run)

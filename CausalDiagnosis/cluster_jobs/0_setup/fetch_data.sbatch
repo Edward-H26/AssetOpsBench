@@ -5,10 +5,12 @@
 #SBATCH -t 02:00:00
 # The data of record on a CPU node: the one fetch and build command of the data of record, which keeps the archive from the
 # official page in DATA, downloaded once, and builds the files of record into the ignored data folder of this clone, then the
-# fetch of the scenario file of the anchored preset at its pinned revision into the same folder, where the runs of that
-# preset read it, then the check of the files of record against the pins of the tracked CHECKSUMS.txt. Both fetches follow the
+# check of the files of record against the pins of the tracked CHECKSUMS.txt, then the fetch of the scenario file of the
+# anchored preset at its pinned revision into the same folder, where the runs of that preset read it. Both fetches follow the
 # retry policy of every fetch (CausalDiagnosis/utils/download_retry.py, with the settings of functions.sh), and an archive whose
-# download broke off stays in DATA as a partial file, from which the next attempt or the next job goes on.
+# download broke off stays in DATA as a partial file, from which the next attempt or the next job goes on. A failed fetch of
+# data that a step of the setup reads stops the job. No step of the setup reads that scenario file, so a failed fetch of it
+# prints one warning that names its dataset, the job goes on, and its closing line lists the optional datasets missing.
 #   bash $H/submit.sh fetch_data.sbatch
 set -uo pipefail
 source "${HPC_DIR:?submit this script with CausalDiagnosis/cluster_jobs/submit.sh}/env.sh"
@@ -29,7 +31,15 @@ fetch_data() {
   local fetch
   for fetch in ${DATA_FETCHES[@]+"${DATA_FETCHES[@]}"}; do $fetch || return 3; done
   check_data
-  echo "CD_DATA_DONE"
+  # each optional fetch is the name of its dataset and then its command
+  OPTIONAL_MISSING=()
+  for fetch in ${OPTIONAL_DATA_FETCHES[@]+"${OPTIONAL_DATA_FETCHES[@]}"}; do
+    ${fetch#* } && continue
+    echo "WARNING the optional dataset ${fetch%% *} is missing: its fetch failed, and the job goes on without it" >&2
+    OPTIONAL_MISSING+=("${fetch%% *}")
+  done
+  local missing=${OPTIONAL_MISSING[*]+"${OPTIONAL_MISSING[*]}"}
+  echo "CD_DATA_DONE${missing:+ optional datasets missing: $missing}"
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then fetch_data; exit $?; fi

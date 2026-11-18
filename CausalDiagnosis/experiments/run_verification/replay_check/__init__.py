@@ -39,4 +39,4 @@ from . import command_line
 from .run_record_checks import RECORDED_DATA, asset_of, changed_files, config_problem
 from .episode_replay import RELEASED_FILE, _feed_lines, feed, feed_no_call, replay_episode, server_object
 from .run_replay import JUDGE_CELLS, STATIC_MODE, replay_run
-from .certificate import ADVISORY, TOOL, certificate_name, certified, certify
+from .certificate import ADVISORY, NOT_HERE, TOOL, certificate_name, certified, certify

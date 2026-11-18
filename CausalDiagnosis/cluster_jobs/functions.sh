@@ -381,11 +381,14 @@ judge_args() {
 }
 
 # The services of the frameworks of this tree. The job_services.sh of every frameworks/<name>/cluster_jobs defines the
-# functions of the services that its rows need and adds its steps to three lists, so that no script of this folder names a
-# framework: DATA_FETCHES holds the commands that fetch_data.sbatch runs after the data of record, IMAGE_PULLS the functions
-# that pull_image.sbatch calls with a node local folder to pull the images that the jobs of the framework start, and
+# functions of the services that its rows need and adds its steps to four lists, so that no script of this folder names a
+# framework: DATA_FETCHES holds the commands that fetch_data.sbatch runs after the data of record, each of data that a step of
+# the setup reads, so that a failed one stops the job, OPTIONAL_DATA_FETCHES the fetches of data that no step of the setup
+# reads, each the name of its dataset and then its command, whose failure the job names and passes by, IMAGE_PULLS the
+# functions that pull_image.sbatch calls with a node local folder to pull the images that the jobs of the framework start, and
 # PLATFORM_RECORDS the functions that platform_record.sh calls with a node local folder to record the images that the runs use.
 DATA_FETCHES=()
+OPTIONAL_DATA_FETCHES=()
 IMAGE_PULLS=()
 PLATFORM_RECORDS=()
 for services in "$FORK"/CausalDiagnosis/frameworks/*/cluster_jobs/job_services.sh; do

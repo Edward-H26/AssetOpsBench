@@ -123,3 +123,18 @@ def test_the_marked_readings_of_the_table_give_the_observations_of_the_unmarked_
     marked = offline_table.table(models, view, starts=[start])
     monkeypatch.setattr(offline_table, "Reading", lambda *values, recorded=False: Reading(*values))
     assert offline_table.table(models, view, starts=[start]) == marked
+
+
+def test_the_offline_table_writes_its_table_under_a_folder_that_no_step_made(tmp_path, monkeypatch):
+    """The documented line writes the table under the runs root of the tree, which only a grid job makes, so on a new root the
+    module writes its table through a folder that does not exist yet. Its computation is stood in, and main and write are the
+    module's own."""
+    row = {column: 0.5 for column in offline_table.COLUMNS} | {"prehistory": 0, "readings": 1, "episodes": 2}
+    for name, stand_in in (("ensure_models", lambda: None), ("load_models", lambda: type("Models", (), {"blocks": {}})()),
+                           ("asset_view", lambda: None), ("start_sets", lambda view, blocks: ([], [])),
+                           ("table", lambda models, view, starts: [row])):
+        monkeypatch.setattr(offline_table, name, stand_in)
+    out = tmp_path / "root" / "runs" / "development" / "a_tree" / "offline_mcp.csv"
+    offline_table.main(["--out", str(out)])
+    lines = out.read_text(encoding="utf-8").splitlines()
+    assert lines[0] == ",".join(offline_table.COLUMNS) and len(lines) == 2
