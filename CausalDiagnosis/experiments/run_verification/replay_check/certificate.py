@@ -14,6 +14,9 @@ TOOL = "replay_check.py"
 # the code that writes a certificate into a run folder, hashed into the event of the run's ledger
 CODE = ("CausalDiagnosis/experiments/run_verification/replay_check/__init__.py", "CausalDiagnosis/experiments/run_verification/replay_check/run_record_checks.py", "CausalDiagnosis/experiments/run_verification/replay_check/episode_replay.py", "CausalDiagnosis/experiments/run_verification/replay_check/run_replay.py", "CausalDiagnosis/experiments/run_verification/replay_check/certificate.py", "CausalDiagnosis/experiments/run_verification/replay_check/command_line.py", "CausalDiagnosis/experiments/run_verification/replay_check/__main__.py", "CausalDiagnosis/experiments/run_verification/verify_results_folder.py")
 ADVISORY = 3  # the exit status of a replay that passed and counts nowhere, since it ran on another store kind or platform
+# the exit status of a replay that passed on a tree that is no clone of the run's commit, such as an upload, where no certificate
+# can be written: no difference of the run, and apart from the 2 and 4 with which the CPU job stops before its command
+NOT_HERE = 5
 
 
 # ----- the certificate -----
@@ -35,8 +38,9 @@ def certify(run_dir, root=ROOT):
     problems are generated tables (table_problems), which the certificate names in data_differences: every value of such a table
     that an episode or the verifier reads shows in an answer, in a file the episode left or in a score cell, and the replay compared
     all of them. Every certificate names the GPU card of the run's model and judge endpoints as run.json records them
-    (serving_card). The status is 0 with the certificate, 1 with another difference, a tree at another commit or a run that cannot
-    be replayed, ADVISORY when the replay passed and counts nowhere."""
+    (serving_card). The status is 0 with the certificate, 1 with a difference or a run that cannot be replayed, ADVISORY when the
+    replay passed and counts nowhere, and NOT_HERE when the replay passed on a tree at another commit or with no repository of
+    its own, where no certificate can be written."""
     run_dir = Path(run_dir)
     meta = read_json(run_dir / "run.json", {}) or {}
     result = run_replay.replay_run(run_dir, root=root)
@@ -51,9 +55,9 @@ def certify(run_dir, root=ROOT):
     run_commit, commit = (meta.get("code") or {}).get("commit"), ledger.code_identity.git_state([], root)[0]
     if commit is None or commit != run_commit:
         here = "is no repository of its own" if commit is None else f"stands at commit {commit[:12]}"
-        result["problems"].append(f"{run_dir.name}: the tree {here}, and the run was played at commit {(run_commit or 'none')[:12]}; "
-                                  "certify on a clone of the run's commit")
-        return 1, result, None
+        result["problems"].append(f"{run_dir.name}: cannot certify here, since the tree {here} and the run was played at commit "
+                                  f"{(run_commit or 'none')[:12]}; certify on a clone of the run's commit")
+        return NOT_HERE, result, None
     agent = meta.get("agent")
     certificate = {"format": CERTIFICATE_FORMAT, "run": run_dir.name, "run_identity": (meta.get("code") or {}).get("identity"),
                    "run_commit": run_commit, "checked_identity": ledger.identity_of(ledger.code_identity.tree_files(root), agent),

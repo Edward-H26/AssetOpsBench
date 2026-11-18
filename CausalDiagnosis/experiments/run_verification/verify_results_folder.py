@@ -280,7 +280,8 @@ def main(argv):
     ap.add_argument("--certify", default=None, metavar="RUN_FOLDER",
                     help="replay one run folder through the servers of this tree and write its certificate into it when the replay passes and "
                          "counts: exit 0 with the certificate, 1 with a difference or a run that cannot be replayed, 3 when the replay passed on "
-                         "another store kind or platform than the run's and counts nowhere")
+                         "another store kind or platform than the run's and counts nowhere, 5 when it passed on a tree that is no clone of the "
+                         "run's commit, such as an upload, where no certificate can be written")
     a = ap.parse_args(argv)
     if a.certify:
         status, result, path = replay_check.certify(Path(a.certify))

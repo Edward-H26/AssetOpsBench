@@ -16,8 +16,10 @@ from pathlib import Path
 def replaced_atomically(path):
     """A text file to write in place of path: a temporary file beside it, renamed over path when the block ends and removed
     when the block raises, so a failed write leaves the folder as it was. It is created as an ordinary new file, so its mode
-    follows the umask of the process, as the run folders that other users read need."""
+    follows the umask of the process, as the run folders that other users read need. The folder of path is made first, as
+    locked() makes it, since an output may lie under a folder that no earlier step made, as the runs root of a tree on a new root."""
     path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f"{path.name}{secrets.token_hex(4)}.tmp")
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
     try:
