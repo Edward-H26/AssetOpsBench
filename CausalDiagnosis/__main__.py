@@ -91,6 +91,9 @@ COMMANDS = {
     "utils": {
         "paths": ("utils.paths", "print a location of the repository by its name"),
     },
+    "performance": {
+        "profile-table": ("performance.profile_table", "the stage profile of the episodes of run folders, per episode, cell and job"),
+    },
 }
 TABLES = P + "evaluation.result_tables.tables_from_runs"
 TABLES_HELP = (("list", "the name of every result table and what varies in it"),
