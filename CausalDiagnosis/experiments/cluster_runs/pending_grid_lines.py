@@ -107,11 +107,13 @@ def wiring_line(line):
 
 def expected(line, starts=DEFAULT_STARTS, model=None, run_options=()):
     """The run.json fields a finished run of the line carries under the start set of the grid, on the test set those of the
-    replicate the line names, the first when it names none. model is the model the job serves, which run_grid.sbatch passes
-    after the line, so it stands in for the model of the line of a model agent; None keeps the model of the line. run_options are
-    the other words that the job adds after every line, its seeds and GRID_EXTRA, so that the fields are those of the episodes that
-    the line plays under the job."""
-    args = [*line.split(), *run_options]
+    replicate the line names, the first when it names none. The line is a run line of a grid, or the words of a command as the
+    ledger of a run recorded them, a list, which keeps an empty word: the public form of a command holds one in place of the
+    endpoint URL of a model agent (public_record.public_argv), and a split of the joined words would drop it. model is the model
+    the job serves, which run_grid.sbatch passes after the line, so it stands in for the model of the line of a model agent; None
+    keeps the model of the line. run_options are the other words that the job adds after every line, its seeds and GRID_EXTRA, so
+    that the fields are those of the episodes that the line plays under the job."""
+    args = [*(line.split() if isinstance(line, str) else line), *run_options]
     if "--agent" not in args:
         args += ["--agent", "plan_execute"]
     a = run_episodes.build_parser().parse_args(args + ["--starts", starts])
@@ -238,7 +240,7 @@ def runs_in_progress(roots, starts=DEFAULT_STARTS):
             if "--filler" in argv:
                 continue
             try:
-                fields = expected(" ".join(argv), starts)
+                fields = expected(argv, starts)  # the recorded words as they are, the empty one of an endpoint URL among them
             except SystemExit:
                 fields = None
             yield record, path.parent, fields

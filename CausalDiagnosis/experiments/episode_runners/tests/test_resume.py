@@ -19,6 +19,7 @@ import pytest
 from CausalDiagnosis.experiments.run_verification import check_grid_complete as check_grid
 from CausalDiagnosis.experiments.episode_runners import attempt_error_classes as failures
 from CausalDiagnosis.experiments.cluster_runs import grid_job_lists as grid_lines
+from CausalDiagnosis.experiments.run_verification import public_record
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger
 from CausalDiagnosis.experiments.cluster_runs import pending_grid_lines as pending_lines
 from CausalDiagnosis.experiments.episode_runners import run_episodes
@@ -376,6 +377,23 @@ def test_pending_lines_names_the_run_in_progress_with_resume_and_nothing_once_th
         (folder / copy.name / ledger.LEDGER).write_text(json.dumps({**record, **changed}), encoding="utf-8")
         assert pending_lines.pending([LINE], [folder], {}, starts="development", run_options=words) == [LINE], name
     assert grid_lines.filler_arguments(f"{LINE} --replicate 2 --resume {copy}") == LINE
+
+
+def test_pending_lines_take_up_a_run_in_progress_of_a_model_agent_whose_ledger_holds_an_empty_endpoint(runs, tmp_path):
+    """The ledger records a command in its public form, which holds an empty word in place of the endpoint URL of a model agent
+    (public_record.public_argv). The recorded words go to the parser as they are, so a pending pair that a run in progress of a model
+    agent plays is printed with --resume and the run folder, as the pair of a reference policy is."""
+    line, model, words = "--config base --agent causal", "stand-in-model", DEVELOPMENT[2:]
+    argv = public_record.public_argv([*line.split(), "--model", model, "--base-url", "http://127.0.0.1:9/v1", *DEVELOPMENT])
+    assert argv[argv.index("--base-url") + 1] == ""
+    record = read_json(runs["copy"] / ledger.LEDGER)
+    folder = tmp_path / "model"
+    run = folder / runs["copy"].name
+    shutil.copytree(runs["copy"], run)
+    (run / ledger.LEDGER).write_text(json.dumps({**record, "agent": "causal", "command": {**record["command"], "argv": argv}}), encoding="utf-8")
+    assert pending_lines.pending([line], [folder], {}, starts="development", model=model, run_options=words) == [f"{line} --resume {run}"]
+    # the control: the run in progress of a reference policy, whose command holds no endpoint
+    assert pending_lines.pending([LINE], [runs["copy"].parent], {}, starts="development", run_options=words) == [f"{LINE} --resume {runs['copy']}"]
 
 
 @pytest.mark.parametrize("selector", ["start_state", "scenario_ids"])
