@@ -1,0 +1,79 @@
+{
+  "round": "v5_targeted_20261120",
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "agent_version": "v005",
+  "formal_evaluation": false,
+  "debug_only": true,
+  "expected_tasks": 6,
+  "reference_baseline_round": "v4_24_20261120",
+  "tasks": [
+    {
+      "id": "scn01_causal_mcp",
+      "scenario": "scn01",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn1.json",
+      "seed": 0,
+      "scenario_id": 2007
+    },
+    {
+      "id": "scn01_causal_no_mcp",
+      "scenario": "scn01",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn1.json",
+      "seed": 0,
+      "scenario_id": 2007
+    },
+    {
+      "id": "scn02_causal_mcp",
+      "scenario": "scn02",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn2.json",
+      "seed": 0,
+      "scenario_id": 2004
+    },
+    {
+      "id": "scn02_causal_no_mcp",
+      "scenario": "scn02",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn2.json",
+      "seed": 0,
+      "scenario_id": 2004
+    },
+    {
+      "id": "scn06_causal_mcp",
+      "scenario": "scn06",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn6.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn06_causal_no_mcp",
+      "scenario": "scn06",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn6.json",
+      "seed": 1,
+      "scenario_id": null
+    }
+  ],
+  "sha256": {
+    "source/audit.py": "e34b74f7f13830e48e709147bf81ba85a76df7b16ac3b7fa77d6d3b930cb90c5",
+    "source/prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "source/protocol.py": "ac7ea7220bca9f908e6865a5e8c8ff3753d9943ffb6726878a708670203811cc",
+    "source/run.py": "490e3c39ed767b91aad5d603f0b0b8610bd7360205ebf50e77311338cb7b83b8",
+    "source/run_round.py": "40e1210087a7214c39202ab29cd0ee55df52437d78cd3dd9af83052b9c34e78f",
+    "source/scenario1.json": "084d495229ecd84ec9d225b28442b0fe102e0c1baf432445ed842b2197274a10",
+    "source/test_protocol.py": "e7810042764b6877e6c319bcd688d188a2faad1de14314aa4091fbef76f6c88b",
+    "source/v4_protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "configs/scn1.json": "084d495229ecd84ec9d225b28442b0fe102e0c1baf432445ed842b2197274a10",
+    "configs/scn2.json": "bd710cedf820187b28b60c435bb501c6063f2e8d9692efdcdaa757ceca4e7b1f",
+    "configs/scn6.json": "cf578fda76bbb521ad0bf54abd036e45e2d4449ab89060f967ba6816301dcb30"
+  },
+  "shutdown_after_archive": true
+}

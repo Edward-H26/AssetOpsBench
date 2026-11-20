@@ -9,7 +9,7 @@
   "config_file": "scenario1.json",
   "first_seed": 0,
   "scenario_ids": "2007",
-  "status": "offline_verified_not_model_evaluated",
+  "status": "model_validation_queued",
   "formal_evaluation": false,
   "real_llm_runs": 0,
   "offline_tests": 10,
@@ -20,5 +20,8 @@
     "scenario1.json": "084d495229ecd84ec9d225b28442b0fe102e0c1baf432445ed842b2197274a10",
     "test_protocol.py": "e7810042764b6877e6c319bcd688d188a2faad1de14314aa4091fbef76f6c88b",
     "v4_protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9"
-  }
+  },
+  "gpu_job_id": "14029696",
+  "model_validation_round": "v5_targeted_20261120",
+  "model_validation_status_source": "../../rounds/v5_targeted_20261120/status.json"
 }

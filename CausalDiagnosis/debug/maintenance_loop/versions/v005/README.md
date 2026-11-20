@@ -1,6 +1,6 @@
 # v005：提示格式与逐轮记录
 
-状态：10项离线检查通过，**未进行真实LLM试跑**。当前24回合继续使用冻结v004；不在本轮插入v005，不追加GPU，原轮次完成后仍自动归档停服。
+状态：10项离线检查通过。用户已授权另申请GPU，作业14029696已提交，用于6回合定向实测；当前等待调度，**尚无真实模型结果**。[运行记录](../../rounds/v5_targeted_20261120/README.md)。v4的24回合仍使用原冻结代码，两轮各用独立GPU/服务。
 
 ## 改了什么
 
@@ -21,4 +21,4 @@ v4_protocol.py与v004/source/protocol.py完全相同，保留其逐步检查、p
 
 离线检查：在仓库根目录运行`python CausalDiagnosis/debug/maintenance_loop/versions/v005/source/test_protocol.py`。
 
-以后若实测，应以独立输出目录运行`experiment.py run-pair --version v005 ...`，用相同场景、seed、模型比较v004，不覆盖旧记录。目前没有提交这项GPU任务。
+本次定向实测选择Scenario1、2、6，分别带/不带诊断MCP，代码与配置见运行目录manifest.json。不覆盖旧记录，不修改正在运行的v4。完整记录归档后本次GPU也会自动停止。
