@@ -1,0 +1,1722 @@
+{
+ "format": 4,
+ "seed": 0,
+ "config": {
+  "asset_id": "hyd_1",
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE"
+   ],
+   "tier2": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "FS1",
+    "FS2",
+    "CP"
+   ],
+   "tier3": [
+    "PS1",
+    "PS2",
+    "PS3",
+    "PS4",
+    "PS5",
+    "PS6",
+    "EPS1",
+    "FS1",
+    "FS2",
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "CP",
+    "SE"
+   ]
+  },
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "dependencies": {
+   "cooler": [],
+   "valve": [],
+   "pump": [
+    "valve",
+    "accumulator"
+   ],
+   "accumulator": []
+  },
+  "priority": {
+   "valve": 1,
+   "accumulator": 2,
+   "cooler": 3,
+   "pump": 4
+  },
+  "emergency": {
+   "lead": 1,
+   "surcharge": 2.0,
+   "hold": 10
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 4
+  },
+  "allowed": null,
+  "start": {
+   "combination": [
+    3,
+    100,
+    2,
+    130
+   ],
+   "entry_offset": 5
+  },
+  "schedule": {
+   "mode": "none",
+   "components": 0,
+   "first_drop": [
+    0,
+    0
+   ],
+   "interval": 1
+  },
+  "hazard": {
+   "mode": "scheduled",
+   "base_rate": 0.0,
+   "depth_factor": 0.0,
+   "collateral": 0.0
+  },
+  "fix_history": {
+   "healthy_probability": 0.4,
+   "healthy_ago": [
+    5,
+    80
+   ],
+   "degraded_probability": 0.3,
+   "degraded_ago": [
+    5,
+    80
+   ]
+  },
+  "failure": {
+   "patience": 10,
+   "strict": false,
+   "penalty": 50
+  },
+  "clock_mode": "declared",
+  "seconds_per_cycle": 60,
+  "think_seconds_per_cycle": 10,
+  "time_tools": true,
+  "guidance_level": 2,
+  "question": "For asset hp_1, can severe internal pump leakage onset at 2023-01-27 be detected by analyzing sensor data from the last 100 days? Which sensor trends and patterns within this window indicate leakage development?",
+  "anchors": {
+   "date0": "2023-01-27",
+   "asset_alias": "hp_1"
+  },
+  "verifier_scope": "writes",
+  "diagnostics_server": true
+ },
+ "facts_path": "CausalDiagnosis/datasets/hyd_1/data/hyd_cycles.jsonl",
+ "actions": [
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "get_asset_profile"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "cooler"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "valve"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "pump"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "accumulator"
+  },
+  {
+   "type": "aob_read",
+   "server": "wo",
+   "tool": "list_workorders",
+   "fix_history": [
+    "hist/4",
+    "hist/3",
+    "hist/2",
+    "hist/1"
+   ]
+  },
+  {
+   "type": "get_current_time"
+  },
+  {
+   "type": "aob_read",
+   "server": "iot",
+   "tool": "stream_extent"
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": -5,
+   "end": 0,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  }
+ ],
+ "think_cycles": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "think_seconds": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_carried": 0.0,
+ "tool_calls": [
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 59,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":59,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "get_asset_profile",
+   "arguments": {},
+   "summary": {
+    "items": 40
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 58,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":58,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "cooler"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 57,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":57,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "valve"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 56,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":56,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "pump"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 55,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":55,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "accumulator"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 54,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":54,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "list_workorders",
+   "arguments": {
+    "site_id": "MAIN"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 53,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":53,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "get_current_time",
+   "arguments": {},
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 52,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":52,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "stream_extent",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1"
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 51,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":51,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2023-01-27T23:54:00",
+    "end": "2023-01-27T23:59:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     -5,
+     -1
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "price": 50,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 50,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":250,\"steps_left\":50,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 49,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":49,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 48,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":48,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 47,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":47,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 46,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":46,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 45,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":45,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 44,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":44,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 43,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":43,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 42,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":42,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 41,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":41,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 40,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":40,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 39,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":39,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 38,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":38,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 37,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":37,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 36,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":36,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 35,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":35,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 34,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":34,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 33,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":33,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 32,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":32,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 31,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":31,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 30,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":30,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 29,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":29,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 28,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":28,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 27,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":27,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 26,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":26,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 25,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":25,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 24,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":24,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 23,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":23,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 22,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":22,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 21,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":21,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 20,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":20,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 19,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":19,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 18,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":18,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 17,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":17,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 16,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":16,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 15,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":15,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 14,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":14,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 13,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":13,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 12,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":12,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 11,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":11,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 10,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":10,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 9,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":9,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 8,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":8,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 7,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":7,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 6,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":6,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 5,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":5,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 4,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":4,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 3,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":3,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 2,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":2,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 1,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":1,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 0,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_STOP",
+     "t": 0,
+     "message": "The episode ended (max_steps).",
+     "event": "end",
+     "reason": "max_steps"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":0,\"cycle\":0,\"notifications\":[{\"message_type\":\"ENVIRONMENT_STOP\",\"t\":0,\"message\":\"The episode ended (max_steps).\",\"event\":\"end\",\"reason\":\"max_steps\"}]}"
+  }
+ ],
+ "last_call_wall_time": 1795201041.2567606,
+ "episode_started_at": 1795199937.3052866,
+ "called_at": [
+  1795199950.27877,
+  1795199953.0069747,
+  1795199956.4031873,
+  1795199956.5121098,
+  1795199956.523154,
+  1795199956.5352175,
+  1795199972.275193,
+  1795199974.7001293,
+  1795199974.757652,
+  1795199981.9223852,
+  1795200010.59227,
+  1795200053.821668,
+  1795200101.886646,
+  1795200117.4449306,
+  1795200129.3922892,
+  1795200144.7398396,
+  1795200163.2409732,
+  1795200178.055742,
+  1795200194.1658547,
+  1795200208.6979764,
+  1795200224.7995229,
+  1795200239.934776,
+  1795200255.3653367,
+  1795200270.0771902,
+  1795200282.122047,
+  1795200296.0769458,
+  1795200311.325778,
+  1795200325.147646,
+  1795200338.425195,
+  1795200355.0875115,
+  1795200370.8866436,
+  1795200383.308021,
+  1795200394.572574,
+  1795200407.9068031,
+  1795200424.6377974,
+  1795200434.7437527,
+  1795200447.7661526,
+  1795200457.7351282,
+  1795200474.966787,
+  1795200506.6037138,
+  1795200538.4025033,
+  1795200569.6352742,
+  1795200603.3870082,
+  1795200637.2602162,
+  1795200668.0989726,
+  1795200700.837404,
+  1795200734.4285107,
+  1795200768.089465,
+  1795200800.1207373,
+  1795200815.1653516,
+  1795200828.8878584,
+  1795200841.4292345,
+  1795200876.1645782,
+  1795200888.5457613,
+  1795200920.0195923,
+  1795200932.4031959,
+  1795200984.1610134,
+  1795200996.547836,
+  1795201028.866643,
+  1795201041.2567606
+ ],
+ "think_seconds_monotonic": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_wall": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "last_call_monotonic_time": 872004.418218161,
+ "handover_wall": 1795199937.3254468,
+ "handover_mono": 870900.486904766,
+ "charged_until_mono": 872004.418218161,
+ "transcript_cursor": 97228,
+ "failures_cursor": 0,
+ "credited_segments": [],
+ "started_servers": [
+  "iot",
+  "fmsr",
+  "wo",
+  "task",
+  "causal_diagnosis"
+ ],
+ "open_service": {
+  "n": 191,
+  "e": 872004.418218161,
+  "e_thread": 0.773568227
+ },
+ "refused_processes": {},
+ "credited_seconds": {
+  "starts": 7.86827040289063,
+  "calls": 1.096902289
+ },
+ "uncredited_seconds": {
+  "starts": 0.07618065201677382,
+  "calls": 0.041330257043582466
+ },
+ "failed_model_seconds": 0.0,
+ "failed_model_attempts": 0,
+ "episode_ended_at": 1795201046.8999467
+}

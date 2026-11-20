@@ -1,0 +1,24 @@
+{
+  "version": "v005",
+  "variant": "prompt-and-live-trace-over-v004",
+  "created_at": "2026-11-20T19:09:06.151044+00:00",
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "parent_debug_commit": "eca77c745fac2d75175fbe6f212e5504ea0503a1",
+  "parent_variant": "v004",
+  "execution_kernel_unchanged": true,
+  "config_file": "scenario1.json",
+  "first_seed": 0,
+  "scenario_ids": "2007",
+  "status": "offline_verified_not_model_evaluated",
+  "formal_evaluation": false,
+  "real_llm_runs": 0,
+  "offline_tests": 10,
+  "sha256": {
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "protocol.py": "ac7ea7220bca9f908e6865a5e8c8ff3753d9943ffb6726878a708670203811cc",
+    "run.py": "490e3c39ed767b91aad5d603f0b0b8610bd7360205ebf50e77311338cb7b83b8",
+    "scenario1.json": "084d495229ecd84ec9d225b28442b0fe102e0c1baf432445ed842b2197274a10",
+    "test_protocol.py": "e7810042764b6877e6c319bcd688d188a2faad1de14314aa4091fbef76f6c88b",
+    "v4_protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "backend": "synthetic, no model API",
+  "actual_post_opening_prompt_hook_verified": true,
+  "exact_retry_preserved": true,
+  "invalid_array_still_refused": true,
+  "live_trace_events": [
+    "model_request",
+    "model_reply",
+    "plan_decision"
+  ],
+  "real_llm_api_calls": 0
+}

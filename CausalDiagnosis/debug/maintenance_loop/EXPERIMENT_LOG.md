@@ -20,6 +20,7 @@
 | [v003](versions/v003/README.md) | 实际只执行首个模型动作，再重规划 | 已完成：MCP空读循环；无MCP在首个模型调用前被debug bug阻塞，不能比较能力 | [设计与实测分析](versions/v003/ANALYSIS.md) |
 | [v004](versions/v004/README.md) | 修开局异常、保留计划进度、显式可用数据与空读反馈 | 用户要求切到动态场景，基础试跑已中断，不计任务失败 | [设计与实测分析](versions/v004/ANALYSIS.md) |
 | [v004_dynamic_scn6](versions/v004_dynamic_scn6/README.md) | agent不变，只换实时时钟/定时劣化场景 | 已完成：诊断正确，未完成整机维修；cycle60结束，生产损失209 | [分析](versions/v004_dynamic_scn6/ANALYSIS.md) |
+| [v005](versions/v005/README.md) | 明确输出字段、当前可用信息、核验后结束提示、逐轮原文日志 | 10项离线检查通过，未进行真实LLM试跑；不影响当前v4整轮 | [分析](versions/v005/ANALYSIS.md) |
 
 ## 2026-11-20：从历史结果得到的设计
 
@@ -48,6 +49,12 @@ Scenario6动态预试完成：诊断正确、passFalse、recoveredFalse、cycle6
 用户要求综合跑完后归档并停止GPU，覆盖此前“持续保留GPU”的偏好。原GPU14011256已自然TIMEOUT于12小时上限；新的整轮GPU作业14027301已提交，等待调度，单卡A6000/l40/l40s任选，不指定节点。整轮为8场景×3配置24回合，每场景依次v4+MCP、v4无MCP、原版Plan-Execute+MCP。模型Granite3.3-8B BF16/context131072，memory backend、judge none。
 
 整轮快照与24任务清单在[rounds/v4_24_20261120](rounds/v4_24_20261120/README.md)。每回合独立命令/日志/输入输出/评分/分析；全部执行并打包后，native RUN_AFTER_SERVE退出并停止模型、释放GPU，不再常驻。新作业尚未开始时不能报告24回合已跑完。两组可用工具差异、重建场景及单seed的局限继续保留。
+
+## 2026-11-20：v005离线完善，v4整轮保持冻结
+
+当前已完成4/24。Scenario2带MCP回合有40次已知空读意图被拒绝，模型回复仍以read开头，并出现缺mode等错误。结合Scenario1无MCP的参数格式问题、带MCP核验后不结束的问题，新增v005提示与逐轮日志包装。
+
+v005不改v004执行逻辑和环境规则。输出契约明确字段类型和实际组名；提示实际可读周期、预算、公开核验结果；把每轮模型原文、拒绝原因及执行反馈即时记录。10项离线检查与v4原11项检查通过，真实LLM效果未测。没有新GPU任务，当前24回合与自动归档停GPU安排保持不变。
 
 ## 2026-11-20T07:50:29.316517+00:00 — 建立 v004
 
