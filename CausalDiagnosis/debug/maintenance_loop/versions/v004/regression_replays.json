@@ -1,0 +1,13 @@
+{
+  "kind": "offline public-evidence regression, no LLM generation",
+  "source_version": "v003",
+  "frozen_runtime_version": "v004",
+  "empty_read_rejected": true,
+  "reason": "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+  "unread_cycles": {
+    "tier1": 0,
+    "tier2": 0,
+    "tier3": 0
+  },
+  "no_profile_no_wait_prompt_safe": true
+}

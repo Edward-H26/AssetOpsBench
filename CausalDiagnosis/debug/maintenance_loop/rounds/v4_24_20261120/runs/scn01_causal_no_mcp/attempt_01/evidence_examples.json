@@ -1,0 +1,17 @@
+[
+  {
+    "plan_index": 40,
+    "proposed_or_executed": {
+      "branch": null,
+      "mode": null,
+      "why": "controller: no usable plan, the reply step 1 (diagnose): no candidate exists yet, so list your candidates under candidates before the diagnosis",
+      "steps": []
+    },
+    "check_problems": [
+      [
+        "step 1 (diagnose): no candidate exists yet, so list your candidates under candidates before the diagnosis"
+      ]
+    ],
+    "surprise": null
+  }
+]

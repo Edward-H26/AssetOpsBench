@@ -1,0 +1,11 @@
+{
+  "version": "v002",
+  "imported": true,
+  "design": "首次仅读取一个传感器组；提示分段计划、完工后验证；仅修改prompt",
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "source_sha256": {
+    "prompts.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d"
+  },
+  "original_remote_root": "runtime/prompt_debug/20261120_prompt_v2",
+  "formal_evaluation": false
+}

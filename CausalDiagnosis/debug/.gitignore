@@ -1,0 +1,15 @@
+# Runtime synchronization is local; publish a dated review snapshot instead.
+**/__pycache__/
+**/*.pyc
+**/*.lock
+**/*.pid
+**/sync.json
+**/sync_stdout.log
+**/sync_stderr.log
+**/SYNC_COMPLETE.json
+**/launch_private.json
+**/*.key
+maintenance_loop/rounds/*/status.json
+maintenance_loop/rounds/*/SUMMARY.md
+maintenance_loop/rounds/*/models.json
+maintenance_loop/rounds/*/serving.txt

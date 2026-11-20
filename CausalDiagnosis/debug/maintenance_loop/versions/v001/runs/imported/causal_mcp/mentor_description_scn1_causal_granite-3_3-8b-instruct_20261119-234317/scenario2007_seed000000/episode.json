@@ -1,0 +1,1587 @@
+{
+ "format": 4,
+ "seed": 0,
+ "config": {
+  "asset_id": "hyd_1",
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE"
+   ],
+   "tier2": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "FS1",
+    "FS2",
+    "CP"
+   ],
+   "tier3": [
+    "PS1",
+    "PS2",
+    "PS3",
+    "PS4",
+    "PS5",
+    "PS6",
+    "EPS1",
+    "FS1",
+    "FS2",
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "CP",
+    "SE"
+   ]
+  },
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "dependencies": {
+   "cooler": [],
+   "valve": [],
+   "pump": [
+    "valve",
+    "accumulator"
+   ],
+   "accumulator": []
+  },
+  "priority": {
+   "valve": 1,
+   "accumulator": 2,
+   "cooler": 3,
+   "pump": 4
+  },
+  "emergency": {
+   "lead": 1,
+   "surcharge": 2.0,
+   "hold": 10
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 4
+  },
+  "allowed": null,
+  "start": {
+   "combination": [
+    100,
+    100,
+    2,
+    130
+   ],
+   "entry_offset": 5
+  },
+  "schedule": {
+   "mode": "none",
+   "components": 0,
+   "first_drop": [
+    0,
+    0
+   ],
+   "interval": 1
+  },
+  "hazard": {
+   "mode": "scheduled",
+   "base_rate": 0.0,
+   "depth_factor": 0.0,
+   "collateral": 0.0
+  },
+  "fix_history": {
+   "healthy_probability": 0.4,
+   "healthy_ago": [
+    5,
+    80
+   ],
+   "degraded_probability": 0.3,
+   "degraded_ago": [
+    5,
+    80
+   ]
+  },
+  "failure": {
+   "patience": 10,
+   "strict": false,
+   "penalty": 50
+  },
+  "clock_mode": "declared",
+  "seconds_per_cycle": 60,
+  "think_seconds_per_cycle": 10,
+  "time_tools": true,
+  "guidance_level": 2,
+  "question": "For asset hp_1, using the last 100 days up to and including 2027-01-30, can sensor data reveal the onset of severe internal pump leakage? Which sensor anomalies support this?",
+  "anchors": {
+   "date0": "2027-01-30",
+   "asset_alias": "hp_1"
+  },
+  "verifier_scope": "writes",
+  "diagnostics_server": true
+ },
+ "facts_path": "CausalDiagnosis/datasets/hyd_1/data/hyd_cycles.jsonl",
+ "actions": [
+  {
+   "type": "get_asset_profile"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "cooler"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "valve"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "pump"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "accumulator"
+  },
+  {
+   "type": "aob_read",
+   "server": "wo",
+   "tool": "list_workorders",
+   "fix_history": [
+    "hist/4",
+    "hist/3",
+    "hist/2",
+    "hist/1"
+   ]
+  },
+  {
+   "type": "get_current_time"
+  },
+  {
+   "type": "aob_read",
+   "server": "iot",
+   "tool": "stream_extent"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  }
+ ],
+ "think_cycles": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "think_seconds": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_carried": 0.0,
+ "tool_calls": [
+  {
+   "server": "task",
+   "tool": "get_asset_profile",
+   "arguments": {},
+   "summary": {
+    "items": 40
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 59,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":59,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "cooler"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 58,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":58,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "valve"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 57,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":57,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "pump"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 56,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":56,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "accumulator"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 55,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":55,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "list_workorders",
+   "arguments": {
+    "site_id": "MAIN"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 54,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":54,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "get_current_time",
+   "arguments": {},
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 53,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":53,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "stream_extent",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1"
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 52,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":52,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 51,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":51,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 50,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":50,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 49,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":49,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 48,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":48,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 47,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":47,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 46,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":46,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 45,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":45,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 44,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":44,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 43,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":43,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 42,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":42,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 41,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":41,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 40,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":40,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 39,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":39,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 38,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":38,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 37,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":37,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 36,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":36,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 35,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":35,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 34,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":34,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 33,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":33,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 32,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":32,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 31,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":31,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 30,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":30,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 29,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":29,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 28,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":28,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 27,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":27,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 26,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":26,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 25,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":25,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 24,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":24,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 23,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":23,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 22,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":22,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 21,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":21,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 20,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":20,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 19,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":19,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 18,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":18,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 17,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":17,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 16,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":16,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 15,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":15,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 14,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":14,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 13,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":13,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 12,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":12,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 11,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":11,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 10,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":10,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 9,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":9,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 8,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":8,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 7,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":7,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 6,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":6,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 5,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":5,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 4,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":4,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 3,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":3,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 2,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":2,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 1,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":1,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 0,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_STOP",
+     "t": 0,
+     "message": "The episode ended (max_steps).",
+     "event": "end",
+     "reason": "max_steps"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":0,\"cycle\":0,\"notifications\":[{\"message_type\":\"ENVIRONMENT_STOP\",\"t\":0,\"message\":\"The episode ended (max_steps).\",\"event\":\"end\",\"reason\":\"max_steps\"}]}"
+  }
+ ],
+ "last_call_wall_time": 1795150730.859161,
+ "episode_started_at": 1795149867.2476263,
+ "called_at": [
+  1795149885.116784,
+  1795149889.3890595,
+  1795149889.5123205,
+  1795149889.5266438,
+  1795149889.5406394,
+  1795149889.6087239,
+  1795149889.7792993,
+  1795149889.8474605,
+  1795149917.333112,
+  1795149927.1895804,
+  1795149937.1279001,
+  1795149952.2210834,
+  1795149964.02042,
+  1795149976.4433038,
+  1795149987.5620062,
+  1795150002.0755022,
+  1795150016.3702984,
+  1795150028.111806,
+  1795150055.798585,
+  1795150072.8903754,
+  1795150088.1995614,
+  1795150109.8735826,
+  1795150121.2674692,
+  1795150134.3141334,
+  1795150144.4121983,
+  1795150172.4189732,
+  1795150184.293919,
+  1795150195.403251,
+  1795150207.2865057,
+  1795150219.0510728,
+  1795150229.5475318,
+  1795150243.4125006,
+  1795150254.705114,
+  1795150266.6168919,
+  1795150283.9425435,
+  1795150301.1680355,
+  1795150315.458444,
+  1795150340.7860422,
+  1795150355.3778248,
+  1795150366.049248,
+  1795150378.1906695,
+  1795150390.6719031,
+  1795150402.0040941,
+  1795150416.9887547,
+  1795150429.2105095,
+  1795150442.0746133,
+  1795150542.360732,
+  1795150556.4096456,
+  1795150570.1492128,
+  1795150585.0401416,
+  1795150599.750585,
+  1795150613.6299536,
+  1795150628.1197484,
+  1795150640.859942,
+  1795150654.2271054,
+  1795150667.7898123,
+  1795150688.2588918,
+  1795150702.7755058,
+  1795150715.4565172,
+  1795150730.859161
+ ],
+ "think_seconds_monotonic": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_wall": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "last_call_monotonic_time": 821667.25311789,
+ "handover_wall": 1795149867.270411,
+ "handover_mono": 820803.664368875,
+ "charged_until_mono": 821667.25311789,
+ "transcript_cursor": 66619,
+ "failures_cursor": 0,
+ "credited_segments": [],
+ "started_servers": [
+  "iot",
+  "fmsr",
+  "wo",
+  "task",
+  "causal_diagnosis"
+ ],
+ "open_service": {
+  "n": 190,
+  "e": 821667.25311789,
+  "e_thread": 0.77777264
+ },
+ "refused_processes": {},
+ "credited_seconds": {
+  "starts": 9.225330728921108,
+  "calls": 1.1131803740000001
+ },
+ "uncredited_seconds": {
+  "starts": 0.03927910595666617,
+  "calls": 1.8559715095024911
+ },
+ "failed_model_seconds": 0.0,
+ "failed_model_attempts": 0,
+ "episode_ended_at": 1795150735.7214656
+}

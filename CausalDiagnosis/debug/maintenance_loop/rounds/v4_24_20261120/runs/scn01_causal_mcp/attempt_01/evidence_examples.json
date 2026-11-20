@@ -1,0 +1,62 @@
+[
+  {
+    "plan_index": 9,
+    "proposed_or_executed": {
+      "branch": null,
+      "mode": null,
+      "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+      "steps": []
+    },
+    "check_problems": [
+      [
+        "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+      ]
+    ],
+    "surprise": null
+  },
+  {
+    "plan_index": 12,
+    "proposed_or_executed": {
+      "branch": null,
+      "mode": null,
+      "why": "controller: no usable plan, the reply step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order",
+      "steps": []
+    },
+    "check_problems": [
+      [
+        "step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order"
+      ]
+    ],
+    "surprise": null
+  },
+  {
+    "plan_index": 13,
+    "proposed_or_executed": {
+      "branch": null,
+      "mode": null,
+      "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+      "steps": []
+    },
+    "check_problems": [
+      [
+        "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+      ]
+    ],
+    "surprise": null
+  },
+  {
+    "plan_index": 14,
+    "proposed_or_executed": {
+      "branch": null,
+      "mode": null,
+      "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+      "steps": []
+    },
+    "check_problems": [
+      [
+        "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+      ]
+    ],
+    "surprise": null
+  }
+]

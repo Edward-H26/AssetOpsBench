@@ -1,0 +1,4 @@
+{
+  "status": "interrupted_for_dynamic_scenario",
+  "reason": "User requested autonomous-evolution scenario; CPU client stopped; GPU service retained. Not a model task failure."
+}

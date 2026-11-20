@@ -1,0 +1,45 @@
+{
+  "name": "mentor_description_scn4",
+  "description": "Worst valve and pump, ten-cycle failure and repair dependency; reconstructed from the user-provided description, not an original teammate preset.",
+  "layers": [
+    "priced",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": "none",
+    "time_tools": "on",
+    "failure": {
+      "patience": 10,
+      "strict": true,
+      "penalty": 50
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": {
+    "combination": [
+      100,
+      73,
+      2,
+      130
+    ],
+    "entry_offset": 0
+  },
+  "question": null,
+  "allowed": [
+    [
+      100,
+      73,
+      2,
+      130
+    ]
+  ],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 4
+  }
+}

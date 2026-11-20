@@ -1,0 +1,9 @@
+{
+  "cpu_job_id": "14019427",
+  "gpu_service_job_id": "14011256",
+  "model": "granite-3.3-8b-instruct",
+  "context_length": 131072,
+  "formal_evaluation": false,
+  "official_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "output_root": "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/versions/v003/runs"
+}

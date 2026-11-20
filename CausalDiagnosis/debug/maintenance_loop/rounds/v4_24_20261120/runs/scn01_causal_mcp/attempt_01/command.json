@@ -1,0 +1,42 @@
+{
+  "command": [
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/envs/92825b6b865b/bin/python",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/rounds/v4_24_20261120/source/run.py",
+    "experiments",
+    "run-episodes",
+    "--config",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/rounds/v4_24_20261120/configs/scn1.json",
+    "--agent",
+    "causal",
+    "--servers",
+    "aob",
+    "--store",
+    "memory",
+    "--starts",
+    "seeds",
+    "--seeds",
+    "1",
+    "--first-seed",
+    "0",
+    "--model",
+    "granite-3.3-8b-instruct",
+    "--base-url",
+    "http://10.197.80.93:40037/v1",
+    "--judge",
+    "none",
+    "--out",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/rounds/v4_24_20261120/runs/scn01_causal_mcp/attempt_01/episodes",
+    "--scenario-ids",
+    "2007"
+  ],
+  "started_at": "2026-11-20T17:53:30.813545+00:00",
+  "task": {
+    "id": "scn01_causal_mcp",
+    "scenario": "scn01",
+    "mode": "causal_mcp",
+    "agent": "causal",
+    "config": "configs/scn1.json",
+    "seed": 0,
+    "scenario_id": 2007
+  }
+}

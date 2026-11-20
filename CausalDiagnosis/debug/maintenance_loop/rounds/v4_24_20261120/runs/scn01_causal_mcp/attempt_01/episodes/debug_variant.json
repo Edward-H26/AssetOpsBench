@@ -1,0 +1,16 @@
+{
+  "debug_variant": "maintenance-loop-v4",
+  "official_entry": "CausalDiagnosis",
+  "one_proposed_action_per_turn": true,
+  "preserve_pending_steps": true,
+  "native_verifier": true,
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "overlay_sha256": {
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "run.py": "deb3c693c9c7d5d582e3e7004983cbf4fc7ca729eeb3dd3f3ffa072a75e5f26f",
+    "test_protocol.py": "2e17dad0ef984db9ff1f546bfc2773dcac0edb96921d74afdb5510be9169f20e",
+    "protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "run_round.py": "f891c90dc740125a6b93a0e1e7f732e87d8ab97698c0054a92cc341a8a639996",
+    "audit.py": "e34b74f7f13830e48e709147bf81ba85a76df7b16ac3b7fa77d6d3b930cb90c5"
+  }
+}

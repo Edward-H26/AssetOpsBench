@@ -1,0 +1,31 @@
+{
+ "attempts": 1,
+ "set_aside": null,
+ "standing": {
+  "class": "agent",
+  "kinds": [
+   "other",
+   "timeout"
+  ],
+  "health": null,
+  "error": "WallLimit: the episode passed 1800 s; APITimeoutError: Request timed out.",
+  "finish_by": "harness",
+  "finish": {
+   "stamp": 1795155519.3117204,
+   "source": "the cut at the wall limit",
+   "think_cycles": 0,
+   "refusal": null
+  },
+  "runner_end": "cancelled",
+  "wall_limit": true,
+  "cut_end": "wall",
+  "cut_probe": {
+   "ok": true,
+   "status": 200,
+   "error": null,
+   "seconds": 0.031,
+   "cut_probes": 1
+  },
+  "cache_flush": null
+ }
+}

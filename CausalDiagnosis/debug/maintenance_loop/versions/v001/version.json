@@ -1,0 +1,11 @@
+{
+  "version": "v001",
+  "imported": true,
+  "design": "分阶段开局、明确计划DSL与MCP工具名、真实ID与组件键；仅修改prompt",
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "source_sha256": {
+    "prompts.py": "8c6eaa24645f98f7b687e5c35ca30acb9483e3b2f9809572706baa10a1df12d3"
+  },
+  "original_remote_root": "runtime/prompt_debug/20261119_prompt_v1",
+  "formal_evaluation": false
+}

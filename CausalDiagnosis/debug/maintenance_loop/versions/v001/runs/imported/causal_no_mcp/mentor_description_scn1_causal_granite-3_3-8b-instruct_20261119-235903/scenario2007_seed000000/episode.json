@@ -1,0 +1,1928 @@
+{
+ "format": 4,
+ "seed": 0,
+ "config": {
+  "asset_id": "hyd_1",
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE"
+   ],
+   "tier2": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "FS1",
+    "FS2",
+    "CP"
+   ],
+   "tier3": [
+    "PS1",
+    "PS2",
+    "PS3",
+    "PS4",
+    "PS5",
+    "PS6",
+    "EPS1",
+    "FS1",
+    "FS2",
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "CP",
+    "SE"
+   ]
+  },
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "dependencies": {
+   "cooler": [],
+   "valve": [],
+   "pump": [
+    "valve",
+    "accumulator"
+   ],
+   "accumulator": []
+  },
+  "priority": {
+   "valve": 1,
+   "accumulator": 2,
+   "cooler": 3,
+   "pump": 4
+  },
+  "emergency": {
+   "lead": 1,
+   "surcharge": 2.0,
+   "hold": 10
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 4
+  },
+  "allowed": null,
+  "start": {
+   "combination": [
+    100,
+    100,
+    2,
+    130
+   ],
+   "entry_offset": 5
+  },
+  "schedule": {
+   "mode": "none",
+   "components": 0,
+   "first_drop": [
+    0,
+    0
+   ],
+   "interval": 1
+  },
+  "hazard": {
+   "mode": "scheduled",
+   "base_rate": 0.0,
+   "depth_factor": 0.0,
+   "collateral": 0.0
+  },
+  "fix_history": {
+   "healthy_probability": 0.4,
+   "healthy_ago": [
+    5,
+    80
+   ],
+   "degraded_probability": 0.3,
+   "degraded_ago": [
+    5,
+    80
+   ]
+  },
+  "failure": {
+   "patience": 10,
+   "strict": false,
+   "penalty": 50
+  },
+  "clock_mode": "declared",
+  "seconds_per_cycle": 60,
+  "think_seconds_per_cycle": 10,
+  "time_tools": true,
+  "guidance_level": 2,
+  "question": "For asset hp_1, using the last 100 days up to and including 2027-01-30, can sensor data reveal the onset of severe internal pump leakage? Which sensor anomalies support this?",
+  "anchors": {
+   "date0": "2027-01-30",
+   "asset_alias": "hp_1"
+  },
+  "verifier_scope": "writes",
+  "diagnostics_server": false
+ },
+ "facts_path": "CausalDiagnosis/datasets/hyd_1/data/hyd_cycles.jsonl",
+ "actions": [
+  {
+   "type": "get_asset_profile"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "cooler"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "valve"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "pump"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "accumulator"
+  },
+  {
+   "type": "aob_read",
+   "server": "wo",
+   "tool": "list_workorders",
+   "fix_history": [
+    "hist/4",
+    "hist/3",
+    "hist/2",
+    "hist/1"
+   ]
+  },
+  {
+   "type": "aob_read",
+   "server": "iot",
+   "tool": "stream_extent"
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": -5,
+   "end": 0,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "submit_diagnosis",
+   "diagnosis": {
+    "cooler": 100,
+    "valve": 100,
+    "pump": 2,
+    "accumulator": 130
+   },
+   "evidence_ids": [
+    "obs/1/CE_CoolingEfficiency_percent_1Hz_mean",
+    "obs/1/CP_CoolingPower_kW_1Hz_mean",
+    "obs/1/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/1/FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/1/P1_MotorPower_W_100Hz_mean",
+    "obs/1/PS1_Pressure_bar_100Hz_mean",
+    "obs/1/PS2_Pressure_bar_100Hz_mean",
+    "obs/1/PS3_Pressure_bar_100Hz_mean",
+    "obs/1/PS4_Pressure_bar_100Hz_mean",
+    "obs/1/PS5_Pressure_bar_100Hz_mean",
+    "obs/1/PS6_Pressure_bar_100Hz_mean",
+    "obs/1/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/1/TS1_Temperature_C_1Hz_mean",
+    "obs/1/TS2_Temperature_C_1Hz_mean",
+    "obs/1/TS3_Temperature_C_1Hz_mean",
+    "obs/1/TS4_Temperature_C_1Hz_mean",
+    "obs/1/VS1_Vibration_mm_per_s_1Hz_mean",
+    "obs/2/CP_CoolingPower_kW_1Hz_mean",
+    "obs/2/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/2/FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/2/P1_MotorPower_W_100Hz_mean",
+    "obs/2/PS1_Pressure_bar_100Hz_mean",
+    "obs/2/PS2_Pressure_bar_100Hz_mean",
+    "obs/2/PS3_Pressure_bar_100Hz_mean",
+    "obs/2/PS4_Pressure_bar_100Hz_mean",
+    "obs/2/PS5_Pressure_bar_100Hz_mean",
+    "obs/2/PS6_Pressure_bar_100Hz_mean",
+    "obs/2/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/2/TS1_Temperature_C_1Hz_mean",
+    "obs/2/TS2_Temperature_C_1Hz_mean",
+    "obs/2/TS3_Temperature_C_1Hz_mean",
+    "obs/2/TS4_Temperature_C_1Hz_mean",
+    "obs/2/VS1_Vibration_mm_per_s_1Hz_mean",
+    "obs/3/CP_CoolingPower_kW_1Hz_mean",
+    "obs/3/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/3/FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/3/P1_MotorPower_W_100Hz_mean",
+    "obs/3/PS1_Pressure_bar_100Hz_mean",
+    "obs/3/PS2_Pressure_bar_100Hz_mean",
+    "obs/3/PS3_Pressure_bar_100Hz_mean",
+    "obs/3/PS4_Pressure_bar_100Hz_mean",
+    "obs/3/PS5_Pressure_bar_100Hz_mean",
+    "obs/3/PS6_Pressure_bar_100Hz_mean",
+    "obs/3/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/3/TS1_Temperature_C_1Hz_mean",
+    "obs/3/TS2_Temperature_C_1Hz_mean",
+    "obs/3/TS3_Temperature_C_1Hz_mean",
+    "obs/3/TS4_Temperature_C_1Hz_mean",
+    "obs/3/VS1_Vibration_mm_per_s_1Hz_mean",
+    "obs/4/CE_CoolingEfficiency_percent_1Hz_mean",
+    "obs/4/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/4/FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/4/P1_MotorPower_W_100Hz_mean",
+    "obs/4/PS1_Pressure_bar_100Hz_mean",
+    "obs/4/PS2_Pressure_bar_100Hz_mean",
+    "obs/4/PS3_Pressure_bar_100Hz_mean",
+    "obs/4/PS4_Pressure_bar_100Hz_mean",
+    "obs/4/PS5_Pressure_bar_100Hz_mean",
+    "obs/4/PS6_Pressure_bar_100Hz_mean",
+    "obs/4/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/4/TS1_Temperature_C_1Hz_mean",
+    "obs/4/TS2_Temperature_C_1Hz_mean",
+    "obs/4/TS3_Temperature_C_1Hz_mean",
+    "obs/4/TS4_Temperature_C_1Hz_mean",
+    "obs/4/VS1_Vibration_mm_per_s_1Hz_mean",
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/5/FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/5/P1_MotorPower_W_100Hz_mean",
+    "obs/5/PS1_Pressure_bar_100Hz_mean",
+    "obs/5/PS2_Pressure_bar_100Hz_mean",
+    "obs/5/PS3_Pressure_bar_100Hz_mean",
+    "obs/5/PS4_Pressure_bar_100Hz_mean",
+    "obs/5/PS5_Pressure_bar_100Hz_mean",
+    "obs/5/PS6_Pressure_bar_100Hz_mean",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/5/TS1_Temperature_C_1Hz_mean",
+    "obs/5/TS2_Temperature_C_1Hz_mean",
+    "obs/5/TS3_Temperature_C_1Hz_mean",
+    "obs/5/TS4_Temperature_C_1Hz_mean",
+    "obs/5/VS1_Vibration_mm_per_s_1Hz_mean"
+   ]
+  },
+  {
+   "type": "create_work_order",
+   "component": "pump",
+   "mode": "standard",
+   "prediction_id": "",
+   "evidence_ids": []
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  }
+ ],
+ "think_cycles": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "think_seconds": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_carried": 0.0,
+ "tool_calls": [
+  {
+   "server": "task",
+   "tool": "get_asset_profile",
+   "arguments": {},
+   "summary": {
+    "items": 32
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 59,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":59,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "cooler"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 58,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":58,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "valve"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 57,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":57,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "pump"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 56,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":56,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "accumulator"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 55,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":55,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "list_workorders",
+   "arguments": {
+    "site_id": "MAIN"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 54,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":54,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "stream_extent",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1"
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 53,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":53,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2027-01-30T23:54:00",
+    "end": "2027-01-30T23:59:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     -5,
+     -1
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "price": 50,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 52,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":250,\"steps_left\":52,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "submit_diagnosis",
+   "arguments": {
+    "cooler": 100,
+    "valve": 100,
+    "pump": 2,
+    "accumulator": 130,
+    "evidence_ids": "obs/2027-01-30T23:54:00/CE_CoolingEfficiency_percent_1Hz,obs/2027-01-30T23:54:00/CP_CoolingPower_kW_1Hz,obs/2027-01-30T23:54:00/FS1_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:54:00/FS2_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:54:00/P1_MotorPower_W_100Hz,obs/2027-01-30T23:54:00/PS1_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/PS2_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/PS3_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/PS4_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/PS5_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/PS6_Pressure_bar_100Hz,obs/2027-01-30T23:54:00/SE_EfficiencyFactor_percent_1Hz,obs/2027-01-30T23:54:00/TS1_Temperature_C_1Hz,obs/2027-01-30T23:54:00/TS2_Temperature_C_1Hz,obs/2027-01-30T23:54:00/TS3_Temperature_C_1Hz,obs/2027-01-30T23:54:00/TS4_Temperature_C_1Hz,obs/2027-01-30T23:54:00/VS1_Vibration_mm_per_s_1Hz,obs/2027-01-30T23:55:00/CP_CoolingPower_kW_1Hz,obs/2027-01-30T23:55:00/FS1_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:55:00/FS2_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:55:00/P1_MotorPower_W_100Hz,obs/2027-01-30T23:55:00/PS1_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/PS2_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/PS3_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/PS4_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/PS5_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/PS6_Pressure_bar_100Hz,obs/2027-01-30T23:55:00/SE_EfficiencyFactor_percent_1Hz,obs/2027-01-30T23:55:00/TS1_Temperature_C_1Hz,obs/2027-01-30T23:55:00/TS2_Temperature_C_1Hz,obs/2027-01-30T23:55:00/TS3_Temperature_C_1Hz,obs/2027-01-30T23:55:00/TS4_Temperature_C_1Hz,obs/2027-01-30T23:55:00/VS1_Vibration_mm_per_s_1Hz,obs/2027-01-30T23:56:00/CP_CoolingPower_kW_1Hz,obs/2027-01-30T23:56:00/FS1_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:56:00/FS2_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:56:00/P1_MotorPower_W_100Hz,obs/2027-01-30T23:56:00/PS1_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/PS2_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/PS3_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/PS4_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/PS5_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/PS6_Pressure_bar_100Hz,obs/2027-01-30T23:56:00/SE_EfficiencyFactor_percent_1Hz,obs/2027-01-30T23:56:00/TS1_Temperature_C_1Hz,obs/2027-01-30T23:56:00/TS2_Temperature_C_1Hz,obs/2027-01-30T23:56:00/TS3_Temperature_C_1Hz,obs/2027-01-30T23:56:00/TS4_Temperature_C_1Hz,obs/2027-01-30T23:56:00/VS1_Vibration_mm_per_s_1Hz,obs/2027-01-30T23:57:00/CE_CoolingEfficiency_percent_1Hz,obs/2027-01-30T23:57:00/FS1_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:57:00/FS2_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:57:00/P1_MotorPower_W_100Hz,obs/2027-01-30T23:57:00/PS1_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/PS2_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/PS3_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/PS4_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/PS5_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/PS6_Pressure_bar_100Hz,obs/2027-01-30T23:57:00/SE_EfficiencyFactor_percent_1Hz,obs/2027-01-30T23:57:00/TS1_Temperature_C_1Hz,obs/2027-01-30T23:57:00/TS2_Temperature_C_1Hz,obs/2027-01-30T23:57:00/TS3_Temperature_C_1Hz,obs/2027-01-30T23:57:00/TS4_Temperature_C_1Hz,obs/2027-01-30T23:57:00/VS1_Vibration_mm_per_s_1Hz,obs/2027-01-30T23:58:00/FS1_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:58:00/FS2_VolumeFlow_l_per_min_10Hz,obs/2027-01-30T23:58:00/P1_MotorPower_W_100Hz,obs/2027-01-30T23:58:00/PS1_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/PS2_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/PS3_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/PS4_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/PS5_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/PS6_Pressure_bar_100Hz,obs/2027-01-30T23:58:00/SE_EfficiencyFactor_percent_1Hz,obs/2027-01-30T23:58:00/TS1_Temperature_C_1Hz,obs/2027-01-30T23:58:00/TS2_Temperature_C_1Hz,obs/2027-01-30T23:58:00/TS3_Temperature_C_1Hz,obs/2027-01-30T23:58:00/TS4_Temperature_C_1Hz,obs/2027-01-30T23:58:00/VS1_Vibration_mm_per_s_1Hz"
+   },
+   "summary": {
+    "diagnosis": {
+     "cooler": 100,
+     "valve": 100,
+     "pump": 2,
+     "accumulator": 130
+    },
+    "evidence_ids": [
+     "obs/1/CE_CoolingEfficiency_percent_1Hz_mean",
+     "obs/1/CP_CoolingPower_kW_1Hz_mean",
+     "obs/1/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/1/FS2_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/1/P1_MotorPower_W_100Hz_mean",
+     "obs/1/PS1_Pressure_bar_100Hz_mean",
+     "obs/1/PS2_Pressure_bar_100Hz_mean",
+     "obs/1/PS3_Pressure_bar_100Hz_mean",
+     "obs/1/PS4_Pressure_bar_100Hz_mean",
+     "obs/1/PS5_Pressure_bar_100Hz_mean",
+     "obs/1/PS6_Pressure_bar_100Hz_mean",
+     "obs/1/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/1/TS1_Temperature_C_1Hz_mean",
+     "obs/1/TS2_Temperature_C_1Hz_mean",
+     "obs/1/TS3_Temperature_C_1Hz_mean",
+     "obs/1/TS4_Temperature_C_1Hz_mean",
+     "obs/1/VS1_Vibration_mm_per_s_1Hz_mean",
+     "obs/2/CP_CoolingPower_kW_1Hz_mean",
+     "obs/2/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/2/FS2_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/2/P1_MotorPower_W_100Hz_mean",
+     "obs/2/PS1_Pressure_bar_100Hz_mean",
+     "obs/2/PS2_Pressure_bar_100Hz_mean",
+     "obs/2/PS3_Pressure_bar_100Hz_mean",
+     "obs/2/PS4_Pressure_bar_100Hz_mean",
+     "obs/2/PS5_Pressure_bar_100Hz_mean",
+     "obs/2/PS6_Pressure_bar_100Hz_mean",
+     "obs/2/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/2/TS1_Temperature_C_1Hz_mean",
+     "obs/2/TS2_Temperature_C_1Hz_mean",
+     "obs/2/TS3_Temperature_C_1Hz_mean",
+     "obs/2/TS4_Temperature_C_1Hz_mean",
+     "obs/2/VS1_Vibration_mm_per_s_1Hz_mean",
+     "obs/3/CP_CoolingPower_kW_1Hz_mean",
+     "obs/3/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/3/FS2_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/3/P1_MotorPower_W_100Hz_mean",
+     "obs/3/PS1_Pressure_bar_100Hz_mean",
+     "obs/3/PS2_Pressure_bar_100Hz_mean",
+     "obs/3/PS3_Pressure_bar_100Hz_mean",
+     "obs/3/PS4_Pressure_bar_100Hz_mean",
+     "obs/3/PS5_Pressure_bar_100Hz_mean",
+     "obs/3/PS6_Pressure_bar_100Hz_mean",
+     "obs/3/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/3/TS1_Temperature_C_1Hz_mean",
+     "obs/3/TS2_Temperature_C_1Hz_mean",
+     "obs/3/TS3_Temperature_C_1Hz_mean",
+     "obs/3/TS4_Temperature_C_1Hz_mean",
+     "obs/3/VS1_Vibration_mm_per_s_1Hz_mean",
+     "obs/4/CE_CoolingEfficiency_percent_1Hz_mean",
+     "obs/4/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/4/FS2_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/4/P1_MotorPower_W_100Hz_mean",
+     "obs/4/PS1_Pressure_bar_100Hz_mean",
+     "obs/4/PS2_Pressure_bar_100Hz_mean",
+     "obs/4/PS3_Pressure_bar_100Hz_mean",
+     "obs/4/PS4_Pressure_bar_100Hz_mean",
+     "obs/4/PS5_Pressure_bar_100Hz_mean",
+     "obs/4/PS6_Pressure_bar_100Hz_mean",
+     "obs/4/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/4/TS1_Temperature_C_1Hz_mean",
+     "obs/4/TS2_Temperature_C_1Hz_mean",
+     "obs/4/TS3_Temperature_C_1Hz_mean",
+     "obs/4/TS4_Temperature_C_1Hz_mean",
+     "obs/4/VS1_Vibration_mm_per_s_1Hz_mean",
+     "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/5/FS2_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/5/P1_MotorPower_W_100Hz_mean",
+     "obs/5/PS1_Pressure_bar_100Hz_mean",
+     "obs/5/PS2_Pressure_bar_100Hz_mean",
+     "obs/5/PS3_Pressure_bar_100Hz_mean",
+     "obs/5/PS4_Pressure_bar_100Hz_mean",
+     "obs/5/PS5_Pressure_bar_100Hz_mean",
+     "obs/5/PS6_Pressure_bar_100Hz_mean",
+     "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/5/TS1_Temperature_C_1Hz_mean",
+     "obs/5/TS2_Temperature_C_1Hz_mean",
+     "obs/5/TS3_Temperature_C_1Hz_mean",
+     "obs/5/TS4_Temperature_C_1Hz_mean",
+     "obs/5/VS1_Vibration_mm_per_s_1Hz_mean"
+    ]
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 51,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":51,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "generate_work_order",
+   "arguments": {
+    "description": "restore the pump of hyd_1 to its healthy level",
+    "asset_num": "hyd_1_pump",
+    "site_id": "MAIN",
+    "priority": 2,
+    "work_type": "CM",
+    "aob_source": {
+     "prediction_id": "",
+     "evidence_ids": []
+    }
+   },
+   "summary": {
+    "work_order": {
+     "id": "wo-1",
+     "component": "pump",
+     "created_t": 0,
+     "expected_close_t": 5,
+     "status": "open",
+     "source": "agent",
+     "closed_t": null,
+     "mode": "standard",
+     "visit": 1
+    }
+   },
+   "price": 65,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 50,
+   "notifications": [],
+   "response": "{\"price\":65,\"budget_left\":185,\"steps_left\":50,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 49,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":49,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 48,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":48,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 47,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":47,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 46,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":46,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 45,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":45,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 44,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":44,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 43,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":43,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 42,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":42,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 41,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":41,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 40,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":40,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 39,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":39,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 38,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":38,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 37,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":37,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 36,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":36,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 35,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":35,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 34,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":34,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 33,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":33,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 32,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":32,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 31,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":31,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 30,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":30,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 29,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":29,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 28,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":28,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 27,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":27,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 26,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":26,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 25,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":25,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 24,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":24,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 23,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":23,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 22,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":22,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 21,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":21,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 20,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":20,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 19,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":19,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 18,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":18,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 17,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":17,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 16,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":16,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 15,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":15,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 14,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":14,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 13,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":13,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 12,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":12,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 11,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":11,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 10,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":10,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 9,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":9,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 8,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":8,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 7,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":7,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 6,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":6,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 5,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":5,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 4,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":4,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 3,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":3,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 2,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":2,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 1,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":1,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 0,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_STOP",
+     "t": 0,
+     "message": "The episode ended (max_steps).",
+     "event": "end",
+     "reason": "max_steps"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":0,\"cycle\":0,\"notifications\":[{\"message_type\":\"ENVIRONMENT_STOP\",\"t\":0,\"message\":\"The episode ended (max_steps).\",\"event\":\"end\",\"reason\":\"max_steps\"}]}"
+  }
+ ],
+ "last_call_wall_time": 1795151994.089393,
+ "episode_started_at": 1795150755.7882774,
+ "called_at": [
+  1795150766.6870751,
+  1795150768.926152,
+  1795150769.0448854,
+  1795150769.056841,
+  1795150769.068581,
+  1795150769.1281352,
+  1795150769.2841158,
+  1795150794.8652236,
+  1795150794.9864407,
+  1795150795.0842874,
+  1795150808.235414,
+  1795150835.0552874,
+  1795150878.2109346,
+  1795150895.4873073,
+  1795150938.085744,
+  1795150957.0927305,
+  1795150975.3192177,
+  1795151018.826306,
+  1795151037.3753924,
+  1795151055.684825,
+  1795151073.8723629,
+  1795151094.2908041,
+  1795151108.59031,
+  1795151152.5406992,
+  1795151172.5417464,
+  1795151190.800817,
+  1795151209.9773881,
+  1795151229.1361277,
+  1795151247.0429652,
+  1795151291.9013727,
+  1795151310.4909523,
+  1795151328.1335523,
+  1795151347.4265766,
+  1795151365.2794878,
+  1795151382.671483,
+  1795151401.3945336,
+  1795151420.213669,
+  1795151438.7650518,
+  1795151457.6621885,
+  1795151475.1484747,
+  1795151501.7615488,
+  1795151520.2277594,
+  1795151537.6005304,
+  1795151565.5422397,
+  1795151593.3156724,
+  1795151620.400101,
+  1795151647.5014071,
+  1795151660.4693124,
+  1795151677.8539608,
+  1795151697.5531614,
+  1795151715.9721375,
+  1795151744.208366,
+  1795151770.88425,
+  1795151798.5803587,
+  1795151825.203321,
+  1795151853.677361,
+  1795151873.634359,
+  1795151919.738423,
+  1795151972.3250039,
+  1795151994.089393
+ ],
+ "think_seconds_monotonic": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_wall": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "last_call_monotonic_time": 822930.483350067,
+ "handover_wall": 1795150755.808101,
+ "handover_mono": 821692.202058296,
+ "charged_until_mono": 822930.483350067,
+ "transcript_cursor": 47987,
+ "failures_cursor": 0,
+ "credited_segments": [],
+ "started_servers": [
+  "iot",
+  "fmsr",
+  "wo",
+  "task"
+ ],
+ "open_service": {
+  "n": 187,
+  "e": 822930.483350067,
+  "e_thread": 0.862153369
+ },
+ "refused_processes": {},
+ "credited_seconds": {
+  "starts": 7.679775541066192,
+  "calls": 1.2342598899999992
+ },
+ "uncredited_seconds": {
+  "starts": 0.03337076283060014,
+  "calls": 1.2171907651204252
+ },
+ "failed_model_seconds": 0.0,
+ "failed_model_attempts": 0,
+ "episode_ended_at": 1795152004.6988688
+}

@@ -1,0 +1,14 @@
+{
+  "gpu_job_id": "14027301",
+  "expected_episodes": 24,
+  "shutdown_after_archive": true,
+  "model": "granite-3.3-8b-instruct",
+  "dtype": "bfloat16",
+  "context": 131072,
+  "judge": "none",
+  "node_pinned": false,
+  "gpu_features": "A6000|l40|l40s",
+  "log": "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/logs/cd-v4-round24-%j.out",
+  "round_dir": "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/rounds/v4_24_20261120",
+  "submission_returncode": 0
+}

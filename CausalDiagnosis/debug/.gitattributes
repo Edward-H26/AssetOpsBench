@@ -1,0 +1,4 @@
+# Preserve frozen source/config hashes and raw evidence across Windows/Linux.
+* -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Native reports are archival evidence; keep their original trailing spaces.
+**/runs/**/report.md -whitespace

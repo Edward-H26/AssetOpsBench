@@ -1,0 +1,17 @@
+{
+ "attempts": 1,
+ "set_aside": null,
+ "standing": {
+  "class": "",
+  "kinds": [],
+  "health": null,
+  "error": null,
+  "finish_by": "",
+  "finish": null,
+  "runner_end": "episode_over",
+  "wall_limit": false,
+  "cut_end": "",
+  "cut_probe": null,
+  "cache_flush": null
+ }
+}

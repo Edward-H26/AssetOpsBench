@@ -1,0 +1,979 @@
+{
+ "format": 3,
+ "asset_id": "hyd_1",
+ "task_text": "Asset hyd_1 (HYDRAULIC_PUMP, Hydraulic pump condition-monitoring rig, at site MAIN), with one child asset per component: hyd_1_cooler, hyd_1_valve, hyd_1_pump and hyd_1_accumulator. The performance monitor flagged the unit. For asset hp_1, using the last 100 days up to and including 2027-01-30, can sensor data reveal the onset of severe internal pump leakage? Which sensor anomalies support this? Answer through the tools: read the telemetry of hyd_1 with the iot server, submit exactly one diagnosis, or one declaration of insufficient evidence, with the task server, create the work orders that restore the unit with generate_work_order of the wo server, and finish with a summary. The diagnosis states the condition level of each component at the cycle it is submitted, and it is scored against the hidden condition at that cycle. Every reading is a recorded cycle, and while the condition levels stay the same the unit replays the same 5 cycles in a loop, so its readings repeat every 5 cycles it runs under unchanged levels, and the 5 cycles recorded before the episode started are other recordings outside that loop. get_current_time reads the clock without moving it, wait_for_notification lets the rig run until the next notification or a timeout, and every answer lists the notifications of the public events since the previous call. The repair manual, lookup_fix of the task server, gives the standard fix of each component with its charges and times, its priority, the components it depends on and the emergency option. The fix history, list_workorders of the wo server, lists the work orders closed on this rig before the episode. An emergency work order arrives sooner at a surcharge but holds the component at its healthy level only for a limited number of cycles, after which the component returns to its earlier level unless a standard order on it closes first. A repair takes only when every component it depends on is at its healthy level at its close. The work orders created one after another, with no other call between them, form one technician visit with one visit charge that repairs them in priority order.\n\nCondition levels: cooler: 3, 20, 100 (healthy 100); valve: 73, 80, 90, 100 (healthy 100); pump: 0, 1, 2 (healthy 0); accumulator: 90, 100, 115, 130 (healthy 130).\n\nTelemetry. A row of hyd_1 holds one recorded cycle: its timestamp and, for every channel, the mean under the installed sensor name and the standard deviation under that name with _std appended. Name the sensors you need in history, since a history without a sensor list returns every field of every row. Row timestamps carry no time zone and history bounds take the same form, while work order dates carry the offset +00:00. A history window that reaches cycles not yet recorded first lets the rig run them, 1 cycle each, and returns and charges them.\nhistory and latest_reading charge every cycle they return at the price per cycle of the cheapest sensor group whose fields cover the fields returned, unless a group paid earlier for that cycle covers them, so reading a paid row again is free:\n  - tier1 costs 1 per cycle and returns TS1_Temperature_C_1Hz, TS2_Temperature_C_1Hz, TS3_Temperature_C_1Hz, TS4_Temperature_C_1Hz, VS1_Vibration_mm_per_s_1Hz, CE_CoolingEfficiency_percent_1Hz\n  - tier2 costs 3 per cycle and returns TS1_Temperature_C_1Hz, TS2_Temperature_C_1Hz, TS3_Temperature_C_1Hz, TS4_Temperature_C_1Hz, VS1_Vibration_mm_per_s_1Hz, CE_CoolingEfficiency_percent_1Hz, FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, CP_CoolingPower_kW_1Hz\n  - tier3 costs 10 per cycle and returns PS1_Pressure_bar_100Hz, PS2_Pressure_bar_100Hz, PS3_Pressure_bar_100Hz, PS4_Pressure_bar_100Hz, PS5_Pressure_bar_100Hz, PS6_Pressure_bar_100Hz, P1_MotorPower_W_100Hz, FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, TS1_Temperature_C_1Hz, TS2_Temperature_C_1Hz, TS3_Temperature_C_1Hz, TS4_Temperature_C_1Hz, VS1_Vibration_mm_per_s_1Hz, CE_CoolingEfficiency_percent_1Hz, CP_CoolingPower_kW_1Hz, SE_EfficiencyFactor_percent_1Hz\n\nTools by server (class, duration in cycles, price):\n- iot, with site_name MAIN and asset_id hyd_1: sites, asset_ids, assets, asset_detail, installed_sensors, measured_sensors, find_assets_by_sensors, stream_extent and sensor_coverage (read, 0, free) describe the registry and the recorded stream. history(site_name, asset_id, start, end, sensors, limit, cursor) (read, the cycles it plays, price per cycle by group) returns the recorded rows of a window, and latest_reading(site_name, asset_id, sensor) (read, 0, price per cycle by group) returns the newest recorded row.\n- fmsr: get_failure_modes(asset_class) (read, 0, free) returns the failure mode codes of a component class, cooler, valve, pump or accumulator, with their source.\n- wo, with site_id MAIN: list_workorders, get_workorder, get_workorder_tasks, get_workorder_costs, get_workorder_actuals_vs_planned, get_workorder_kpis, get_schedule_calendar, get_my_assigned_workorders and get_failure_codes (read, 0, free) read the work orders of this episode and the failure code catalog. generate_work_order(description, asset_num, site_id, priority, work_type, reported_by, location, notes, wonum, aob_source) (write, 0, part price plus the repair charge of 20, plus a visit charge of 15 for the order that opens a visit) asks a technician to restore the component of a child asset to its healthy level, with work_type CM and an empty wonum, since the environment numbers the orders wo-1 and up, and aob_source an object with the prediction_id and the evidence_ids behind the order. With work_type EM the order is an emergency order, which forms a visit of its own, arrives 1 cycle after its creation at 2.0 times the part and repair price, and holds the component at its healthy level for 10 cycles after its close. A component that an emergency order still holds when the episode ends is scored at the level it had before that order. Parts: cooler 20, valve 20, pump 30, accumulator 20. The technician arrives after the lead time and repairs while the rig stands still, then the order closes. Lead times: cooler 3, valve 3, pump 3, accumulator 3. Repair downtimes: cooler 1, valve 1, pump 2, accumulator 1. A work order is refused before a diagnosis or a declaration, and while an order on the same component is open. An order on a healthy component is executed and counted as unnecessary.\n- task: get_asset_profile() (read, 0, free) returns these rules, the child assets, the normal ranges of the channel means under the record fields and the tool table.\n  get_current_time() (read, 0, free) returns the cycle, its datetime in the form of the row timestamps, the horizon, the budget left, seconds_per_cycle and think_seconds_per_cycle without moving the clock. wait_for_notification(timeout) (read, the cycles waited, free) lets the rig run until the next notification or for timeout cycles, the cycles left before the horizon when it is empty, and returns what ended the wait.\n  lookup_fix(component) (read, 0, free) returns the repair manual of a component: its standard fix (replace or service) with the part, repair and visit charges, the lead time and the repair downtime, its priority, the components that must be at their healthy level for the fix to take, the expected effect, and the emergency option.\n  summarize_changes_since(cycle) (read, 0, free) returns the cycles elapsed since a past cycle, the channel means of the sensor groups already read in this episode that left their normal range, with the first such cycle, and the work orders closed since then.\n  submit_diagnosis(cooler, valve, pump, accumulator, evidence_ids) (write, 0, free) records one condition level per component, accepted once and never after a declaration. A wrong diagnosis costs the misdiagnosis price of 15, the call-out that it wastes. The price is added to the cost of the episode when the episode is scored and does not fall from the budget. declare_insufficient_evidence(sensor_group, cycles, evidence_ids) (write, 0, free) records that the evidence cannot separate the remaining candidates and names the reading that would, accepted once and never after a diagnosis, and work orders stay allowed afterward. It must cite at least one reading already read, and a declaration that cites none is scored as a failure. finish(summary) (write, 0, free) ends the episode. With no further call the rig then runs until the open work orders close while the downtime accrues, and the episode is scored after the last close.\nevidence_ids of the task tools is a comma separated list of identifiers, possibly empty, and aob_source.evidence_ids a list of them: obs/<timestamp>/<field> for a value of a telemetry row, with the timestamp and the field as the row shows them, wo/<wonum> for a work order, fmea/<source>/<code> for a failure mode, alarm/<cycle>/<channel> for the alarm of a notification and pred/<n> for a prediction of the diagnostics server. aob_source.prediction_id is the identifier of a prediction of the diagnostics server, or empty.\nEvery answer ends with one JSON line with the price of the call, the budget left, the steps left, the cycle and the notifications since the previous call of the work orders executed and closed, the alarms of the sensor groups already read and the failures, then the timeout of a wait that reached it and the end of the episode. An alarm is raised once per channel in an episode, so a channel that leaves its normal range again after a repair raises no second alarm, and only a new reading of the telemetry shows it.\n\nDowntime accrues per cycle while a component is below its healthy level (cooler: level 100 0, level 20 1, level 3 2; valve: level 100 0, level 90 1, level 80 2, level 73 3; pump: level 0 0, level 1 1, level 2 2; accumulator: level 130 0, level 115 1, level 100 2, level 90 3) and counts toward the cost of the episode, while the budget limits the prices alone. Budget: 300. Horizon: 60 cycles. Step cap: 60 tool calls, refused ones included. A call of the diagnostics server is no call of the rig and takes no step, but a turn that calls no tool of the rig still takes one step, and as many requests in a row without a call as the step cap allows end the episode. Time advances only inside tool calls, by their declared durations. The episode ends on finish, at the horizon, at the step cap, after 1800 seconds of wall time, or when an action would exceed the budget; a component at its worst level for 10 cycles is a failure that adds 50 to the cost, and only a repair on it that has closed by then averts it. If the wall limit ends the episode while every call is answered or while your reply is being written, the episode ends there and is scored. A refused call costs nothing but counts as a step, and a call with a missing argument or an argument of the wrong type is refused.\n\nA diagnostics server offers get_episode_evidence(sensor_group), rank_root_causes(top_k), estimate_intervention_effect(action) and verify_outcome(prediction_id). They read the evidence released so far and change nothing.",
+ "guidance_level": 2,
+ "rules": {
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1_Temperature_C_1Hz",
+    "TS2_Temperature_C_1Hz",
+    "TS3_Temperature_C_1Hz",
+    "TS4_Temperature_C_1Hz",
+    "VS1_Vibration_mm_per_s_1Hz",
+    "CE_CoolingEfficiency_percent_1Hz"
+   ],
+   "tier2": [
+    "TS1_Temperature_C_1Hz",
+    "TS2_Temperature_C_1Hz",
+    "TS3_Temperature_C_1Hz",
+    "TS4_Temperature_C_1Hz",
+    "VS1_Vibration_mm_per_s_1Hz",
+    "CE_CoolingEfficiency_percent_1Hz",
+    "FS1_VolumeFlow_l_per_min_10Hz",
+    "FS2_VolumeFlow_l_per_min_10Hz",
+    "CP_CoolingPower_kW_1Hz"
+   ],
+   "tier3": [
+    "PS1_Pressure_bar_100Hz",
+    "PS2_Pressure_bar_100Hz",
+    "PS3_Pressure_bar_100Hz",
+    "PS4_Pressure_bar_100Hz",
+    "PS5_Pressure_bar_100Hz",
+    "PS6_Pressure_bar_100Hz",
+    "P1_MotorPower_W_100Hz",
+    "FS1_VolumeFlow_l_per_min_10Hz",
+    "FS2_VolumeFlow_l_per_min_10Hz",
+    "TS1_Temperature_C_1Hz",
+    "TS2_Temperature_C_1Hz",
+    "TS3_Temperature_C_1Hz",
+    "TS4_Temperature_C_1Hz",
+    "VS1_Vibration_mm_per_s_1Hz",
+    "CE_CoolingEfficiency_percent_1Hz",
+    "CP_CoolingPower_kW_1Hz",
+    "SE_EfficiencyFactor_percent_1Hz"
+   ]
+  },
+  "statistics": [
+   "mean",
+   "std"
+  ],
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "processes": {
+   "schedule": {
+    "mode": "none",
+    "components": 0,
+    "first_drop": [
+     0,
+     0
+    ],
+    "interval": 1
+   },
+   "hazard": {
+    "mode": "scheduled",
+    "base_rate": 0.0,
+    "depth_factor": 0.0,
+    "collateral": 0.0
+   },
+   "emergency": {
+    "lead": 1,
+    "surcharge": 2.0,
+    "hold": 10
+   },
+   "dependencies": {
+    "cooler": [],
+    "valve": [],
+    "pump": [
+     "valve",
+     "accumulator"
+    ],
+    "accumulator": []
+   },
+   "priority": {
+    "valve": 1,
+    "accumulator": 2,
+    "cooler": 3,
+    "pump": 4
+   },
+   "fix_history": {
+    "healthy_probability": 0.4,
+    "healthy_ago": [
+     5,
+     80
+    ],
+    "degraded_probability": 0.3,
+    "degraded_ago": [
+     5,
+     80
+    ]
+   },
+   "failure": {
+    "patience": 10,
+    "strict": false,
+    "penalty": 50
+   }
+  },
+  "clock_mode": "declared",
+  "clock": {
+   "modes": {
+    "declared": "time moves only inside tool calls, by the declared duration of each",
+    "generation_time": "the declared durations plus the agent's thinking time before each counted call, a call that reaches the environment, a refused one included, or the step of a turn that calls no tool of the rig. The thinking time of a counted call is the time since the previous counted call, or since the handover of the task for the first, on the monotonic clock of the benchmark, less the credited time of the first start of each tool server, of the service of each counted call and of every failed attempt of a model request, and its seconds are added to the seconds carried from the calls before, one cycle for every full think_seconds_per_cycle and the rest carried to the next call",
+    "instant": "every call but get_current_time takes one cycle, and so does the step of a turn that calls no tool of the rig"
+   },
+   "seconds_per_cycle": 60,
+   "think_seconds_per_cycle": 10,
+   "cycle_order": [
+    "the emergency holds that end expire",
+    "the scheduled drops",
+    "the drops of the stochastic hazard",
+    "the work orders close or start their repair, in priority order",
+    "the rig plays one recorded cycle unless a repair stops it",
+    "the downtime accrues",
+    "the failure check",
+    "the clock moves to the next cycle",
+    "the repairs that end with the cycle close"
+   ],
+   "notifying_events": [
+    "work_order_executed",
+    "work_order_closed",
+    "failure",
+    "alarm"
+   ],
+   "notifications": "from the real time clock row on, the receipt line that ends every answer lists the public events since the previous call, then the timeout of a wait that reached it and the end of the episode, in the message types of ARE's notification system",
+   "mode": "declared",
+   "durations": {
+    "sites": 0,
+    "asset_ids": 0,
+    "assets": 0,
+    "asset_detail": 0,
+    "installed_sensors": 0,
+    "measured_sensors": 0,
+    "find_assets_by_sensors": 0,
+    "stream_extent": 0,
+    "sensor_coverage": 0,
+    "history": 1,
+    "latest_reading": 0,
+    "get_failure_modes": 0,
+    "list_workorders": 0,
+    "get_workorder": 0,
+    "get_workorder_tasks": 0,
+    "get_workorder_costs": 0,
+    "get_workorder_actuals_vs_planned": 0,
+    "get_workorder_kpis": 0,
+    "get_schedule_calendar": 0,
+    "get_my_assigned_workorders": 0,
+    "get_failure_codes": 0,
+    "generate_work_order": 0,
+    "get_asset_profile": 0,
+    "get_current_time": 0,
+    "wait_for_notification": 1,
+    "lookup_fix": 0,
+    "summarize_changes_since": 0,
+    "submit_diagnosis": 0,
+    "declare_insufficient_evidence": 0,
+    "finish": 0
+   }
+  },
+  "tools": [
+   {
+    "name": "sites",
+    "server": "iot",
+    "class": "read",
+    "parameters": {},
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "asset_ids",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "assets",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "assettype": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "asset_detail",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "installed_sensors",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "measured_sensors",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "find_assets_by_sensors",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "sensors": "array",
+     "match": "string",
+     "substring": "boolean",
+     "source": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "stream_extent",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string",
+     "sensor": "string",
+     "start": "string",
+     "end": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "sensor_coverage",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "history",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string",
+     "start": "string",
+     "end": "string",
+     "sensors": "array",
+     "limit": "integer",
+     "cursor": "string"
+    },
+    "duration": "none for a recorded cycle, and durations.read_per_cycle for every cycle not yet recorded that the window reaches, which the rig plays first in the advanced real time clock row, while the real time clock row clips the window to the present",
+    "price": "prices.read of the cheapest sensor group whose fields cover the returned fields, for every returned cycle that no group paid earlier for that cycle covers, so that a re-read of a paid cycle is free",
+    "scored": false,
+    "price_value": {
+     "tier1": 1,
+     "tier2": 3,
+     "tier3": 10
+    },
+    "duration_value": 1
+   },
+   {
+    "name": "latest_reading",
+    "server": "iot",
+    "class": "read",
+    "parameters": {
+     "site_name": "string",
+     "asset_id": "string",
+     "sensor": "string"
+    },
+    "duration": "none, since the newest row is recorded",
+    "price": "prices.read of the cheapest sensor group that covers the returned fields, for the newest recorded cycle unless a group paid earlier for that cycle covers them",
+    "scored": false,
+    "price_value": {
+     "tier1": 1,
+     "tier2": 3,
+     "tier3": 10
+    },
+    "duration_value": 0
+   },
+   {
+    "name": "get_failure_modes",
+    "server": "fmsr",
+    "class": "read",
+    "parameters": {
+     "asset_class": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "list_workorders",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "site_id": "string",
+     "status": "string",
+     "asset_num": "string",
+     "priority": "integer",
+     "date_from": "string",
+     "date_to": "string",
+     "page_size": "integer",
+     "page_num": "integer"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_workorder",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "wonum": "string",
+     "site_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_workorder_tasks",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "wonum": "string",
+     "site_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_workorder_costs",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "wonum": "string",
+     "site_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_workorder_actuals_vs_planned",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "wonum": "string",
+     "site_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_workorder_kpis",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "site_id": "string",
+     "period_months": "integer"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_schedule_calendar",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "site_id": "string",
+     "date_from": "string",
+     "date_to": "string",
+     "group_by": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_my_assigned_workorders",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "labor_code": "string",
+     "site_id": "string",
+     "open_only": "boolean"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_failure_codes",
+    "server": "wo",
+    "class": "read",
+    "parameters": {
+     "code": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "generate_work_order",
+    "server": "wo",
+    "class": "write",
+    "parameters": {
+     "description": "string",
+     "asset_num": "string",
+     "site_id": "string",
+     "priority": "integer",
+     "work_type": "string",
+     "reported_by": "string",
+     "location": "string",
+     "notes": "string",
+     "wonum": "string",
+     "aob_source": "object"
+    },
+    "duration": "none for the call. Without a clock the order closes inside its call while the repair card is off, and with the rest of its visit at the next call that is not an order while it is on. It closes at the next played cycle in the real time clock row. From the advanced real time clock row on, the standard orders created one after another, with no other call between them, form one visit: the technician arrives at the largest creation cycle plus lead time among the orders not yet begun, or at the close of the repair begun before them, and repairs them back to back in the order they were created, each for its repair downtime, while a repair that has begun keeps its cycles. From the repair rules row the visit pays one visit charge and repairs in priority order, smaller number first, while work_type EM gives an emergency order with a visit of its own and emergency.lead",
+    "price": "the price of the rig's create_work_order, prices.parts[component] plus prices.repair_charge, times emergency.surcharge for work_type EM, with prices.visit for the order that opens a visit, charged at creation",
+    "scored": true,
+    "price_value": {
+     "standard": {
+      "cooler": 40,
+      "valve": 40,
+      "pump": 50,
+      "accumulator": 40
+     },
+     "visit": 15,
+     "emergency": {
+      "cooler": 80.0,
+      "valve": 80.0,
+      "pump": 100.0,
+      "accumulator": 80.0
+     }
+    },
+    "duration_value": 0
+   },
+   {
+    "name": "get_asset_profile",
+    "server": "task",
+    "class": "read",
+    "parameters": {},
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_current_time",
+    "server": "task",
+    "class": "read",
+    "parameters": {},
+    "duration": "none in every clock mode, since no tool sets the time",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "wait_for_notification",
+    "server": "task",
+    "class": "read",
+    "parameters": {
+     "timeout": "integer"
+    },
+    "duration": "the clock runs one cycle at a time until a notification is pending or the timeout in cycles is reached, the cycles left before the horizon when the timeout is empty, one cycle in the instant clock mode",
+    "price": "free, while the downtime accrues as the rig runs",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 1
+   },
+   {
+    "name": "lookup_fix",
+    "server": "task",
+    "class": "read",
+    "parameters": {
+     "component": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "summarize_changes_since",
+    "server": "task",
+    "class": "read",
+    "parameters": {
+     "cycle": "integer"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "submit_diagnosis",
+    "server": "task",
+    "class": "write",
+    "parameters": {
+     "cooler": "integer",
+     "valve": "integer",
+     "pump": "integer",
+     "accumulator": "integer",
+     "evidence_ids": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": true,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "declare_insufficient_evidence",
+    "server": "task",
+    "class": "write",
+    "parameters": {
+     "sensor_group": "string",
+     "cycles": "integer",
+     "evidence_ids": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": true,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "finish",
+    "server": "task",
+    "class": "write",
+    "parameters": {
+     "summary": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": true,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "get_episode_evidence",
+    "server": "causal_diagnosis",
+    "class": "read",
+    "parameters": {
+     "sensor_group": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "rank_root_causes",
+    "server": "causal_diagnosis",
+    "class": "read",
+    "parameters": {
+     "top_k": "integer",
+     "branch_detail": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "estimate_intervention_effect",
+    "server": "causal_diagnosis",
+    "class": "read",
+    "parameters": {
+     "action": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   },
+   {
+    "name": "verify_outcome",
+    "server": "causal_diagnosis",
+    "class": "read",
+    "parameters": {
+     "prediction_id": "string"
+    },
+    "duration": "none",
+    "price": "free",
+    "scored": false,
+    "price_value": 0,
+    "duration_value": 0
+   }
+  ],
+  "normal_ranges": {
+   "PS1_Pressure_bar_100Hz_mean": {
+    "low": 160.98,
+    "high": 161.013
+   },
+   "PS2_Pressure_bar_100Hz_mean": {
+    "low": 109.597,
+    "high": 109.635
+   },
+   "PS3_Pressure_bar_100Hz_mean": {
+    "low": 1.99025,
+    "high": 2.00909
+   },
+   "PS4_Pressure_bar_100Hz_mean": {
+    "low": 10.0521,
+    "high": 10.064
+   },
+   "PS5_Pressure_bar_100Hz_mean": {
+    "low": 9.82337,
+    "high": 9.83551
+   },
+   "PS6_Pressure_bar_100Hz_mean": {
+    "low": 9.70876,
+    "high": 9.72093
+   },
+   "P1_MotorPower_W_100Hz_mean": {
+    "low": 2530.35,
+    "high": 2539.07
+   },
+   "FS1_VolumeFlow_l_per_min_10Hz_mean": {
+    "low": 6.69487,
+    "high": 6.71934
+   },
+   "FS2_VolumeFlow_l_per_min_10Hz_mean": {
+    "low": 10.1589,
+    "high": 10.1672
+   },
+   "TS1_Temperature_C_1Hz_mean": {
+    "low": 36.2552,
+    "high": 36.3111
+   },
+   "TS2_Temperature_C_1Hz_mean": {
+    "low": 41.8607,
+    "high": 41.919
+   },
+   "TS3_Temperature_C_1Hz_mean": {
+    "low": 39.1281,
+    "high": 39.1942
+   },
+   "TS4_Temperature_C_1Hz_mean": {
+    "low": 31.1787,
+    "high": 31.2834
+   },
+   "VS1_Vibration_mm_per_s_1Hz_mean": {
+    "low": 0.545217,
+    "high": 0.55835
+   },
+   "CE_CoolingEfficiency_percent_1Hz_mean": {
+    "low": 47.3392,
+    "high": 47.8537
+   },
+   "CP_CoolingPower_kW_1Hz_mean": {
+    "low": 2.16238,
+    "high": 2.17988
+   },
+   "SE_EfficiencyFactor_percent_1Hz_mean": {
+    "low": 59.1634,
+    "high": 59.5579
+   }
+  }
+ },
+ "status": {
+  "time": 0,
+  "day": "2027-01-30",
+  "budget_left": 300,
+  "steps_left": 52,
+  "open_work_orders": [],
+  "episode_over": true
+ },
+ "events": [
+  {
+   "event": "no_call",
+   "step": 1,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "none",
+   "cost": 0,
+   "think_cycles": 0
+  },
+  {
+   "event": "aob_read",
+   "step": 2,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "read",
+   "cost": 0,
+   "think_cycles": 0,
+   "server": "iot",
+   "tool": "history"
+  },
+  {
+   "event": "aob_read",
+   "step": 3,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "read",
+   "cost": 0,
+   "think_cycles": 0,
+   "server": "iot",
+   "tool": "sites"
+  },
+  {
+   "event": "read",
+   "step": 4,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "read",
+   "cost": 0,
+   "think_cycles": 0,
+   "tool": "history",
+   "sensor_group": "tier3",
+   "cycles": 0,
+   "stopped": 0,
+   "served": []
+  },
+  {
+   "event": "declare_insufficient_evidence",
+   "step": 5,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "write",
+   "cost": 0,
+   "think_cycles": 0,
+   "separating_test": {
+    "sensor_group": "tier2",
+    "cycles": 100
+   },
+   "evidence_ids": [
+    "obs/2027-01-01/Supply Temperature",
+    "obs/2027-01-02/Supply Temperature"
+   ]
+  },
+  {
+   "event": "refused",
+   "step": 6,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "write",
+   "cost": 0,
+   "think_cycles": 0,
+   "action": {
+    "type": "create_work_order",
+    "component": "hyd_1_pump",
+    "mode": "standard",
+    "prediction_id": "",
+    "evidence_ids": []
+   },
+   "reason": "unknown component"
+  },
+  {
+   "event": "refused",
+   "step": 7,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "write",
+   "cost": 0,
+   "think_cycles": 0,
+   "action": {
+    "type": "create_work_order",
+    "component": "hyd_1_pump",
+    "mode": "standard",
+    "prediction_id": "",
+    "evidence_ids": []
+   },
+   "reason": "unknown component"
+  },
+  {
+   "event": "finish",
+   "step": 8,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "write",
+   "cost": 0,
+   "think_cycles": 0,
+   "summary": "The Work Order Management agent cannot create a corrective work order due to an unknown component error."
+  },
+  {
+   "event": "end",
+   "step": null,
+   "t_start": 0,
+   "t_end": 0,
+   "class": "system",
+   "reason": "finish",
+   "time": 0
+  }
+ ],
+ "observations": []
+}

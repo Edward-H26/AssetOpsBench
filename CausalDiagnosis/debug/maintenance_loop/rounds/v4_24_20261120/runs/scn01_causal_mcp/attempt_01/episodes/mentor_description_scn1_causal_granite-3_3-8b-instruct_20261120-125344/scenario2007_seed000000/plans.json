@@ -1,0 +1,6536 @@
+{
+ "mode_of_first_plan": "test_first",
+ "differential": [
+  {
+   "component": "pump",
+   "expected_symptoms": "Decreased cooling efficiency, increased vibration, and reduced cooling power due to internal leakage.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+   ]
+  },
+  {
+   "component": "cooler",
+   "expected_symptoms": "Reduced cooling efficiency and increased cooling power due to inefficiency.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced",
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical"
+   ]
+  },
+  {
+   "component": "valve",
+   "expected_symptoms": "Severe lag or small lag in valve switching due to malfunction.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+   ]
+  },
+  {
+   "component": "accumulator",
+   "expected_symptoms": "Low pressure, severely reduced pressure, or reduced pressure due to pressure issues.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+   ]
+  }
+ ],
+ "plans": [
+  {
+   "index": 1,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 2: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'get_failure_modes'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 2,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "profile",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "profile",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 3,
+   "source": "debug_pending_model_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "failure_modes",
+      "args": {
+       "component": ""
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "failure_modes",
+     "args": {
+      "component": ""
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 4,
+   "source": "debug_pending_model_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "fix_history",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "fix_history",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 5,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "Read the opening information before planning an investigation.",
+    "steps": [
+     {
+      "kind": "time",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "time",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 6,
+   "source": "debug_pending_model_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "Read the opening information before planning an investigation.",
+    "steps": [
+     {
+      "kind": "extent",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "extent",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 7,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The performance monitor flagged hyd_1, and the recent fix history suggests potential recurring issues. Reading tier3 data for 5 cycles will provide detailed pressure and flow information to assess the current condition of the pump, cooler, valve, and accumulator.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 0,
+      "top": "cooler 100, valve 100, pump 2, accumulator 130",
+      "top_mass": 0.9715655174411996,
+      "verified": {},
+      "refuted": [],
+      "top_set": [
+       "pump"
+      ],
+      "top_set_mass": 0.9715666286908525,
+      "effective_hypotheses": 1.1469090179359405
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 8,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "the plan needs a non empty list under steps"
+   ],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 9,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+    ]
+   ],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 10,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry data from the last 100 days indicates a significant drop in cooling efficiency, reduced cooling power, increased vibration, and abnormal pressure readings, which align with the failure mode 'pump_internal_leakage_severe'. The evidence supports this diagnosis, and no further readings are needed as the current data is sufficient to confirm the onset of severe internal pump leakage.",
+    "steps": [
+     {
+      "kind": "diagnose",
+      "args": {
+       "rank": 1
+      },
+      "expect": {},
+      "evidence": [
+       "obs/2027-01-30T23:58:00/CE_CoolingEfficiency_percent_1Hz below",
+       "obs/2027-01-30T23:58:00/CP_CoolingPower_kW_1Hz below",
+       "obs/2027-01-30T23:58:00/FS1_VolumeFlow_l_per_min_10Hz below",
+       "obs/2027-01-30T23:58:00/FS2_VolumeFlow_l_per_min_10Hz above",
+       "obs/2027-01-30T23:58:00/P1_MotorPower_W_100Hz above",
+       "obs/2027-01-30T23:58:00/PS1_Pressure_bar_100Hz below",
+       "obs/2027-01-30T23:58:00/PS2_Pressure_bar_100Hz below",
+       "obs/2027-01-30T23:58:00/PS3_Pressure_bar_100Hz below",
+       "obs/2027-01-30T23:58:00/PS4_Pressure_bar_100Hz above",
+       "obs/2027-01-30T23:58:00/PS5_Pressure_bar_100Hz above",
+       "obs/2027-01-30T23:58:00/PS6_Pressure_bar_100Hz above",
+       "obs/2027-01-30T23:58:00/SE_EfficiencyFactor_percent_1Hz below",
+       "obs/2027-01-30T23:58:00/TS1_Temperature_C_1Hz below",
+       "obs/2027-01-30T23:58:00/TS2_Temperature_C_1Hz below",
+       "obs/2027-01-30T23:58:00/TS3_Temperature_C_1Hz below",
+       "obs/2027-01-30T23:58:00/TS4_Temperature_C_1Hz below",
+       "obs/2027-01-30T23:58:00/VS1_Vibration_mm_per_s_1Hz below"
+      ]
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "diagnose",
+     "args": {
+      "rank": 1
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "top": "cooler 100, valve 100, pump 2, accumulator 130",
+      "top_mass": 0.9715655174411996
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 11,
+   "source": "debug_pending_model_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry data from the last 100 days indicates a significant drop in cooling efficiency, reduced cooling power, increased vibration, and abnormal pressure readings, which align with the failure mode 'pump_internal_leakage_severe'. The evidence supports this diagnosis, and no further readings are needed as the current data is sufficient to confirm the onset of severe internal pump leakage.",
+    "steps": [
+     {
+      "kind": "order",
+      "args": {
+       "component": "pump",
+       "prediction_id": "pred/b8"
+      },
+      "expect": {
+       "prediction_id": "pred/b8"
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "order",
+     "args": {
+      "component": "pump",
+      "prediction_id": "pred/b8"
+     },
+     "expect": {
+      "prediction_id": "pred/b8"
+     },
+     "status": "done",
+     "observed": {
+      "prediction_id": "pred/b8",
+      "recovery": 0.9715666286908525,
+      "work_order": "wo-1"
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 12,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order"
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 13,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 14,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 15,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read.",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read."
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 16,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order"
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 17,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 2,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 18,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 4,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 19,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.9715655174411996,
+     "faults": [
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 6,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 20,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 8,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 21,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 10,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 22,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 12,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 23,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 14,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 24,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 16,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 25,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 18,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 26,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 20,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 27,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 22,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 28,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 24,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 29,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 26,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 30,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 28,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 31,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump work order is still open, and the environment refuses further orders on components with open orders. We should wait for the pump work order to close before proceeding with any additional repairs.",
+    "steps": [
+     {
+      "kind": "wait",
+      "args": {
+       "cycles": 2
+      },
+      "expect": {
+       "no_new_alarm": true
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "wait",
+     "args": {
+      "cycles": 2
+     },
+     "expect": {
+      "no_new_alarm": true
+     },
+     "status": "done",
+     "observed": {
+      "time": 30,
+      "new_alarms": [],
+      "verified": {},
+      "refuted": []
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 32,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "the plan needs a non empty list under steps"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 33,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 34,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 35,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The pump has been diagnosed with internal leakage, and a work order (wo-1) has been executed and closed, indicating a repair was performed. We should now verify the repair by reading the latest telemetry data to ensure the pump's condition has improved.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.9715666286908525,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0266167841442783,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0014230918859946063,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.0003761628555957038,
+     "faults": [
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 7.131226452904388e-06,
+     "faults": [
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 30,
+      "top": "cooler 100, valve 100, pump 0, accumulator 130",
+      "top_mass": 1.0,
+      "verified": {
+       "pred/b8": true
+      },
+      "refuted": [],
+      "top_set": [],
+      "top_set_mass": 1.0,
+      "effective_hypotheses": 1.0
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 36,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "Verify the repair of the pump by reading the latest telemetry data to ensure the pump's condition has improved.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 1.0,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 9.457811404354078e-122,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.578052701676236e-125,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.967319980011955e-126,
+     "faults": [
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.2137772190536293e-126,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 30,
+      "top": "cooler 100, valve 100, pump 0, accumulator 130",
+      "top_mass": 1.0,
+      "verified": {},
+      "refuted": [],
+      "top_set": [],
+      "top_set_mass": 1.0,
+      "effective_hypotheses": 1.0
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 37,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "Verify the repair of the pump by reading the latest telemetry data to ensure the pump's condition has improved.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 1.0,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 9.457811404354078e-122,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.578052701676236e-125,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.967319980011955e-126,
+     "faults": [
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.2137772190536293e-126,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 30,
+      "top": "cooler 100, valve 100, pump 0, accumulator 130",
+      "top_mass": 1.0,
+      "verified": {},
+      "refuted": [],
+      "top_set": [],
+      "top_set_mass": 1.0,
+      "effective_hypotheses": 1.0
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 38,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply the plan's prices (50) exceed the budget left (35)",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 1.0,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 9.457811404354078e-122,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.578052701676236e-125,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.967319980011955e-126,
+     "faults": [
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.2137772190536293e-126,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "the plan's prices (50) exceed the budget left (35)"
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 39,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 1.0,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 9.457811404354078e-122,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.578052701676236e-125,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.967319980011955e-126,
+     "faults": [
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.2137772190536293e-126,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 2: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 40,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply the plan's prices (150) exceed the budget left (35)",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 1.0,
+     "faults": []
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 9.457811404354078e-122,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.578052701676236e-125,
+     "faults": [
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.967319980011955e-126,
+     "faults": [
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 100,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 2.2137772190536293e-126,
+     "faults": [
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "the plan's prices (150) exceed the budget left (35)"
+    ]
+   ],
+   "schedule": null
+  }
+ ],
+ "surprises": [],
+ "revisions": 0,
+ "fallbacks": 14,
+ "model_calls": 38,
+ "end_reason": null,
+ "error": null,
+ "server": true,
+ "board": {
+  "status": {
+   "time": 30,
+   "budget_left": 35,
+   "steps_left": 3,
+   "recorded_from": -5,
+   "recorded_until": 29
+  },
+  "observations": 20,
+  "ranking_basis": [
+   20,
+   1,
+   30
+  ],
+  "diagnosis": {
+   "diagnosis": {
+    "cooler": 100,
+    "valve": 100,
+    "pump": 2,
+    "accumulator": 130
+   },
+   "evidence_ids": [
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_std",
+    "obs/5/PS3_Pressure_bar_100Hz_mean",
+    "obs/5/PS3_Pressure_bar_100Hz_std",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+   ]
+  },
+  "declaration": null,
+  "orders": {
+   "wo-1": {
+    "id": "wo-1",
+    "component": "pump",
+    "created_t": 0,
+    "expected_close_t": 5,
+    "status": "closed",
+    "prediction_id": "pred/b8",
+    "closed_t": 5,
+    "visit": 1
+   }
+  },
+  "predictions": {
+   "pred/b4": {
+    "action": "replace:cooler+valve+accumulator",
+    "component": null,
+    "recovery": 0.3333333333333333,
+    "source": "branch 1"
+   },
+   "pred/b5": {
+    "action": "replace:cooler+valve",
+    "component": null,
+    "recovery": 0.08333333333333333,
+    "source": "branch 4"
+   },
+   "pred/b7": {
+    "action": "replace:cooler+valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   },
+   "pred/b8": {
+    "action": "replace:pump",
+    "component": null,
+    "recovery": 0.9715666286908525,
+    "source": "branch 1"
+   },
+   "pred/b10": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b12": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b13": {
+    "action": "replace:pump",
+    "component": null,
+    "recovery": 0.9715666286908525,
+    "source": "branch 1"
+   },
+   "pred/b15": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b17": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b18": {
+    "action": "replace:pump",
+    "component": null,
+    "recovery": 0.9715666286908525,
+    "source": "branch 1"
+   },
+   "pred/b20": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b22": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b25": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b27": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b30": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b32": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b35": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b37": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b40": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b42": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b45": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b47": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b50": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b52": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b55": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b57": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b60": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b62": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b65": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b67": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b70": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b72": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b75": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b77": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b80": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b82": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b85": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 0.9999838810329889,
+    "source": "branch 2"
+   },
+   "pred/b87": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 0.9715759535609909,
+    "source": "branch 5"
+   },
+   "pred/b90": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 2"
+   },
+   "pred/b92": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 4"
+   },
+   "pred/b93": {
+    "action": "replace:valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   },
+   "pred/b96": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 2"
+   },
+   "pred/b98": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 4"
+   },
+   "pred/b99": {
+    "action": "replace:valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   },
+   "pred/b102": {
+    "action": "replace:valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 2"
+   },
+   "pred/b104": {
+    "action": "replace:pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 4"
+   },
+   "pred/b105": {
+    "action": "replace:valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   }
+  },
+  "verifications": {
+   "pred/b8": {
+    "status": "verified",
+    "consistent": true,
+    "recovery_predicted": 0.9715666286908525,
+    "recovery_posterior": 1.0,
+    "recovery_status": "predicted recovery 0.972, mass of the healthy combination in the belief now 1.000",
+    "predicted_combination": {
+     "cooler": 100,
+     "valve": 100,
+     "pump": 0,
+     "accumulator": 130
+    },
+    "predicted_mass": 0.9715666286908525,
+    "message": "pred/b8 (replace:pump): verified; consistent at alpha 0.05 for (cooler 100, valve 100, pump 0, accumulator 130), the predicted combination, the most probable after the action, with mass 0.972: the largest standardized deviation over 34 channels is 3.58, conformal p value 0.258; recovery predicted recovery 0.972, mass of the healthy combination in the belief now 1.000"
+   }
+  },
+  "alarms": [
+   {
+    "channel": "CE_CoolingEfficiency_percent_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "P1_MotorPower_W_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS1_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS2_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS3_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS4_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS5_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS6_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "SE_EfficiencyFactor_percent_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS1_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS2_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS3_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS4_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "VS1_Vibration_mm_per_s_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "CP_CoolingPower_kW_1Hz_mean",
+    "first_t": 1
+   }
+  ],
+  "closed_orders": [
+   {
+    "id": "wo-1",
+    "component": "pump",
+    "source": "agent",
+    "closed_t": 5
+   }
+  ],
+  "differential": [
+   {
+    "component": "pump",
+    "expected_symptoms": "Decreased cooling efficiency, increased vibration, and reduced cooling power due to internal leakage.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+    ]
+   },
+   {
+    "component": "cooler",
+    "expected_symptoms": "Reduced cooling efficiency and increased cooling power due to inefficiency.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced",
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical"
+    ]
+   },
+   {
+    "component": "valve",
+    "expected_symptoms": "Severe lag or small lag in valve switching due to malfunction.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+    ]
+   },
+   {
+    "component": "accumulator",
+    "expected_symptoms": "Low pressure, severely reduced pressure, or reduced pressure due to pressure issues.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+    ]
+   }
+  ],
+  "notes": [
+   "Your plan of turn 1 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"failure_modes\", \"args\": {\"component\": \"\"}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"fix_history\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"extent\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "Your plan of turn 8 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"diagnose\", \"args\": {\"rank\": 1}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b8\"}, \"expect\": {\"prediction_id\": \"pred/b8\"}, \"evidence\": []}]",
+   "Your plan of turn 9 No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read..",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b8\"}, \"expect\": {\"prediction_id\": \"pred/b8\"}, \"evidence\": []}]",
+   "17 cited identifier(s) not on the board were dropped: obs/2027-01-30T23:58:00/CE_CoolingEfficiency_percent_1Hz below, obs/2027-01-30T23:58:00/CP_CoolingPower_kW_1Hz below, obs/2027-01-30T23:58:00/FS1_VolumeFlow_l_per_min_10Hz below, obs/2027-01-30T23:58:00/FS2_VolumeFlow_l_per_min_10Hz above, obs/2027-01-30T23:58:00/P1_MotorPower_W_100Hz above, obs/2027-01-30T23:58:00/PS1_Pressure_bar_100Hz below, obs/2027-01-30T23:58:00/PS2_Pressure_bar_100Hz below, obs/2027-01-30T23:58:00/PS3_Pressure_bar_100Hz below, obs/2027-01-30T23:58:00/PS4_Pressure_bar_100Hz above, obs/2027-01-30T23:58:00/PS5_Pressure_bar_100Hz above, obs/2027-01-30T23:58:00/PS6_Pressure_bar_100Hz above, obs/2027-01-30T23:58:00/SE_EfficiencyFactor_percent_1Hz below, obs/2027-01-30T23:58:00/TS1_Temperature_C_1Hz below, obs/2027-01-30T23:58:00/TS2_Temperature_C_1Hz below, obs/2027-01-30T23:58:00/TS3_Temperature_C_1Hz below, obs/2027-01-30T23:58:00/TS4_Temperature_C_1Hz below, obs/2027-01-30T23:58:00/VS1_Vibration_mm_per_s_1Hz below.",
+   "Your plan of turn 12 step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b8\"}, \"expect\": {\"prediction_id\": \"pred/b8\"}, \"evidence\": []}]",
+   "Your plan of turn 13 No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read..",
+   "Your plan of turn 14 No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read..",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b8\"}, \"expect\": {\"prediction_id\": \"pred/b8\"}, \"evidence\": []}]",
+   "Your plan of turn 15 No unread recorded cycles exist for tier3. This history call cannot acquire a new sample or advance the declared clock. Use evidence already on the board for your decision, or explicitly wait for new data if wait is served. Do not repeat this empty read..",
+   "Your plan of turn 16 step 1 (order): a work order on the pump is still open at this step; the environment refuses an order on a component with an open order.",
+   "Your plan of turn 32 could not be parsed.",
+   "Your plan of turn 33 could not be parsed.",
+   "Your plan of turn 34 could not be parsed.",
+   "Your plan of turn 38 the plan's prices (50) exceed the budget left (35).",
+   "Your plan of turn 39 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"finish\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "Your plan of turn 40 the plan's prices (150) exceed the budget left (35)."
+  ],
+  "end_reason": null,
+  "fix_history": [
+   {
+    "id": "hist-4",
+    "component": "accumulator",
+    "closed": "2027-01-30T23:22:00+00:00",
+    "description": "repair of the accumulator"
+   },
+   {
+    "id": "hist-3",
+    "component": "valve",
+    "closed": "2027-01-30T23:08:00+00:00",
+    "description": "repair of the valve"
+   },
+   {
+    "id": "hist-2",
+    "component": "pump",
+    "closed": "2027-01-30T23:07:00+00:00",
+    "description": "repair of the pump"
+   },
+   {
+    "id": "hist-1",
+    "component": "cooler",
+    "closed": "2027-01-30T22:48:00+00:00",
+    "description": "repair of the cooler"
+   }
+  ],
+  "refuted": [],
+  "refuted_last": null,
+  "summaries": [
+   {
+    "sensor_group": "tier3",
+    "n_first": 1,
+    "n_last": 19,
+    "t_first": -5,
+    "t_last": 29,
+    "cycles": [
+     -5,
+     -4,
+     -3,
+     -2,
+     -1,
+     15,
+     16,
+     17,
+     18,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29
+    ],
+    "values": 646,
+    "outside": [
+     "obs/2027-01-30T23:54:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2027-01-30T23:54:00/CP_CoolingPower_kW_1Hz",
+     "obs/2027-01-30T23:54:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:54:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:54:00/P1_MotorPower_W_100Hz",
+     "obs/2027-01-30T23:54:00/PS1_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/PS2_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/PS3_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/PS4_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/PS5_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/PS6_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:54:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2027-01-30T23:54:00/TS1_Temperature_C_1Hz",
+     "obs/2027-01-30T23:54:00/TS2_Temperature_C_1Hz",
+     "obs/2027-01-30T23:54:00/TS3_Temperature_C_1Hz",
+     "obs/2027-01-30T23:54:00/TS4_Temperature_C_1Hz",
+     "obs/2027-01-30T23:54:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2027-01-30T23:55:00/CP_CoolingPower_kW_1Hz",
+     "obs/2027-01-30T23:55:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:55:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:55:00/P1_MotorPower_W_100Hz",
+     "obs/2027-01-30T23:55:00/PS1_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/PS2_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/PS3_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/PS4_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/PS5_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/PS6_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:55:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2027-01-30T23:55:00/TS1_Temperature_C_1Hz",
+     "obs/2027-01-30T23:55:00/TS2_Temperature_C_1Hz",
+     "obs/2027-01-30T23:55:00/TS3_Temperature_C_1Hz",
+     "obs/2027-01-30T23:55:00/TS4_Temperature_C_1Hz",
+     "obs/2027-01-30T23:55:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2027-01-30T23:56:00/CP_CoolingPower_kW_1Hz",
+     "obs/2027-01-30T23:56:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:56:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:56:00/P1_MotorPower_W_100Hz",
+     "obs/2027-01-30T23:56:00/PS1_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/PS2_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/PS3_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/PS4_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/PS5_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/PS6_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:56:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2027-01-30T23:56:00/TS1_Temperature_C_1Hz",
+     "obs/2027-01-30T23:56:00/TS2_Temperature_C_1Hz",
+     "obs/2027-01-30T23:56:00/TS3_Temperature_C_1Hz",
+     "obs/2027-01-30T23:56:00/TS4_Temperature_C_1Hz",
+     "obs/2027-01-30T23:56:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2027-01-30T23:57:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2027-01-30T23:57:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:57:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:57:00/P1_MotorPower_W_100Hz",
+     "obs/2027-01-30T23:57:00/PS1_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/PS2_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/PS3_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/PS4_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/PS5_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/PS6_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:57:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2027-01-30T23:57:00/TS1_Temperature_C_1Hz",
+     "obs/2027-01-30T23:57:00/TS2_Temperature_C_1Hz",
+     "obs/2027-01-30T23:57:00/TS3_Temperature_C_1Hz",
+     "obs/2027-01-30T23:57:00/TS4_Temperature_C_1Hz",
+     "obs/2027-01-30T23:57:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2027-01-30T23:58:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:58:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2027-01-30T23:58:00/P1_MotorPower_W_100Hz",
+     "obs/2027-01-30T23:58:00/PS1_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/PS2_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/PS3_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/PS4_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/PS5_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/PS6_Pressure_bar_100Hz",
+     "obs/2027-01-30T23:58:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2027-01-30T23:58:00/TS1_Temperature_C_1Hz",
+     "obs/2027-01-30T23:58:00/TS2_Temperature_C_1Hz",
+     "obs/2027-01-30T23:58:00/TS3_Temperature_C_1Hz",
+     "obs/2027-01-30T23:58:00/TS4_Temperature_C_1Hz",
+     "obs/2027-01-30T23:58:00/VS1_Vibration_mm_per_s_1Hz"
+    ],
+    "sides": {
+     "obs/2027-01-30T23:54:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2027-01-30T23:54:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2027-01-30T23:54:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2027-01-30T23:54:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2027-01-30T23:54:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2027-01-30T23:54:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:54:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:54:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:54:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:54:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:54:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:54:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2027-01-30T23:54:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:54:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:54:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:54:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:54:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2027-01-30T23:55:00/CP_CoolingPower_kW_1Hz": "above",
+     "obs/2027-01-30T23:55:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2027-01-30T23:55:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2027-01-30T23:55:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2027-01-30T23:55:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:55:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:55:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:55:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:55:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:55:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:55:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2027-01-30T23:55:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:55:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:55:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:55:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:55:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2027-01-30T23:56:00/CP_CoolingPower_kW_1Hz": "above",
+     "obs/2027-01-30T23:56:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2027-01-30T23:56:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2027-01-30T23:56:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2027-01-30T23:56:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:56:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:56:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:56:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:56:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:56:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:56:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2027-01-30T23:56:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:56:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:56:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:56:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:56:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2027-01-30T23:57:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2027-01-30T23:57:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2027-01-30T23:57:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2027-01-30T23:57:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2027-01-30T23:57:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:57:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:57:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:57:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:57:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:57:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:57:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2027-01-30T23:57:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:57:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:57:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:57:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:57:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2027-01-30T23:58:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2027-01-30T23:58:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2027-01-30T23:58:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2027-01-30T23:58:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:58:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:58:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2027-01-30T23:58:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:58:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:58:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2027-01-30T23:58:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2027-01-30T23:58:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:58:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:58:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:58:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2027-01-30T23:58:00/VS1_Vibration_mm_per_s_1Hz": "below"
+    }
+   }
+  ],
+  "notifications": [
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel CE_CoolingEfficiency_percent_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel FS1_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel FS2_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel P1_MotorPower_W_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS1_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS2_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS3_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS4_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS5_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS6_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel SE_EfficiencyFactor_percent_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS1_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS2_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS3_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS4_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel VS1_Vibration_mm_per_s_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 1,
+    "event": "alarm",
+    "detail": "The channel CP_CoolingPower_kW_1Hz_mean left its normal range at cycle 1."
+   },
+   {
+    "t": 3,
+    "event": "work_order_executed",
+    "detail": "The technician began the repair of work order wo-1, and the rig is stopped until it closes."
+   },
+   {
+    "t": 5,
+    "event": "work_order_closed",
+    "detail": "Work order wo-1 on the pump closed."
+   },
+   {
+    "t": 6,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 1 cycles"
+   },
+   {
+    "t": 8,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 10,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 12,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 14,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 16,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 18,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 20,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 22,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 24,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 26,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 28,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   },
+   {
+    "t": 30,
+    "event": "wait_timeout",
+    "detail": "Wait for notification timeout reached after 2 cycles"
+   }
+  ],
+  "compactions": 1,
+  "compaction_log": [
+   {
+    "after_call": 11,
+    "collapsed": [
+     {
+      "kind": "evidence",
+      "sensor_group": "tier3",
+      "observations": [
+       1,
+       4
+      ],
+      "values": 136
+     }
+    ],
+    "rendered_characters": 17029
+   }
+  ],
+  "reads": [
+   {
+    "plan": 7,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": true,
+    "effective_before": 144.00000000000014,
+    "expected_after": 3.0083512357922477,
+    "expected_elimination": 140.9916487642079,
+    "expected_information_gain": 3.959831434624811,
+    "ig_per_cost": 0.3959831434624811,
+    "realized_after": 1.1469090179359405,
+    "t_first": -5,
+    "t_last": -1,
+    "cycles_outside": [
+     [
+      1,
+      -5,
+      17,
+      17
+     ],
+     [
+      2,
+      -4,
+      16,
+      17
+     ],
+     [
+      3,
+      -3,
+      16,
+      17
+     ],
+     [
+      4,
+      -2,
+      16,
+      17
+     ],
+     [
+      5,
+      -1,
+      15,
+      17
+     ]
+    ],
+    "batch": [
+     7,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 35,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": false,
+    "effective_before": 1.1468903068924696,
+    "expected_after": 1.0114960657309162,
+    "expected_elimination": 0.1353942411615534,
+    "expected_information_gain": 0.12734972405490222,
+    "ig_per_cost": 0.012734972405490222,
+    "realized_after": 1.0,
+    "t_first": 25,
+    "t_last": 29,
+    "cycles_outside": [
+     [
+      6,
+      25,
+      0,
+      17
+     ],
+     [
+      7,
+      26,
+      0,
+      17
+     ],
+     [
+      8,
+      27,
+      0,
+      17
+     ],
+     [
+      9,
+      28,
+      0,
+      17
+     ],
+     [
+      10,
+      29,
+      0,
+      17
+     ]
+    ],
+    "batch": [
+     35,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 36,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": false,
+    "effective_before": 1.0,
+    "expected_after": 1.0,
+    "expected_elimination": 0.0,
+    "expected_information_gain": 0.0,
+    "ig_per_cost": 0.0,
+    "realized_after": 1.0,
+    "t_first": 20,
+    "t_last": 24,
+    "cycles_outside": [
+     [
+      11,
+      20,
+      0,
+      17
+     ],
+     [
+      12,
+      21,
+      0,
+      17
+     ],
+     [
+      13,
+      22,
+      0,
+      17
+     ],
+     [
+      14,
+      23,
+      0,
+      17
+     ],
+     [
+      15,
+      24,
+      0,
+      17
+     ]
+    ],
+    "batch": [
+     36,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 37,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": false,
+    "effective_before": 1.0,
+    "expected_after": 1.0,
+    "expected_elimination": 0.0,
+    "expected_information_gain": 0.0,
+    "ig_per_cost": 0.0,
+    "realized_after": 1.0,
+    "t_first": 15,
+    "t_last": 19,
+    "cycles_outside": [
+     [
+      16,
+      15,
+      0,
+      17
+     ],
+     [
+      17,
+      16,
+      0,
+      17
+     ],
+     [
+      18,
+      17,
+      0,
+      17
+     ],
+     [
+      19,
+      18,
+      0,
+      17
+     ],
+     [
+      20,
+      19,
+      0,
+      17
+     ]
+    ],
+    "batch": [
+     37,
+     1,
+     1
+    ]
+   }
+  ],
+  "server": true,
+  "opening_done": [
+   "profile",
+   "failure_modes",
+   "fix_history",
+   "time",
+   "extent"
+  ],
+  "batches": [
+   {
+    "plan": 7,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 35,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 36,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 37,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   }
+  ],
+  "parallel": true
+ }
+}

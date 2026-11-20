@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/envs/92825b6b865b/bin/python",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/versions/v004_dynamic_scn6/source/run.py",
+    "experiments",
+    "run-episodes",
+    "--config",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/versions/v004_dynamic_scn6/source/scenario.json",
+    "--agent",
+    "causal",
+    "--servers",
+    "aob",
+    "--store",
+    "memory",
+    "--starts",
+    "seeds",
+    "--seeds",
+    "1",
+    "--first-seed",
+    "1",
+    "--model",
+    "granite-3.3-8b-instruct",
+    "--base-url",
+    "http://10.197.80.38:58703/v1",
+    "--judge",
+    "none",
+    "--out",
+    "/insomnia001/depts/edu/users/yc4953/projects/assetopsbench-causaldiagnosis/runtime/clones/9fc86eabcd7c/CausalDiagnosis/debug/maintenance_loop/versions/v004_dynamic_scn6/runs/20261120T081347_985606Z/mcp/episodes"
+  ],
+  "started_at": "2026-11-20T08:13:47.987520+00:00"
+}

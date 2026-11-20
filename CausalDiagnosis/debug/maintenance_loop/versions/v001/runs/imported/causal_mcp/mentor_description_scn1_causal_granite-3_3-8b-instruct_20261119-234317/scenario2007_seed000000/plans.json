@@ -1,0 +1,7946 @@
+{
+ "mode_of_first_plan": null,
+ "differential": [
+  {
+   "component": "pump",
+   "expected_symptoms": "Decreased cooling efficiency, increased vibration, and reduced cooling power due to internal leakage.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+   ]
+  },
+  {
+   "component": "cooler",
+   "expected_symptoms": "Reduced cooling efficiency and increased cooling power due to inefficiency.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced",
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical"
+   ]
+  },
+  {
+   "component": "valve",
+   "expected_symptoms": "Severe lag or small lag in valve switching due to malfunction.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+   ]
+  },
+  {
+   "component": "accumulator",
+   "expected_symptoms": "Low pressure, severely reduced pressure, or reduced pressure due to pressure issues.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+   ]
+  }
+ ],
+ "plans": [
+  {
+   "index": 1,
+   "source": "model",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "profile",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "profile",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 2,
+   "source": "model",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "failure_modes",
+      "args": {
+       "component": ""
+      },
+      "expect": {},
+      "evidence": []
+     },
+     {
+      "kind": "fix_history",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     },
+     {
+      "kind": "time",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     },
+     {
+      "kind": "extent",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "failure_modes",
+     "args": {
+      "component": ""
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    },
+    {
+     "kind": "fix_history",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    },
+    {
+     "kind": "time",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    },
+    {
+     "kind": "extent",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 3,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 6 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one; step 7 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 6 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one",
+     "step 7 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 4,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 5,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 6,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 7,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 8,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 9,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 10,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 11,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 12,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 13,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 14,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 15,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 6 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 6 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 16,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 8 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one; step 9 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 8 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one",
+     "step 9 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 17,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 18,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 5, after the last close, then finish",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 5, after the last close, then finish"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 19,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 20,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 21,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 22,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 23,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 24,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 25,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 26,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 27,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 28,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 29,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 30,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 31,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 32,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 33,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 34,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 35,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 36,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 37,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 38,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 39,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 40,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 41,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 8 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 8 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 42,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 43,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 44,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 45,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 46,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 47,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 48,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 49,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 50,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 51,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 8 (finish): finish precedes the close of a work order (the last closes at cycle 8, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 8 (finish): finish precedes the close of a work order (the last closes at cycle 8, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 52,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 53,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 54,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444446,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first"
+    ]
+   ],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 5,
+      "serves": [
+       5,
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  }
+ ],
+ "surprises": [],
+ "revisions": 0,
+ "fallbacks": 52,
+ "model_calls": 56,
+ "end_reason": null,
+ "error": null,
+ "server": true,
+ "board": {
+  "status": {
+   "time": 0,
+   "budget_left": 300,
+   "steps_left": 52,
+   "recorded_from": -5,
+   "recorded_until": -1
+  },
+  "observations": 0,
+  "ranking_basis": [
+   0,
+   0,
+   0
+  ],
+  "diagnosis": null,
+  "declaration": null,
+  "orders": {},
+  "predictions": {
+   "pred/b4": {
+    "action": "replace:cooler+valve+accumulator",
+    "component": null,
+    "recovery": 0.3333333333333333,
+    "source": "branch 1"
+   },
+   "pred/b5": {
+    "action": "replace:cooler+valve",
+    "component": null,
+    "recovery": 0.08333333333333333,
+    "source": "branch 4"
+   },
+   "pred/b7": {
+    "action": "replace:cooler+valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   }
+  },
+  "verifications": {},
+  "alarms": [],
+  "closed_orders": [],
+  "differential": [
+   {
+    "component": "pump",
+    "expected_symptoms": "Decreased cooling efficiency, increased vibration, and reduced cooling power due to internal leakage.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+    ]
+   },
+   {
+    "component": "cooler",
+    "expected_symptoms": "Reduced cooling efficiency and increased cooling power due to inefficiency.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced",
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical"
+    ]
+   },
+   {
+    "component": "valve",
+    "expected_symptoms": "Severe lag or small lag in valve switching due to malfunction.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+    ]
+   },
+   {
+    "component": "accumulator",
+    "expected_symptoms": "Low pressure, severely reduced pressure, or reduced pressure due to pressure issues.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+    ]
+   }
+  ],
+  "notes": [
+   "Your plan of turn 3 was refused: step 6 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one; step 7 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 4 was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish.",
+   "Your plan of turn 5 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 6 was refused: step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 7 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 8 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 9 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 10 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 11 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 12 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 13 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 14 was refused: step 7 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 15 was refused: step 6 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 16 was refused: step 8 (diagnose): a diagnosis or a declaration was already made; the environment refuses a second one; step 9 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 17 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 18 was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 5, after the last close, then finish.",
+   "Your plan of turn 19 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 20 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 21 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 22 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 23 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 24 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 25 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 26 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 27 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 28 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 29 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 30 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 31 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 32 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 33 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 34 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 35 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 36 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 37 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 38 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 39 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 40 was refused: step 5 (finish): finish comes before the reading that verifies the repair, so read tier3 for 1 cycle at or after cycle 6, after the last close, then finish.",
+   "Your plan of turn 41 was refused: step 8 (finish): finish precedes the close of a work order (the last closes at cycle 6, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 42 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 43 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 44 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 45 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 46 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 47 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 1); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 48 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 49 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 50 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 51 was refused: step 8 (finish): finish precedes the close of a work order (the last closes at cycle 8, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 52 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 53 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first.",
+   "Your plan of turn 54 was refused: step 5 (finish): finish precedes the close of a work order (the last closes at cycle 5, the plan reaches cycle 4); wait to the close so that the controller can verify it first."
+  ],
+  "end_reason": null,
+  "fix_history": [
+   {
+    "id": "hist-4",
+    "component": "accumulator",
+    "closed": "2027-01-30T23:22:00+00:00",
+    "description": "repair of the accumulator"
+   },
+   {
+    "id": "hist-3",
+    "component": "valve",
+    "closed": "2027-01-30T23:08:00+00:00",
+    "description": "repair of the valve"
+   },
+   {
+    "id": "hist-2",
+    "component": "pump",
+    "closed": "2027-01-30T23:07:00+00:00",
+    "description": "repair of the pump"
+   },
+   {
+    "id": "hist-1",
+    "component": "cooler",
+    "closed": "2027-01-30T22:48:00+00:00",
+    "description": "repair of the cooler"
+   }
+  ],
+  "refuted": [],
+  "refuted_last": null,
+  "summaries": [],
+  "notifications": [],
+  "compactions": 0,
+  "compaction_log": [],
+  "reads": [],
+  "server": true,
+  "opening_done": [
+   "profile",
+   "failure_modes",
+   "fix_history",
+   "time",
+   "extent"
+  ],
+  "batches": [],
+  "parallel": true
+ }
+}

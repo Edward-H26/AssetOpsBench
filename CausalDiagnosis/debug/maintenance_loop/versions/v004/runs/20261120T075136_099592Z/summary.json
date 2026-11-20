@@ -1,0 +1,32 @@
+{
+  "version": "v004",
+  "status": "interrupted_for_dynamic_scenario",
+  "started_at": "2026-11-20T07:51:36.100167+00:00",
+  "results": [],
+  "slurm_job_id": "14020029",
+  "model": "granite-3.3-8b-instruct",
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "granite-3.3-8b-instruct",
+        "object": "model",
+        "created": 1795161096,
+        "owned_by": "sglang",
+        "root": "granite-3.3-8b-instruct",
+        "parent": null,
+        "max_model_len": 131072
+      }
+    ]
+  },
+  "source_sha256": {
+    "run.py": "deb3c693c9c7d5d582e3e7004983cbf4fc7ca729eeb3dd3f3ffa072a75e5f26f",
+    "protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "test_protocol.py": "2e17dad0ef984db9ff1f546bfc2773dcac0edb96921d74afdb5510be9169f20e",
+    "scenario1.json": "084d495229ecd84ec9d225b28442b0fe102e0c1baf432445ed842b2197274a10"
+  },
+  "base_commit": "9fc86eabcd7c53b8fdde34c40b00043cf1876cae",
+  "interrupted_at": "2026-11-20T08:12:46.324782+00:00",
+  "interruption_reason": "User requested autonomous-evolution scenario; CPU client stopped; GPU service retained. Not a model task failure."
+}

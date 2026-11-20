@@ -1,0 +1,326 @@
+{
+ "format": 4,
+ "seed": 0,
+ "config": {
+  "asset_id": "hyd_1",
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE"
+   ],
+   "tier2": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "FS1",
+    "FS2",
+    "CP"
+   ],
+   "tier3": [
+    "PS1",
+    "PS2",
+    "PS3",
+    "PS4",
+    "PS5",
+    "PS6",
+    "EPS1",
+    "FS1",
+    "FS2",
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "CP",
+    "SE"
+   ]
+  },
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "dependencies": {
+   "cooler": [],
+   "valve": [],
+   "pump": [
+    "valve",
+    "accumulator"
+   ],
+   "accumulator": []
+  },
+  "priority": {
+   "valve": 1,
+   "accumulator": 2,
+   "cooler": 3,
+   "pump": 4
+  },
+  "emergency": {
+   "lead": 1,
+   "surcharge": 2.0,
+   "hold": 10
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 4
+  },
+  "allowed": null,
+  "start": {
+   "combination": [
+    100,
+    100,
+    2,
+    130
+   ],
+   "entry_offset": 5
+  },
+  "schedule": {
+   "mode": "none",
+   "components": 0,
+   "first_drop": [
+    0,
+    0
+   ],
+   "interval": 1
+  },
+  "hazard": {
+   "mode": "scheduled",
+   "base_rate": 0.0,
+   "depth_factor": 0.0,
+   "collateral": 0.0
+  },
+  "fix_history": {
+   "healthy_probability": 0.4,
+   "healthy_ago": [
+    5,
+    80
+   ],
+   "degraded_probability": 0.3,
+   "degraded_ago": [
+    5,
+    80
+   ]
+  },
+  "failure": {
+   "patience": 10,
+   "strict": false,
+   "penalty": 50
+  },
+  "clock_mode": "declared",
+  "seconds_per_cycle": 60,
+  "think_seconds_per_cycle": 10,
+  "time_tools": true,
+  "guidance_level": 2,
+  "question": "For asset hp_1, using the last 100 days up to and including 2027-01-30, can sensor data reveal the onset of severe internal pump leakage? Which sensor anomalies support this?",
+  "anchors": {
+   "date0": "2027-01-30",
+   "asset_alias": "hp_1"
+  },
+  "verifier_scope": "writes",
+  "diagnostics_server": false
+ },
+ "facts_path": "CausalDiagnosis/datasets/hyd_1/data/hyd_cycles.jsonl",
+ "actions": [
+  {
+   "type": "finish",
+   "summary": ""
+  }
+ ],
+ "think_cycles": [
+  0
+ ],
+ "think_seconds": [
+  0.0
+ ],
+ "think_seconds_carried": 0.0,
+ "tool_calls": [
+  {
+   "server": "task",
+   "tool": "finish",
+   "arguments": {
+    "summary": ""
+   },
+   "summary": {
+    "summary": ""
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 59,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_STOP",
+     "t": 0,
+     "message": "The episode ended (finish).",
+     "event": "end",
+     "reason": "finish"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":59,\"cycle\":0,\"notifications\":[{\"message_type\":\"ENVIRONMENT_STOP\",\"t\":0,\"message\":\"The episode ended (finish).\",\"event\":\"end\",\"reason\":\"finish\"}]}"
+  }
+ ],
+ "last_call_wall_time": 1795158586.5388618,
+ "episode_started_at": 1795158578.1194656,
+ "called_at": [
+  1795158586.5388618
+ ],
+ "think_seconds_monotonic": [
+  0.0
+ ],
+ "think_seconds_wall": [
+  0.0
+ ],
+ "last_call_monotonic_time": 829522.9328182709,
+ "handover_wall": 1795158578.1399353,
+ "handover_mono": 829514.533892493,
+ "charged_until_mono": 829522.9328182709,
+ "transcript_cursor": 3500,
+ "failures_cursor": 0,
+ "credited_segments": [
+  [
+   829514.552792902,
+   829516.373608337
+  ],
+  [
+   829516.411222519,
+   829518.240557106
+  ],
+  [
+   829518.276672832,
+   829520.040264177
+  ],
+  [
+   829520.075053546,
+   829521.948573707
+  ]
+ ],
+ "started_servers": [
+  "iot",
+  "fmsr",
+  "wo",
+  "task"
+ ],
+ "open_service": {
+  "n": 10,
+  "e": 829522.9328182709,
+  "e_thread": 3.366159578
+ },
+ "refused_processes": {},
+ "credited_seconds": {
+  "starts": 7.287261528079398,
+  "calls": 0.0
+ },
+ "uncredited_seconds": {
+  "starts": 0.030141016002744436,
+  "calls": 0.0
+ },
+ "failed_model_seconds": 0.0,
+ "failed_model_attempts": 0,
+ "episode_ended_at": 1795158586.5388618
+}

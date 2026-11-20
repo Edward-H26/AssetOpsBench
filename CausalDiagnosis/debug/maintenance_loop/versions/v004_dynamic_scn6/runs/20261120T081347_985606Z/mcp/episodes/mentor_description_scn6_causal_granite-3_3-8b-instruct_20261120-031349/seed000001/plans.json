@@ -1,0 +1,4572 @@
+{
+ "mode_of_first_plan": "test_first",
+ "differential": [
+  {
+   "component": "cooler",
+   "expected_symptoms": "Reduced cooling efficiency indicated by CE_CoolingEfficiency_percent_1Hz outside its normal range. Failure modes: cooler_efficiency_critical, cooler_efficiency_reduced.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical",
+    "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced"
+   ]
+  },
+  {
+   "component": "valve",
+   "expected_symptoms": "Severe lag or small lag in valve switching indicated by abnormal pressure or flow readings from FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz, CP_CoolingPower_kW_1Hz outside their normal ranges. Failure modes: valve_switching_critical, valve_switching_severe_lag, valve_switching_small_lag.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_critical",
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+    "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+   ]
+  },
+  {
+   "component": "pump",
+   "expected_symptoms": "Internal leakage indicated by abnormal pressure or flow readings from PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz, FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, P1_MotorPower_W_100Hz, CP_CoolingPower_kW_1Hz outside their normal ranges. Failure modes: pump_internal_leakage_severe, pump_internal_leakage_weak.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+    "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+   ]
+  },
+  {
+   "component": "accumulator",
+   "expected_symptoms": "Low or severely reduced pressure indicated by abnormal readings from PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz outside their normal ranges. Failure modes: accumulator_pressure_low_critical, accumulator_pressure_severely_reduced, accumulator_pressure_reduced.",
+   "failure_mode_ids": [
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+    "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+   ]
+  }
+ ],
+ "plans": [
+  {
+   "index": 1,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 2: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'get_failure_modes'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 2,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "profile",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "profile",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 3,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "failure_modes",
+      "args": {
+       "component": ""
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "failure_modes",
+     "args": {
+      "component": ""
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 6,
+      "serves": [
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 4,
+   "source": "debug_pending_model_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "fix_history",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "fix_history",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 6,
+      "serves": [
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 5,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "time",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 90
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 100
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_severely_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 0,
+      "accumulator": 115
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 0.006944444444444445,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "time",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 8,
+      "serves": [
+       1,
+       4
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 6,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "",
+    "steps": [
+     {
+      "kind": "extent",
+      "args": {},
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.027777777777777783,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "extent",
+     "args": {},
+     "expect": {},
+     "status": "done",
+     "observed": {},
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 9,
+      "serves": [
+       1
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 7,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The ranking suggests tier3 readings will provide the most information to separate the top-ranked fault combination. This choice aligns with the advice from the CausalDiagnosis MCP.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 9
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.027777777777777783,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 90
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_low_critical"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 115
+     },
+     "probability": 0.02430555555555556,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 9
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 5,
+      "top": "cooler 20, valve 90, pump 1, accumulator 130",
+      "top_mass": 0.9759594257119016,
+      "verified": {},
+      "refuted": [],
+      "top_set": [
+       "cooler",
+       "pump",
+       "valve"
+      ],
+      "top_set_mass": 0.9952287686385097,
+      "effective_hypotheses": 1.1365472492240298
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [
+     {
+      "sensor_group": "tier3",
+      "cycles": 9,
+      "serves": [
+       1
+      ],
+      "named": true
+     }
+    ],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 8,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9759594257119016,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.018677710514890304,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.004771221991644031,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0005916324116766774,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 9.119599772900354e-09,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "the plan needs a non empty list under steps"
+   ],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 9,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9759594257119016,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.018677710514890304,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.004771221991644031,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0005916324116766774,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 9.119599772900354e-09,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 3 (order): component must be a non empty string, got None"
+   ],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 10,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry indicates reduced cooling efficiency, abnormal pressure and flow readings, and elevated motor power, suggesting issues with the cooler, valve, and pump. The ranking from the CausalDiagnosis MCP suggests a high probability of cooler efficiency reduction, valve switching issues, and pump internal leakage. The recommended repair plan involves diagnosing and ordering work orders for these components.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 1
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9759594257119016,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.018677710514890304,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.004771221991644031,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0005916324116766774,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 20,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 9.119599772900354e-09,
+     "faults": [
+      "cooler_efficiency_reduced",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 1
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 22,
+      "top": "cooler 3, valve 90, pump 1, accumulator 130",
+      "top_mass": 0.9712457318670947,
+      "verified": {},
+      "refuted": [],
+      "top_set": [
+       "cooler",
+       "pump",
+       "valve"
+      ],
+      "top_set_mass": 0.9969436137221596,
+      "effective_hypotheses": 1.1520541167900735
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 11,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9712457318670947,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.02544445795424828,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0030563859296978985,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0002534239008139118,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 3.376572131372614e-10,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "the plan needs a non empty list under steps"
+   ],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 12,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry indicates reduced cooling efficiency, abnormal pressure and flow readings, and elevated motor power, suggesting cooler, valve, and pump issues. The ranking from the CausalDiagnosis MCP strongly favors a diagnosis of cooler, valve, and pump faults. The predicted recovery is high, and the cost-benefit analysis supports immediate action.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9712457318670947,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.02544445795424828,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0030563859296978985,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0002534239008139118,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 115
+     },
+     "probability": 3.376572131372614e-10,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak",
+      "accumulator_pressure_reduced"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 29,
+      "top": "cooler 3, valve 90, pump 1, accumulator 130",
+      "top_mass": 0.9936319891998074,
+      "verified": {},
+      "refuted": [],
+      "top_set": [
+       "cooler",
+       "pump",
+       "valve"
+      ],
+      "top_set_mass": 0.9995110297093003,
+      "effective_hypotheses": 1.0411053876515746
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [],
+    "remaining": [],
+    "differs": false
+   }
+  },
+  {
+   "index": 13,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "the plan needs a non empty list under steps"
+   ],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [
+     [
+      1,
+      "budget"
+     ]
+    ],
+    "remaining": [],
+    "differs": true
+   }
+  },
+  {
+   "index": 14,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry indicates a significant drop in cooling efficiency and pressure readings, suggesting a malfunction in the cooler, valve, or pump. The ranking from the CausalDiagnosis MCP suggests a high probability of failure in these components, with the combination of cooler 3, valve 90, and pump 1 having the highest mass. Given the budget and horizon constraints, we should proceed with diagnosing and ordering repairs for these components.",
+    "steps": [
+     {
+      "kind": "read",
+      "args": {
+       "sensor_group": "tier3",
+       "cycles": 5
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "read",
+     "args": {
+      "sensor_group": "tier3",
+      "cycles": 5
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "time": 43,
+      "top": "cooler 3, valve 90, pump 1, accumulator 130",
+      "top_mass": 0.9936319891998074,
+      "verified": {},
+      "refuted": [],
+      "top_set": [
+       "cooler",
+       "pump",
+       "valve"
+      ],
+      "top_set_mass": 0.9995110297093003,
+      "effective_hypotheses": 1.0411053876515746
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [
+     [
+      1,
+      "budget"
+     ]
+    ],
+    "remaining": [],
+    "differs": true
+   }
+  },
+  {
+   "index": 15,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry indicates a significant drop in cooling efficiency and pressure readings, suggesting a malfunction in the cooler, valve, or pump. The ranking from the CausalDiagnosis MCP suggests a high probability of failure in these components, with the combination of cooler 3, valve 90, and pump 1 having the highest mass. Given the budget and horizon constraints, we should proceed with diagnosing and ordering repairs for these components.",
+    "steps": [
+     {
+      "kind": "diagnose",
+      "args": {
+       "rank": 1
+      },
+      "expect": {},
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "diagnose",
+     "args": {
+      "rank": 1
+     },
+     "expect": {},
+     "status": "done",
+     "observed": {
+      "top": "cooler 3, valve 90, pump 1, accumulator 130",
+      "top_mass": 0.9936319891998074
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": {
+    "reads": [],
+    "cut": [],
+    "left_out": [
+     [
+      1,
+      "budget"
+     ],
+     [
+      3,
+      "budget"
+     ]
+    ],
+    "remaining": [],
+    "differs": true
+   }
+  },
+  {
+   "index": 16,
+   "source": "debug_model_first_step",
+   "plan": {
+    "branch": null,
+    "mode": "test_first",
+    "why": "The telemetry indicates a significant drop in cooling efficiency and pressure readings, suggesting a malfunction in the cooler, valve, or pump. The ranking from the CausalDiagnosis MCP suggests a high probability of failure in these components, with the combination of cooler 3, valve 90, and pump 1 having the highest mass. Given the budget and horizon constraints, we should proceed with diagnosing and ordering repairs for these components.",
+    "steps": [
+     {
+      "kind": "order",
+      "args": {
+       "component": "cooler",
+       "prediction_id": "pred/b28"
+      },
+      "expect": {
+       "prediction_id": "pred/b28"
+      },
+      "evidence": []
+     }
+    ]
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [
+    {
+     "kind": "order",
+     "args": {
+      "component": "cooler",
+      "prediction_id": "pred/b28"
+     },
+     "expect": {
+      "prediction_id": "pred/b28"
+     },
+     "status": "done",
+     "observed": {
+      "prediction_id": "pred/b28",
+      "recovery": 0.9999999996518578,
+      "work_order": "wo-1"
+     },
+     "note": ""
+    }
+   ],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 17,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply the plan's prices (330) exceed the budget left (45)",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "the plan's prices (330) exceed the budget left (45)"
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 18,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 2: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 19,
+   "source": "no_plan_after_check_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply the plan's prices (330) exceed the budget left (45)",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [],
+   "check_problems": [
+    [
+     "the plan's prices (330) exceed the budget left (45)"
+    ]
+   ],
+   "schedule": null
+  },
+  {
+   "index": 20,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 2: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 21,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 22,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 23,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  },
+  {
+   "index": 24,
+   "source": "no_plan_after_parse_failure",
+   "plan": {
+    "branch": null,
+    "mode": null,
+    "why": "controller: no usable plan, the reply could not be parsed",
+    "steps": []
+   },
+   "candidates": [
+    {
+     "rank": 1,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.9936319891998074,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 2,
+     "combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 80,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.005877895400307858,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_severe_lag",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 3,
+     "combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 100,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 0.0004889702906996876,
+     "faults": [
+      "cooler_efficiency_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 4,
+     "combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 73,
+      "pump": 1,
+      "accumulator": 130
+     },
+     "probability": 1.1451091850472204e-06,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_critical",
+      "pump_internal_leakage_weak"
+     ]
+    },
+    {
+     "rank": 5,
+     "combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "current_combination": {
+      "cooler": 3,
+      "valve": 90,
+      "pump": 2,
+      "accumulator": 130
+     },
+     "probability": 4.2079057526716385e-22,
+     "faults": [
+      "cooler_efficiency_critical",
+      "valve_switching_small_lag",
+      "pump_internal_leakage_severe"
+     ]
+    }
+   ],
+   "after_surprise": false,
+   "steps": [],
+   "surprise": null,
+   "parse_errors": [
+    "step 1: kind must be one of read, diagnose, declare, order, wait, finish, profile, failure_modes, fix_history, time, extent, recall, got 'wait_for_notification'"
+   ],
+   "check_problems": [],
+   "schedule": null
+  }
+ ],
+ "surprises": [],
+ "revisions": 0,
+ "fallbacks": 13,
+ "model_calls": 25,
+ "end_reason": null,
+ "error": null,
+ "server": true,
+ "board": {
+  "status": {
+   "time": 48,
+   "budget_left": 45,
+   "steps_left": 41,
+   "recorded_from": -5,
+   "recorded_until": 47
+  },
+  "observations": 20,
+  "ranking_basis": [
+   20,
+   0,
+   48
+  ],
+  "diagnosis": {
+   "diagnosis": {
+    "cooler": 3,
+    "valve": 90,
+    "pump": 1,
+    "accumulator": 130
+   },
+   "evidence_ids": [
+    "obs/20/CE_CoolingEfficiency_percent_1Hz_mean",
+    "obs/20/CE_CoolingEfficiency_percent_1Hz_std",
+    "obs/20/CP_CoolingPower_kW_1Hz_mean",
+    "obs/20/CP_CoolingPower_kW_1Hz_std",
+    "obs/20/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/20/FS1_VolumeFlow_l_per_min_10Hz_std",
+    "obs/20/P1_MotorPower_W_100Hz_mean",
+    "obs/20/P1_MotorPower_W_100Hz_std",
+    "obs/20/PS1_Pressure_bar_100Hz_mean",
+    "obs/20/PS1_Pressure_bar_100Hz_std",
+    "obs/20/PS2_Pressure_bar_100Hz_mean",
+    "obs/20/PS2_Pressure_bar_100Hz_std",
+    "obs/20/PS3_Pressure_bar_100Hz_mean",
+    "obs/20/PS3_Pressure_bar_100Hz_std",
+    "obs/20/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/20/SE_EfficiencyFactor_percent_1Hz_std",
+    "obs/20/TS1_Temperature_C_1Hz_mean",
+    "obs/20/TS1_Temperature_C_1Hz_std",
+    "obs/20/TS2_Temperature_C_1Hz_mean",
+    "obs/20/TS2_Temperature_C_1Hz_std",
+    "obs/20/TS3_Temperature_C_1Hz_mean",
+    "obs/20/TS3_Temperature_C_1Hz_std",
+    "obs/20/TS4_Temperature_C_1Hz_mean",
+    "obs/20/TS4_Temperature_C_1Hz_std"
+   ]
+  },
+  "declaration": null,
+  "orders": {
+   "wo-1": {
+    "id": "wo-1",
+    "component": "cooler",
+    "created_t": 48,
+    "expected_close_t": 52,
+    "status": "open",
+    "prediction_id": "pred/b28",
+    "closed_t": null,
+    "visit": 1
+   }
+  },
+  "predictions": {
+   "pred/b4": {
+    "action": "replace:cooler+valve+accumulator",
+    "component": null,
+    "recovery": 0.11516203703703698,
+    "source": "branch 1"
+   },
+   "pred/b6": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 0.0931712962962963,
+    "source": "branch 4"
+   },
+   "pred/b10": {
+    "action": "replace:cooler+valve+accumulator",
+    "component": null,
+    "recovery": 0.11516203703703698,
+    "source": "branch 1"
+   },
+   "pred/b12": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 0.0931712962962963,
+    "source": "branch 4"
+   },
+   "pred/b17": {
+    "action": "replace:cooler+valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 1"
+   },
+   "pred/b21": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 0.9999999906301597,
+    "source": "branch 1"
+   },
+   "pred/b22": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.004771221991649878,
+    "source": "branch 3"
+   },
+   "pred/b24": {
+    "action": "replace:cooler+valve+pump+accumulator",
+    "component": null,
+    "recovery": 0.0,
+    "source": "branch 5"
+   },
+   "pred/b28": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 0.9999999996518578,
+    "source": "branch 1"
+   },
+   "pred/b29": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.003056385929698192,
+    "source": "branch 3"
+   },
+   "pred/b31": {
+    "action": "replace:cooler+valve+pump+accumulator",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 5"
+   },
+   "pred/b35": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 1"
+   },
+   "pred/b36": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.0004889702906996872,
+    "source": "branch 3"
+   },
+   "pred/b40": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 1"
+   },
+   "pred/b41": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.0004889702906996872,
+    "source": "branch 3"
+   },
+   "pred/b45": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 1"
+   },
+   "pred/b46": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.0004889702906996872,
+    "source": "branch 3"
+   },
+   "pred/b50": {
+    "action": "replace:cooler+valve+pump",
+    "component": null,
+    "recovery": 1.0,
+    "source": "branch 1"
+   },
+   "pred/b51": {
+    "action": "replace:cooler+pump",
+    "component": null,
+    "recovery": 0.0004889702906996872,
+    "source": "branch 3"
+   }
+  },
+  "verifications": {},
+  "alarms": [
+   {
+    "channel": "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "P1_MotorPower_W_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS1_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS2_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS3_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS4_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS5_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "PS6_Pressure_bar_100Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "SE_EfficiencyFactor_percent_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS1_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS2_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS3_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "TS4_Temperature_C_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "VS1_Vibration_mm_per_s_1Hz_mean",
+    "first_t": 0
+   },
+   {
+    "channel": "CP_CoolingPower_kW_1Hz_mean",
+    "first_t": 1
+   },
+   {
+    "channel": "CE_CoolingEfficiency_percent_1Hz_mean",
+    "first_t": 3
+   }
+  ],
+  "closed_orders": [],
+  "differential": [
+   {
+    "component": "cooler",
+    "expected_symptoms": "Reduced cooling efficiency indicated by CE_CoolingEfficiency_percent_1Hz outside its normal range. Failure modes: cooler_efficiency_critical, cooler_efficiency_reduced.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_critical",
+     "fmea/industryasseteqa_hydraulic_facts/cooler_efficiency_reduced"
+    ]
+   },
+   {
+    "component": "valve",
+    "expected_symptoms": "Severe lag or small lag in valve switching indicated by abnormal pressure or flow readings from FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz, CP_CoolingPower_kW_1Hz outside their normal ranges. Failure modes: valve_switching_critical, valve_switching_severe_lag, valve_switching_small_lag.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_critical",
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_severe_lag",
+     "fmea/industryasseteqa_hydraulic_facts/valve_switching_small_lag"
+    ]
+   },
+   {
+    "component": "pump",
+    "expected_symptoms": "Internal leakage indicated by abnormal pressure or flow readings from PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz, FS1_VolumeFlow_l_per_min_10Hz, FS2_VolumeFlow_l_per_min_10Hz, P1_MotorPower_W_100Hz, CP_CoolingPower_kW_1Hz outside their normal ranges. Failure modes: pump_internal_leakage_severe, pump_internal_leakage_weak.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_severe",
+     "fmea/industryasseteqa_hydraulic_facts/pump_internal_leakage_weak"
+    ]
+   },
+   {
+    "component": "accumulator",
+    "expected_symptoms": "Low or severely reduced pressure indicated by abnormal readings from PS1_Pressure_bar_100Hz to PS6_Pressure_bar_100Hz outside their normal ranges. Failure modes: accumulator_pressure_low_critical, accumulator_pressure_severely_reduced, accumulator_pressure_reduced.",
+    "failure_mode_ids": [
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_low_critical",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_severely_reduced",
+     "fmea/industryasseteqa_hydraulic_facts/accumulator_pressure_reduced"
+    ]
+   }
+  ],
+  "notes": [
+   "Your plan of turn 1 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"failure_modes\", \"args\": {\"component\": \"\"}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"fix_history\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"fix_history\", \"args\": {}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"time\", \"args\": {}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"extent\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"extent\", \"args\": {}, \"expect\": {}, \"evidence\": []}]",
+   "Your plan of turn 8 could not be parsed.",
+   "Your plan of turn 9 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"diagnose\", \"args\": {\"rank\": 1}, \"expect\": {}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b21\"}, \"expect\": {\"prediction_id\": \"pred/b21\"}, \"evidence\": []}]",
+   "Your plan of turn 11 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"diagnose\", \"args\": {\"rank\": 1}, \"expect\": {}, \"evidence\": [\"obs/2026-01-01T00:04:00/CE_CoolingEfficiency_percent_1Hz\", \"obs/2026-01-01T00:04:00/CE_CoolingEfficiency_percent_1Hz_std\", \"obs/2026-01-01T00:04:00/CP_CoolingPower_kW_1Hz\", \"obs/2026-01-01T00:04:00/CP_CoolingPower_kW_1Hz_std\", \"obs/2026-01-01T00:04:00/FS1_VolumeFlow_l_per_min_10Hz\", \"obs/2026-01-01T00:04:00/FS1_VolumeFlow_l_per_min_10Hz_std\", \"obs/2026-01-01T00:04:00/FS2_VolumeFlow_l_per_min_10Hz\", \"obs/2026-01-01T00:04:00/FS2_VolumeFlow_l_per_min_10Hz_std\", \"obs/2026-01-01T00:04:00/P1_MotorPower_W_100Hz\", \"obs/2026-01-01T00:04:00/P1_MotorPower_W_100Hz_std\", \"obs/2026-01-01T00:04:00/PS1_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS1_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/PS2_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS2_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/PS3_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS3_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/PS4_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS4_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/PS5_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS5_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/PS6_Pressure_bar_100Hz\", \"obs/2026-01-01T00:04:00/PS6_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:04:00/SE_EfficiencyFactor_percent_1Hz\", \"obs/2026-01-01T00:04:00/SE_EfficiencyFactor_percent_1Hz_std\", \"obs/2026-01-01T00:04:00/TS1_Temperature_C_1Hz\", \"obs/2026-01-01T00:04:00/TS1_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:04:00/TS2_Temperature_C_1Hz\", \"obs/2026-01-01T00:04:00/TS2_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:04:00/TS3_Temperature_C_1Hz\", \"obs/2026-01-01T00:04:00/TS3_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:04:00/TS4_Temperature_C_1Hz\", \"obs/2026-01-01T00:04:00/TS4_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:04:00/VS1_Vibration_mm_per_s_1Hz\", \"obs/2026-01-01T00:04:00/VS1_Vibration_mm_per_s_1Hz_std\"]}, {\"kind\": \"order\", \"args\": {\"component\": \"cooler\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "Your plan of turn 13 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"diagnose\", \"args\": {\"rank\": 1}, \"expect\": {}, \"evidence\": [\"obs/2026-01-01T00:21:00/CE_CoolingEfficiency_percent_1Hz\", \"obs/2026-01-01T00:21:00/CE_CoolingEfficiency_percent_1Hz_std\", \"obs/2026-01-01T00:21:00/CP_CoolingPower_kW_1Hz\", \"obs/2026-01-01T00:21:00/CP_CoolingPower_kW_1Hz_std\", \"obs/2026-01-01T00:21:00/FS1_VolumeFlow_l_per_min_10Hz\", \"obs/2026-01-01T00:21:00/FS1_VolumeFlow_l_per_min_10Hz_std\", \"obs/2026-01-01T00:21:00/FS2_VolumeFlow_l_per_min_10Hz\", \"obs/2026-01-01T00:21:00/FS2_VolumeFlow_l_per_min_10Hz_std\", \"obs/2026-01-01T00:21:00/P1_MotorPower_W_100Hz\", \"obs/2026-01-01T00:21:00/P1_MotorPower_W_100Hz_std\", \"obs/2026-01-01T00:21:00/PS1_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS1_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/PS2_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS2_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/PS3_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS3_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/PS4_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS4_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/PS5_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS5_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/PS6_Pressure_bar_100Hz\", \"obs/2026-01-01T00:21:00/PS6_Pressure_bar_100Hz_std\", \"obs/2026-01-01T00:21:00/SE_EfficiencyFactor_percent_1Hz\", \"obs/2026-01-01T00:21:00/SE_EfficiencyFactor_percent_1Hz_std\", \"obs/2026-01-01T00:21:00/TS1_Temperature_C_1Hz\", \"obs/2026-01-01T00:21:00/TS1_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:21:00/TS2_Temperature_C_1Hz\", \"obs/2026-01-01T00:21:00/TS2_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:21:00/TS3_Temperature_C_1Hz\", \"obs/2026-01-01T00:21:00/TS3_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:21:00/TS4_Temperature_C_1Hz\", \"obs/2026-01-01T00:21:00/TS4_Temperature_C_1Hz_std\", \"obs/2026-01-01T00:21:00/VS1_Vibration_mm_per_s_1Hz\", \"obs/2026-01-01T00:21:00/VS1_Vibration_mm_per_s_1Hz_std\"]}, {\"kind\": \"order\", \"args\": {\"component\": \"cooler\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"cooler\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "Your plan of turn 17 the plan's prices (330) exceed the budget left (45).",
+   "Your plan of turn 18 could not be parsed.",
+   "DEBUG maintenance-loop-v4: pending proposed tail (not yet executed): [{\"kind\": \"order\", \"args\": {\"component\": \"cooler\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"valve\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}, {\"kind\": \"order\", \"args\": {\"component\": \"pump\", \"prediction_id\": \"pred/b28\"}, \"expect\": {\"prediction_id\": \"pred/b28\"}, \"evidence\": []}]",
+   "Your plan of turn 19 the plan's prices (330) exceed the budget left (45).",
+   "Your plan of turn 20 could not be parsed.",
+   "Your plan of turn 21 could not be parsed.",
+   "Your plan of turn 22 could not be parsed.",
+   "Your plan of turn 23 could not be parsed.",
+   "Your plan of turn 24 could not be parsed."
+  ],
+  "end_reason": null,
+  "fix_history": [],
+  "refuted": [],
+  "refuted_last": null,
+  "summaries": [
+   {
+    "sensor_group": "tier3",
+    "n_first": 1,
+    "n_last": 19,
+    "t_first": -5,
+    "t_last": 27,
+    "cycles": [
+     -5,
+     -4,
+     -3,
+     -2,
+     -1,
+     0,
+     1,
+     2,
+     3,
+     4,
+     17,
+     18,
+     19,
+     20,
+     21,
+     24,
+     25,
+     26,
+     27
+    ],
+    "values": 646,
+    "outside": [
+     "obs/2025-12-31T23:55:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:55:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:55:00/P1_MotorPower_W_100Hz",
+     "obs/2025-12-31T23:55:00/PS1_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/PS2_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/PS3_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/PS4_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/PS5_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/PS6_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:55:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2025-12-31T23:55:00/TS1_Temperature_C_1Hz",
+     "obs/2025-12-31T23:55:00/TS2_Temperature_C_1Hz",
+     "obs/2025-12-31T23:55:00/TS3_Temperature_C_1Hz",
+     "obs/2025-12-31T23:55:00/TS4_Temperature_C_1Hz",
+     "obs/2025-12-31T23:55:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2025-12-31T23:56:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:56:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:56:00/P1_MotorPower_W_100Hz",
+     "obs/2025-12-31T23:56:00/PS1_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/PS2_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/PS3_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/PS4_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/PS5_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/PS6_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:56:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2025-12-31T23:56:00/TS1_Temperature_C_1Hz",
+     "obs/2025-12-31T23:56:00/TS2_Temperature_C_1Hz",
+     "obs/2025-12-31T23:56:00/TS3_Temperature_C_1Hz",
+     "obs/2025-12-31T23:56:00/TS4_Temperature_C_1Hz",
+     "obs/2025-12-31T23:57:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:57:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:57:00/P1_MotorPower_W_100Hz",
+     "obs/2025-12-31T23:57:00/PS1_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/PS2_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/PS3_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/PS4_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/PS5_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/PS6_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:57:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2025-12-31T23:57:00/TS1_Temperature_C_1Hz",
+     "obs/2025-12-31T23:57:00/TS2_Temperature_C_1Hz",
+     "obs/2025-12-31T23:57:00/TS3_Temperature_C_1Hz",
+     "obs/2025-12-31T23:57:00/TS4_Temperature_C_1Hz",
+     "obs/2025-12-31T23:58:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2025-12-31T23:58:00/CP_CoolingPower_kW_1Hz",
+     "obs/2025-12-31T23:58:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:58:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:58:00/P1_MotorPower_W_100Hz",
+     "obs/2025-12-31T23:58:00/PS1_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/PS2_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/PS3_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/PS4_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/PS5_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/PS6_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:58:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2025-12-31T23:58:00/TS1_Temperature_C_1Hz",
+     "obs/2025-12-31T23:58:00/TS2_Temperature_C_1Hz",
+     "obs/2025-12-31T23:58:00/TS3_Temperature_C_1Hz",
+     "obs/2025-12-31T23:58:00/TS4_Temperature_C_1Hz",
+     "obs/2025-12-31T23:58:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2025-12-31T23:59:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:59:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2025-12-31T23:59:00/P1_MotorPower_W_100Hz",
+     "obs/2025-12-31T23:59:00/PS1_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/PS2_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/PS3_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/PS4_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/PS5_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/PS6_Pressure_bar_100Hz",
+     "obs/2025-12-31T23:59:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2025-12-31T23:59:00/TS1_Temperature_C_1Hz",
+     "obs/2025-12-31T23:59:00/TS2_Temperature_C_1Hz",
+     "obs/2025-12-31T23:59:00/TS3_Temperature_C_1Hz",
+     "obs/2025-12-31T23:59:00/TS4_Temperature_C_1Hz",
+     "obs/2025-12-31T23:59:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:00:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:00:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:00:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:00:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:00:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:00:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:00:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:00:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:00:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:00:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:01:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:01:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:01:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:01:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:01:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:01:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:01:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:01:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:01:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:01:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:02:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:02:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:02:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:02:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:02:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:02:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:02:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:02:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:02:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:02:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:03:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:03:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:03:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:03:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:03:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:03:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:03:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:03:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:03:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:03:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:03:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:03:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:04:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:04:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:04:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:04:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:04:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:04:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:04:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:04:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:04:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:04:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:04:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:04:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:17:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:17:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:17:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:17:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:17:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:17:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:17:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:17:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:17:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:17:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:17:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:17:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:18:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:18:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:18:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:18:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:18:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:18:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:18:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:18:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:18:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:18:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:18:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:18:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:19:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:19:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:19:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:19:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:19:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:19:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:19:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:19:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:19:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:19:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:19:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:19:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:20:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:20:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:20:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:20:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:20:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:20:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:20:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:20:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:20:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:20:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:20:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:20:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:21:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:21:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:21:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:21:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:21:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:21:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:21:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:21:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:21:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:21:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:21:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:21:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:24:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:24:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:24:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:24:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:24:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:24:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:24:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:24:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:24:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:24:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:24:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:24:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:25:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:25:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:25:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:25:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:25:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:25:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:25:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:25:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:25:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:25:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:25:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:25:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:26:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:26:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:26:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:26:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:26:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:26:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:26:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:26:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:26:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:26:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:26:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:26:00/VS1_Vibration_mm_per_s_1Hz",
+     "obs/2026-01-01T00:27:00/CE_CoolingEfficiency_percent_1Hz",
+     "obs/2026-01-01T00:27:00/CP_CoolingPower_kW_1Hz",
+     "obs/2026-01-01T00:27:00/FS1_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:27:00/FS2_VolumeFlow_l_per_min_10Hz",
+     "obs/2026-01-01T00:27:00/P1_MotorPower_W_100Hz",
+     "obs/2026-01-01T00:27:00/PS1_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/PS2_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/PS3_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/PS4_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/PS5_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/PS6_Pressure_bar_100Hz",
+     "obs/2026-01-01T00:27:00/SE_EfficiencyFactor_percent_1Hz",
+     "obs/2026-01-01T00:27:00/TS1_Temperature_C_1Hz",
+     "obs/2026-01-01T00:27:00/TS2_Temperature_C_1Hz",
+     "obs/2026-01-01T00:27:00/TS3_Temperature_C_1Hz",
+     "obs/2026-01-01T00:27:00/TS4_Temperature_C_1Hz",
+     "obs/2026-01-01T00:27:00/VS1_Vibration_mm_per_s_1Hz"
+    ],
+    "sides": {
+     "obs/2025-12-31T23:55:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2025-12-31T23:55:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2025-12-31T23:55:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2025-12-31T23:55:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:55:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:55:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:55:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:55:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:55:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:55:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2025-12-31T23:55:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:55:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:55:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:55:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:55:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2025-12-31T23:56:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2025-12-31T23:56:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2025-12-31T23:56:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2025-12-31T23:56:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:56:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:56:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:56:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:56:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:56:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:56:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2025-12-31T23:56:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:56:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:56:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:56:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:57:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2025-12-31T23:57:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2025-12-31T23:57:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2025-12-31T23:57:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:57:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:57:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:57:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:57:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:57:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:57:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2025-12-31T23:57:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:57:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:57:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:57:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:58:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2025-12-31T23:58:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2025-12-31T23:58:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2025-12-31T23:58:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2025-12-31T23:58:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2025-12-31T23:58:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:58:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:58:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:58:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:58:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:58:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:58:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2025-12-31T23:58:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:58:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:58:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:58:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:58:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2025-12-31T23:59:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2025-12-31T23:59:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2025-12-31T23:59:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2025-12-31T23:59:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:59:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:59:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2025-12-31T23:59:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:59:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:59:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2025-12-31T23:59:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2025-12-31T23:59:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:59:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:59:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:59:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2025-12-31T23:59:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2026-01-01T00:00:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:00:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2026-01-01T00:00:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2026-01-01T00:00:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:00:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:00:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:00:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:00:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:00:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:00:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:00:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:00:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:00:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:00:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:00:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2026-01-01T00:01:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:01:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:01:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2026-01-01T00:01:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2026-01-01T00:01:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:01:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:01:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:01:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:01:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:01:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:01:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:01:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:01:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:01:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:01:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:02:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:02:00/FS2_VolumeFlow_l_per_min_10Hz": "above",
+     "obs/2026-01-01T00:02:00/P1_MotorPower_W_100Hz": "above",
+     "obs/2026-01-01T00:02:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:02:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:02:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:02:00/PS4_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:02:00/PS5_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:02:00/PS6_Pressure_bar_100Hz": "above",
+     "obs/2026-01-01T00:02:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:02:00/TS1_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:02:00/TS2_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:02:00/TS3_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:02:00/TS4_Temperature_C_1Hz": "below",
+     "obs/2026-01-01T00:02:00/VS1_Vibration_mm_per_s_1Hz": "below",
+     "obs/2026-01-01T00:03:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:03:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:03:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:03:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:03:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:03:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:03:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:03:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:03:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:03:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:03:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:04:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:04:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:04:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:04:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:04:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:04:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:04:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:04:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:04:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:04:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:04:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:17:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:17:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:17:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:17:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:17:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:17:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:17:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:17:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:17:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:17:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:17:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:18:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:18:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:18:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:18:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:18:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:18:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:18:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:18:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:18:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:18:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:18:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:19:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:19:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:19:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:19:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:19:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:19:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:19:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:19:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:19:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:19:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:19:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:20:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:20:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:20:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:20:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:20:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:20:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:20:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:20:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:20:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:20:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:20:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:21:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:21:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:21:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:21:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:21:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:21:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:21:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:21:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:21:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:21:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:21:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:24:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:24:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:24:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:24:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:24:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:24:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:24:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:24:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:24:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:24:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:24:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:25:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:25:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:25:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:25:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:25:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:25:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:25:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:25:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:25:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:25:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:25:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:26:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:26:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:26:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:26:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:26:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:26:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:26:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:26:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:26:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:26:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:26:00/VS1_Vibration_mm_per_s_1Hz": "above",
+     "obs/2026-01-01T00:27:00/CE_CoolingEfficiency_percent_1Hz": "below",
+     "obs/2026-01-01T00:27:00/CP_CoolingPower_kW_1Hz": "below",
+     "obs/2026-01-01T00:27:00/FS1_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:27:00/FS2_VolumeFlow_l_per_min_10Hz": "below",
+     "obs/2026-01-01T00:27:00/P1_MotorPower_W_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS1_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS2_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS3_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS4_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS5_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/PS6_Pressure_bar_100Hz": "below",
+     "obs/2026-01-01T00:27:00/SE_EfficiencyFactor_percent_1Hz": "below",
+     "obs/2026-01-01T00:27:00/TS1_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:27:00/TS2_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:27:00/TS3_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:27:00/TS4_Temperature_C_1Hz": "above",
+     "obs/2026-01-01T00:27:00/VS1_Vibration_mm_per_s_1Hz": "above"
+    }
+   }
+  ],
+  "notifications": [
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel FS1_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel FS2_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel P1_MotorPower_W_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS1_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS2_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS3_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS4_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS5_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel PS6_Pressure_bar_100Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel SE_EfficiencyFactor_percent_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS1_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS2_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS3_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel TS4_Temperature_C_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 0,
+    "event": "alarm",
+    "detail": "The channel VS1_Vibration_mm_per_s_1Hz_mean left its normal range at cycle 0."
+   },
+   {
+    "t": 1,
+    "event": "alarm",
+    "detail": "The channel CP_CoolingPower_kW_1Hz_mean left its normal range at cycle 1."
+   },
+   {
+    "t": 3,
+    "event": "alarm",
+    "detail": "The channel CE_CoolingEfficiency_percent_1Hz_mean left its normal range at cycle 3."
+   }
+  ],
+  "compactions": 1,
+  "compaction_log": [
+   {
+    "after_call": 13,
+    "collapsed": [
+     {
+      "kind": "evidence",
+      "sensor_group": "tier3",
+      "observations": [
+       1,
+       8
+      ],
+      "values": 272
+     }
+    ],
+    "rendered_characters": 24496
+   }
+  ],
+  "reads": [
+   {
+    "plan": 7,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 9,
+    "advised": true,
+    "effective_before": 82.52843951864271,
+    "expected_after": 2.8527978307048407,
+    "expected_elimination": 79.67564168793787,
+    "expected_information_gain": 3.4642001783887855,
+    "ig_per_cost": 0.34642001783887855,
+    "realized_after": 1.1365472492240298,
+    "t_first": -5,
+    "t_last": 3,
+    "cycles_outside": [
+     [
+      1,
+      -5,
+      15,
+      17
+     ],
+     [
+      2,
+      -4,
+      14,
+      17
+     ],
+     [
+      3,
+      -3,
+      14,
+      17
+     ],
+     [
+      4,
+      -2,
+      17,
+      17
+     ],
+     [
+      5,
+      -1,
+      15,
+      17
+     ],
+     [
+      6,
+      0,
+      15,
+      17
+     ],
+     [
+      7,
+      1,
+      15,
+      17
+     ],
+     [
+      8,
+      2,
+      15,
+      17
+     ],
+     [
+      9,
+      3,
+      17,
+      17
+     ]
+    ],
+    "batch": [
+     7,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 10,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 1,
+    "advised": false,
+    "effective_before": 1.1365472492240298,
+    "expected_after": 1.1365472492240298,
+    "expected_elimination": 0.0,
+    "expected_information_gain": 0.0,
+    "ig_per_cost": 0.0,
+    "realized_after": 1.1520541167900735,
+    "t_first": 4,
+    "t_last": 4,
+    "cycles_outside": [
+     [
+      10,
+      4,
+      17,
+      17
+     ]
+    ],
+    "batch": [
+     10,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 12,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": false,
+    "effective_before": 1.1520541167900735,
+    "expected_after": 1.1520541167900735,
+    "expected_elimination": 0.0,
+    "expected_information_gain": 0.0,
+    "ig_per_cost": 0.0,
+    "realized_after": 1.0411053876515746,
+    "t_first": 17,
+    "t_last": 21,
+    "cycles_outside": [
+     [
+      11,
+      17,
+      17,
+      17
+     ],
+     [
+      12,
+      18,
+      17,
+      17
+     ],
+     [
+      13,
+      19,
+      17,
+      17
+     ],
+     [
+      14,
+      20,
+      17,
+      17
+     ],
+     [
+      15,
+      21,
+      17,
+      17
+     ]
+    ],
+    "batch": [
+     12,
+     1,
+     1
+    ]
+   },
+   {
+    "plan": 14,
+    "step": 1,
+    "sensor_group": "tier3",
+    "cycles": 5,
+    "advised": false,
+    "effective_before": 1.0411053876515746,
+    "expected_after": 1.0411053876515746,
+    "expected_elimination": 0.0,
+    "expected_information_gain": 0.0,
+    "ig_per_cost": 0.0,
+    "realized_after": 1.0411053876515746,
+    "t_first": 24,
+    "t_last": 28,
+    "cycles_outside": [
+     [
+      16,
+      24,
+      17,
+      17
+     ],
+     [
+      17,
+      25,
+      17,
+      17
+     ],
+     [
+      18,
+      26,
+      17,
+      17
+     ],
+     [
+      19,
+      27,
+      17,
+      17
+     ],
+     [
+      20,
+      28,
+      17,
+      17
+     ]
+    ],
+    "batch": [
+     14,
+     1,
+     1
+    ]
+   }
+  ],
+  "server": true,
+  "opening_done": [
+   "profile",
+   "failure_modes",
+   "fix_history",
+   "time",
+   "extent"
+  ],
+  "batches": [
+   {
+    "plan": 7,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      9
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 10,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      1
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 12,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   },
+   {
+    "plan": 14,
+    "first_step": 1,
+    "reads": [
+     [
+      "tier3",
+      5
+     ]
+    ],
+    "rankings": 1
+   }
+  ],
+  "parallel": true
+ }
+}

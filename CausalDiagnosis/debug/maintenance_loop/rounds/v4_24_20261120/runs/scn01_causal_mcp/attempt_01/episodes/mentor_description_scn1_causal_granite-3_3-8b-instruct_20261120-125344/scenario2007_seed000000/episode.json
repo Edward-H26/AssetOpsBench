@@ -1,0 +1,2607 @@
+{
+ "format": 4,
+ "seed": 0,
+ "config": {
+  "asset_id": "hyd_1",
+  "components": [
+   "cooler",
+   "valve",
+   "pump",
+   "accumulator"
+  ],
+  "levels": {
+   "cooler": [
+    3,
+    20,
+    100
+   ],
+   "valve": [
+    73,
+    80,
+    90,
+    100
+   ],
+   "pump": [
+    0,
+    1,
+    2
+   ],
+   "accumulator": [
+    90,
+    100,
+    115,
+    130
+   ]
+  },
+  "healthy": {
+   "cooler": 100,
+   "valve": 100,
+   "pump": 0,
+   "accumulator": 130
+  },
+  "sensor_groups": {
+   "tier1": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE"
+   ],
+   "tier2": [
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "FS1",
+    "FS2",
+    "CP"
+   ],
+   "tier3": [
+    "PS1",
+    "PS2",
+    "PS3",
+    "PS4",
+    "PS5",
+    "PS6",
+    "EPS1",
+    "FS1",
+    "FS2",
+    "TS1",
+    "TS2",
+    "TS3",
+    "TS4",
+    "VS1",
+    "CE",
+    "CP",
+    "SE"
+   ]
+  },
+  "prices": {
+   "read": {
+    "tier1": 1,
+    "tier2": 3,
+    "tier3": 10
+   },
+   "parts": {
+    "cooler": 20,
+    "valve": 20,
+    "pump": 30,
+    "accumulator": 20
+   },
+   "repair_charge": 20,
+   "visit": 15,
+   "misdiagnosis": 15,
+   "fix_kind": {
+    "cooler": "replace",
+    "valve": "replace",
+    "pump": "replace",
+    "accumulator": "service"
+   }
+  },
+  "durations": {
+   "read_per_cycle": 1,
+   "advance_per_cycle": 1,
+   "lead_time": {
+    "cooler": 3,
+    "valve": 3,
+    "pump": 3,
+    "accumulator": 3
+   },
+   "repair_downtime": {
+    "cooler": 1,
+    "valve": 1,
+    "pump": 2,
+    "accumulator": 1
+   }
+  },
+  "downtime_rate": {
+   "cooler": {
+    "100": 0,
+    "20": 1,
+    "3": 2
+   },
+   "valve": {
+    "100": 0,
+    "90": 1,
+    "80": 2,
+    "73": 3
+   },
+   "pump": {
+    "0": 0,
+    "1": 1,
+    "2": 2
+   },
+   "accumulator": {
+    "130": 0,
+    "115": 1,
+    "100": 2,
+    "90": 3
+   },
+   "stopped": 5
+  },
+  "dependencies": {
+   "cooler": [],
+   "valve": [],
+   "pump": [
+    "valve",
+    "accumulator"
+   ],
+   "accumulator": []
+  },
+  "priority": {
+   "valve": 1,
+   "accumulator": 2,
+   "cooler": 3,
+   "pump": 4
+  },
+  "emergency": {
+   "lead": 1,
+   "surcharge": 2.0,
+   "hold": 10
+  },
+  "budget": 300,
+  "horizon": 60,
+  "max_steps": 60,
+  "fault_rule": {
+   "min_faulty": 1,
+   "max_faulty": 4
+  },
+  "allowed": null,
+  "start": {
+   "combination": [
+    100,
+    100,
+    2,
+    130
+   ],
+   "entry_offset": 5
+  },
+  "schedule": {
+   "mode": "none",
+   "components": 0,
+   "first_drop": [
+    0,
+    0
+   ],
+   "interval": 1
+  },
+  "hazard": {
+   "mode": "scheduled",
+   "base_rate": 0.0,
+   "depth_factor": 0.0,
+   "collateral": 0.0
+  },
+  "fix_history": {
+   "healthy_probability": 0.4,
+   "healthy_ago": [
+    5,
+    80
+   ],
+   "degraded_probability": 0.3,
+   "degraded_ago": [
+    5,
+    80
+   ]
+  },
+  "failure": {
+   "patience": 10,
+   "strict": false,
+   "penalty": 50
+  },
+  "clock_mode": "declared",
+  "seconds_per_cycle": 60,
+  "think_seconds_per_cycle": 10,
+  "time_tools": true,
+  "guidance_level": 2,
+  "question": "For asset hp_1, using the last 100 days up to and including 2027-01-30, can sensor data reveal the onset of severe internal pump leakage? Which sensor anomalies support this?",
+  "anchors": {
+   "date0": "2027-01-30",
+   "asset_alias": "hp_1"
+  },
+  "verifier_scope": "writes",
+  "diagnostics_server": true
+ },
+ "facts_path": "CausalDiagnosis/datasets/hyd_1/data/hyd_cycles.jsonl",
+ "actions": [
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "get_asset_profile"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "cooler"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "valve"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "pump"
+  },
+  {
+   "type": "get_failure_modes",
+   "component": "accumulator"
+  },
+  {
+   "type": "aob_read",
+   "server": "wo",
+   "tool": "list_workorders",
+   "fix_history": [
+    "hist/4",
+    "hist/3",
+    "hist/2",
+    "hist/1"
+   ]
+  },
+  {
+   "type": "get_current_time"
+  },
+  {
+   "type": "aob_read",
+   "server": "iot",
+   "tool": "stream_extent"
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": -5,
+   "end": 0,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "submit_diagnosis",
+   "diagnosis": {
+    "cooler": 100,
+    "valve": 100,
+    "pump": 2,
+    "accumulator": 130
+   },
+   "evidence_ids": [
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_std",
+    "obs/5/PS3_Pressure_bar_100Hz_mean",
+    "obs/5/PS3_Pressure_bar_100Hz_std",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+   ]
+  },
+  {
+   "type": "create_work_order",
+   "component": "pump",
+   "mode": "standard",
+   "prediction_id": "pred/b8",
+   "evidence_ids": [
+    "pred/b8",
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "obs/5/FS1_VolumeFlow_l_per_min_10Hz_std",
+    "obs/5/PS3_Pressure_bar_100Hz_mean",
+    "obs/5/PS3_Pressure_bar_100Hz_std",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+    "obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+   ]
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 1
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 0
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 2
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 1
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 4
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 6
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 8
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 10
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 12
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 14
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 16
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 18
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 20
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 22
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 24
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 26
+  },
+  {
+   "type": "wait_for_notification",
+   "timeout": 2
+  },
+  {
+   "type": "summarize_changes_since",
+   "cycle": 28
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": 25,
+   "end": 30,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": 20,
+   "end": 25,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "read_recorded",
+   "tool": "history",
+   "sensor_group": "tier3",
+   "fields": [
+    "PS1_Pressure_bar_100Hz_mean",
+    "PS1_Pressure_bar_100Hz_std",
+    "PS2_Pressure_bar_100Hz_mean",
+    "PS2_Pressure_bar_100Hz_std",
+    "PS3_Pressure_bar_100Hz_mean",
+    "PS3_Pressure_bar_100Hz_std",
+    "PS4_Pressure_bar_100Hz_mean",
+    "PS4_Pressure_bar_100Hz_std",
+    "PS5_Pressure_bar_100Hz_mean",
+    "PS5_Pressure_bar_100Hz_std",
+    "PS6_Pressure_bar_100Hz_mean",
+    "PS6_Pressure_bar_100Hz_std",
+    "P1_MotorPower_W_100Hz_mean",
+    "P1_MotorPower_W_100Hz_std",
+    "FS1_VolumeFlow_l_per_min_10Hz_mean",
+    "FS1_VolumeFlow_l_per_min_10Hz_std",
+    "FS2_VolumeFlow_l_per_min_10Hz_mean",
+    "FS2_VolumeFlow_l_per_min_10Hz_std",
+    "TS1_Temperature_C_1Hz_mean",
+    "TS1_Temperature_C_1Hz_std",
+    "TS2_Temperature_C_1Hz_mean",
+    "TS2_Temperature_C_1Hz_std",
+    "TS3_Temperature_C_1Hz_mean",
+    "TS3_Temperature_C_1Hz_std",
+    "TS4_Temperature_C_1Hz_mean",
+    "TS4_Temperature_C_1Hz_std",
+    "VS1_Vibration_mm_per_s_1Hz_mean",
+    "VS1_Vibration_mm_per_s_1Hz_std",
+    "CE_CoolingEfficiency_percent_1Hz_mean",
+    "CE_CoolingEfficiency_percent_1Hz_std",
+    "CP_CoolingPower_kW_1Hz_mean",
+    "CP_CoolingPower_kW_1Hz_std",
+    "SE_EfficiencyFactor_percent_1Hz_mean",
+    "SE_EfficiencyFactor_percent_1Hz_std"
+   ],
+   "start": 15,
+   "end": 20,
+   "offset": 0,
+   "limit": 5
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  },
+  {
+   "type": "no_call"
+  }
+ ],
+ "think_cycles": [
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "think_seconds": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_carried": 0.0,
+ "tool_calls": [
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 59,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":59,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "get_asset_profile",
+   "arguments": {},
+   "summary": {
+    "items": 40
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 58,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":58,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "cooler"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 57,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":57,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "valve"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 56,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":56,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "pump"
+   },
+   "summary": {
+    "items": 3
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 55,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":55,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "fmsr",
+   "tool": "get_failure_modes",
+   "arguments": {
+    "asset_class": "accumulator"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 54,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":54,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "list_workorders",
+   "arguments": {
+    "site_id": "MAIN"
+   },
+   "summary": {
+    "items": 4
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 53,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":53,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "get_current_time",
+   "arguments": {},
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 52,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":52,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "stream_extent",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1"
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 300,
+   "steps_left": 51,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":300,\"steps_left\":51,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2027-01-30T23:54:00",
+    "end": "2027-01-30T23:59:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     -5,
+     -1
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "price": 50,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 50,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":250,\"steps_left\":50,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 49,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":49,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 48,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":48,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "submit_diagnosis",
+   "arguments": {
+    "cooler": 100,
+    "valve": 100,
+    "pump": 2,
+    "accumulator": 130,
+    "evidence_ids": "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean,obs/5/FS1_VolumeFlow_l_per_min_10Hz_std,obs/5/PS3_Pressure_bar_100Hz_mean,obs/5/PS3_Pressure_bar_100Hz_std,obs/5/SE_EfficiencyFactor_percent_1Hz_mean,obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+   },
+   "summary": {
+    "diagnosis": {
+     "cooler": 100,
+     "valve": 100,
+     "pump": 2,
+     "accumulator": 130
+    },
+    "evidence_ids": [
+     "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+     "obs/5/FS1_VolumeFlow_l_per_min_10Hz_std",
+     "obs/5/PS3_Pressure_bar_100Hz_mean",
+     "obs/5/PS3_Pressure_bar_100Hz_std",
+     "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+     "obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+    ]
+   },
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 250,
+   "steps_left": 47,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":250,\"steps_left\":47,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "wo",
+   "tool": "generate_work_order",
+   "arguments": {
+    "description": "restore the pump of hyd_1 to its healthy level",
+    "asset_num": "hyd_1_pump",
+    "site_id": "MAIN",
+    "priority": 2,
+    "work_type": "CM",
+    "aob_source": {
+     "prediction_id": "pred/b8",
+     "evidence_ids": [
+      "pred/b8",
+      "obs/5/FS1_VolumeFlow_l_per_min_10Hz_mean",
+      "obs/5/FS1_VolumeFlow_l_per_min_10Hz_std",
+      "obs/5/PS3_Pressure_bar_100Hz_mean",
+      "obs/5/PS3_Pressure_bar_100Hz_std",
+      "obs/5/SE_EfficiencyFactor_percent_1Hz_mean",
+      "obs/5/SE_EfficiencyFactor_percent_1Hz_std"
+     ]
+    }
+   },
+   "summary": {
+    "work_order": {
+     "id": "wo-1",
+     "component": "pump",
+     "created_t": 0,
+     "expected_close_t": 5,
+     "status": "open",
+     "source": "agent",
+     "closed_t": null,
+     "mode": "standard",
+     "visit": 1
+    }
+   },
+   "price": 65,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 46,
+   "notifications": [],
+   "response": "{\"price\":65,\"budget_left\":185,\"steps_left\":46,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 45,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":45,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 44,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":44,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 43,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":43,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 42,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":42,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 0,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 41,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":41,\"cycle\":0,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 1,
+   "cycles": 1,
+   "budget_left": 185,
+   "steps_left": 40,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel CE_CoolingEfficiency_percent_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "CE_CoolingEfficiency_percent_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel FS1_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "FS1_VolumeFlow_l_per_min_10Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel FS2_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "FS2_VolumeFlow_l_per_min_10Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel P1_MotorPower_W_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "P1_MotorPower_W_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS1_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS1_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS2_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS2_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS3_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS3_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS4_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS4_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS5_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS5_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel PS6_Pressure_bar_100Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "PS6_Pressure_bar_100Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel SE_EfficiencyFactor_percent_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "SE_EfficiencyFactor_percent_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel TS1_Temperature_C_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "TS1_Temperature_C_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel TS2_Temperature_C_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "TS2_Temperature_C_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel TS3_Temperature_C_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "TS3_Temperature_C_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel TS4_Temperature_C_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "TS4_Temperature_C_1Hz_mean"
+    },
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 0,
+     "message": "The channel VS1_Vibration_mm_per_s_1Hz_mean left its normal range at cycle 0.",
+     "event": "alarm",
+     "channel": "VS1_Vibration_mm_per_s_1Hz_mean"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":40,\"cycle\":1,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel CE_CoolingEfficiency_percent_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"CE_CoolingEfficiency_percent_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel FS1_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"FS1_VolumeFlow_l_per_min_10Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel FS2_VolumeFlow_l_per_min_10Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"FS2_VolumeFlow_l_per_min_10Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel P1_MotorPower_W_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"P1_MotorPower_W_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS1_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS1_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS2_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS2_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS3_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS3_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS4_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS4_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS5_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS5_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel PS6_Pressure_bar_100Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"PS6_Pressure_bar_100Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel SE_EfficiencyFactor_percent_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"SE_EfficiencyFactor_percent_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel TS1_Temperature_C_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"TS1_Temperature_C_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel TS2_Temperature_C_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"TS2_Temperature_C_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel TS3_Temperature_C_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"TS3_Temperature_C_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel TS4_Temperature_C_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"TS4_Temperature_C_1Hz_mean\"},{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":0,\"message\":\"The channel VS1_Vibration_mm_per_s_1Hz_mean left its normal range at cycle 0.\",\"event\":\"alarm\",\"channel\":\"VS1_Vibration_mm_per_s_1Hz_mean\"}]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 1
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 2,
+   "cycles": 1,
+   "budget_left": 185,
+   "steps_left": 39,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 1,
+     "message": "The channel CP_CoolingPower_kW_1Hz_mean left its normal range at cycle 1.",
+     "event": "alarm",
+     "channel": "CP_CoolingPower_kW_1Hz_mean"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":39,\"cycle\":2,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":1,\"message\":\"The channel CP_CoolingPower_kW_1Hz_mean left its normal range at cycle 1.\",\"event\":\"alarm\",\"channel\":\"CP_CoolingPower_kW_1Hz_mean\"}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 0
+   },
+   "summary": {
+    "items": 17
+   },
+   "price": 0,
+   "time": 2,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 38,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":38,\"cycle\":2,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 4,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 37,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 3,
+     "message": "The technician began the repair of work order wo-1, and the rig is stopped until it closes.",
+     "event": "work_order_executed",
+     "id": "wo-1"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":37,\"cycle\":4,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":3,\"message\":\"The technician began the repair of work order wo-1, and the rig is stopped until it closes.\",\"event\":\"work_order_executed\",\"id\":\"wo-1\"}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 2
+   },
+   "summary": {
+    "items": 17
+   },
+   "price": 0,
+   "time": 4,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 36,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":36,\"cycle\":4,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 5,
+   "cycles": 1,
+   "budget_left": 185,
+   "steps_left": 35,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 5,
+     "message": "Work order wo-1 on the pump closed.",
+     "event": "work_order_closed",
+     "id": "wo-1",
+     "component": "pump",
+     "source": "agent"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":35,\"cycle\":5,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":5,\"message\":\"Work order wo-1 on the pump closed.\",\"event\":\"work_order_closed\",\"id\":\"wo-1\",\"component\":\"pump\",\"source\":\"agent\"}]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 1
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 6,
+   "cycles": 1,
+   "budget_left": 185,
+   "steps_left": 34,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 6,
+     "message": "Wait for notification timeout reached after 1 cycles",
+     "event": "wait_timeout",
+     "timeout": 1
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":34,\"cycle\":6,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":6,\"message\":\"Wait for notification timeout reached after 1 cycles\",\"event\":\"wait_timeout\",\"timeout\":1}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 4
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 6,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 33,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":33,\"cycle\":6,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 8,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 32,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 8,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":32,\"cycle\":8,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":8,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 6
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 8,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 31,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":31,\"cycle\":8,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 10,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 30,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 10,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":30,\"cycle\":10,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":10,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 8
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 10,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 29,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":29,\"cycle\":10,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 12,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 28,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 12,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":28,\"cycle\":12,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":12,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 10
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 12,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 27,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":27,\"cycle\":12,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 14,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 26,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 14,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":26,\"cycle\":14,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":14,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 12
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 14,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 25,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":25,\"cycle\":14,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 16,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 24,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 16,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":24,\"cycle\":16,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":16,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 14
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 16,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 23,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":23,\"cycle\":16,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 18,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 22,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 18,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":22,\"cycle\":18,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":18,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 16
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 18,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 21,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":21,\"cycle\":18,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 20,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 20,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 20,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":20,\"cycle\":20,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":20,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 18
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 20,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 19,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":19,\"cycle\":20,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 22,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 18,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 22,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":18,\"cycle\":22,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":22,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 20
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 22,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 17,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":17,\"cycle\":22,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 24,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 16,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 24,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":16,\"cycle\":24,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":24,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 22
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 24,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 15,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":15,\"cycle\":24,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 26,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 14,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 26,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":14,\"cycle\":26,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":26,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 24
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 26,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 13,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":13,\"cycle\":26,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 28,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 12,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 28,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":12,\"cycle\":28,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":28,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 26
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 28,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 11,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":11,\"cycle\":28,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "wait_for_notification",
+   "arguments": {
+    "timeout": 2
+   },
+   "summary": {
+    "items": 1
+   },
+   "price": 0,
+   "time": 30,
+   "cycles": 2,
+   "budget_left": 185,
+   "steps_left": 10,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_NOTIFICATION",
+     "t": 30,
+     "message": "Wait for notification timeout reached after 2 cycles",
+     "event": "wait_timeout",
+     "timeout": 2
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":10,\"cycle\":30,\"notifications\":[{\"message_type\":\"ENVIRONMENT_NOTIFICATION\",\"t\":30,\"message\":\"Wait for notification timeout reached after 2 cycles\",\"event\":\"wait_timeout\",\"timeout\":2}]}"
+  },
+  {
+   "server": "task",
+   "tool": "summarize_changes_since",
+   "arguments": {
+    "cycle": 28
+   },
+   "summary": {
+    "items": 0
+   },
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 9,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":9,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 8,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":8,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 7,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":7,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 185,
+   "steps_left": 6,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":185,\"steps_left\":6,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2027-01-31T00:24:00",
+    "end": "2027-01-31T00:29:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     25,
+     29
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   },
+   "price": 50,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 135,
+   "steps_left": 5,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":135,\"steps_left\":5,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2027-01-31T00:19:00",
+    "end": "2027-01-31T00:24:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     20,
+     24
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     11,
+     12,
+     13,
+     14,
+     15
+    ]
+   },
+   "price": 50,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 85,
+   "steps_left": 4,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":85,\"steps_left\":4,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "iot",
+   "tool": "history",
+   "arguments": {
+    "site_name": "MAIN",
+    "asset_id": "hyd_1",
+    "sensors": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "start": "2027-01-31T00:14:00",
+    "end": "2027-01-31T00:19:00",
+    "limit": 5
+   },
+   "summary": {
+    "rows": 5,
+    "cycle_span": [
+     15,
+     19
+    ],
+    "fields": [
+     "PS1_Pressure_bar_100Hz",
+     "PS1_Pressure_bar_100Hz_std",
+     "PS2_Pressure_bar_100Hz",
+     "PS2_Pressure_bar_100Hz_std",
+     "PS3_Pressure_bar_100Hz",
+     "PS3_Pressure_bar_100Hz_std",
+     "PS4_Pressure_bar_100Hz",
+     "PS4_Pressure_bar_100Hz_std",
+     "PS5_Pressure_bar_100Hz",
+     "PS5_Pressure_bar_100Hz_std",
+     "PS6_Pressure_bar_100Hz",
+     "PS6_Pressure_bar_100Hz_std",
+     "P1_MotorPower_W_100Hz",
+     "P1_MotorPower_W_100Hz_std",
+     "FS1_VolumeFlow_l_per_min_10Hz",
+     "FS1_VolumeFlow_l_per_min_10Hz_std",
+     "FS2_VolumeFlow_l_per_min_10Hz",
+     "FS2_VolumeFlow_l_per_min_10Hz_std",
+     "TS1_Temperature_C_1Hz",
+     "TS1_Temperature_C_1Hz_std",
+     "TS2_Temperature_C_1Hz",
+     "TS2_Temperature_C_1Hz_std",
+     "TS3_Temperature_C_1Hz",
+     "TS3_Temperature_C_1Hz_std",
+     "TS4_Temperature_C_1Hz",
+     "TS4_Temperature_C_1Hz_std",
+     "VS1_Vibration_mm_per_s_1Hz",
+     "VS1_Vibration_mm_per_s_1Hz_std",
+     "CE_CoolingEfficiency_percent_1Hz",
+     "CE_CoolingEfficiency_percent_1Hz_std",
+     "CP_CoolingPower_kW_1Hz",
+     "CP_CoolingPower_kW_1Hz_std",
+     "SE_EfficiencyFactor_percent_1Hz",
+     "SE_EfficiencyFactor_percent_1Hz_std"
+    ],
+    "newly_paid": 5,
+    "rows_read_again": 0,
+    "new_observations": [
+     16,
+     17,
+     18,
+     19,
+     20
+    ]
+   },
+   "price": 50,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 35,
+   "steps_left": 3,
+   "notifications": [],
+   "response": "{\"price\":50,\"budget_left\":35,\"steps_left\":3,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 35,
+   "steps_left": 2,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":35,\"steps_left\":2,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 35,
+   "steps_left": 1,
+   "notifications": [],
+   "response": "{\"price\":0,\"budget_left\":35,\"steps_left\":1,\"cycle\":30,\"notifications\":[]}"
+  },
+  {
+   "server": "task",
+   "tool": "no_call",
+   "arguments": {},
+   "summary": {},
+   "price": 0,
+   "time": 30,
+   "cycles": 0,
+   "budget_left": 35,
+   "steps_left": 0,
+   "notifications": [
+    {
+     "message_type": "ENVIRONMENT_STOP",
+     "t": 30,
+     "message": "The episode ended (max_steps).",
+     "event": "end",
+     "reason": "max_steps"
+    }
+   ],
+   "response": "{\"price\":0,\"budget_left\":35,\"steps_left\":0,\"cycle\":30,\"notifications\":[{\"message_type\":\"ENVIRONMENT_STOP\",\"t\":30,\"message\":\"The episode ended (max_steps).\",\"event\":\"end\",\"reason\":\"max_steps\"}]}"
+  }
+ ],
+ "last_call_wall_time": 1795197858.7004004,
+ "episode_started_at": 1795197257.6431372,
+ "called_at": [
+  1795197277.1896098,
+  1795197280.0458121,
+  1795197283.2782786,
+  1795197283.3832073,
+  1795197283.3954468,
+  1795197283.407334,
+  1795197298.1058376,
+  1795197300.8780737,
+  1795197300.932887,
+  1795197307.3626792,
+  1795197333.7617607,
+  1795197389.8036547,
+  1795197421.025937,
+  1795197421.100334,
+  1795197445.7218416,
+  1795197453.7770631,
+  1795197517.1628644,
+  1795197525.6608002,
+  1795197531.3457751,
+  1795197535.853302,
+  1795197535.8696449,
+  1795197535.8846,
+  1795197565.0621774,
+  1795197565.0793116,
+  1795197572.7928536,
+  1795197572.809907,
+  1795197572.8259692,
+  1795197582.716746,
+  1795197582.7346263,
+  1795197593.767063,
+  1795197593.7853596,
+  1795197601.495112,
+  1795197601.5237796,
+  1795197628.9019544,
+  1795197628.9215932,
+  1795197641.2679126,
+  1795197641.287859,
+  1795197650.5066803,
+  1795197650.5269241,
+  1795197656.668454,
+  1795197656.688836,
+  1795197675.8867261,
+  1795197675.9077117,
+  1795197696.1422923,
+  1795197696.180922,
+  1795197716.4642277,
+  1795197716.489582,
+  1795197737.9688952,
+  1795197737.9913785,
+  1795197760.957317,
+  1795197760.9802086,
+  1795197772.2261531,
+  1795197791.6972747,
+  1795197810.8133714,
+  1795197818.4598541,
+  1795197827.4573324,
+  1795197836.0218117,
+  1795197844.909055,
+  1795197851.1707118,
+  1795197858.7004004
+ ],
+ "think_seconds_monotonic": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "think_seconds_wall": [
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0,
+  0.0
+ ],
+ "last_call_monotonic_time": 868821.861858118,
+ "handover_wall": 1795197257.663504,
+ "handover_mono": 868220.824961874,
+ "charged_until_mono": 868821.861858118,
+ "transcript_cursor": 661904,
+ "failures_cursor": 0,
+ "credited_segments": [],
+ "started_servers": [
+  "iot",
+  "fmsr",
+  "wo",
+  "task",
+  "causal_diagnosis"
+ ],
+ "open_service": {
+  "n": 210,
+  "e": 868821.861858118,
+  "e_thread": 0.244071136
+ },
+ "refused_processes": {},
+ "credited_seconds": {
+  "starts": 7.613830746035092,
+  "calls": 1.2584956250000003
+ },
+ "uncredited_seconds": {
+  "starts": 0.07937934098299593,
+  "calls": 0.07491893832709658
+ },
+ "failed_model_seconds": 0.0,
+ "failed_model_attempts": 0,
+ "episode_ended_at": 1795197871.8933687
+}
