@@ -6,8 +6,8 @@ DEFAULT_PLAN_LENGTH = None  # no count: the budget, the horizon and the step cap
 # the switches that change what the diagnostics server advises or that need its ranking, so a run without the server refuses them
 SERVER_SWITCHES = ("branches", "single_hypothesis", "rule_only", "reads")
 # the options that run.json records only where a run moves them from their default, so the run.json of a run that sets none keeps
-# its bytes: the recall step and the summary turn of the compaction
-OMITTED_AT_DEFAULT = {"recall": True, "summary_turn": True}
+# its bytes: the recall step, the summary turn of the compaction and the schema of the replies
+OMITTED_AT_DEFAULT = {"recall": True, "summary_turn": True, "structured_output": True}
 
 
 @dataclass
@@ -26,6 +26,7 @@ class CausalLoopOptions:
     parallel: bool = True  # the schedule of the candidate plans on the board and the batch of consecutive read steps, with or without the server; False plays every read alone
     recall: bool = True  # the plan step that puts collapsed rows back on the next board
     summary_turn: bool = True  # the summary of the earlier turns at the compaction trigger; False sends no summary request
+    structured_output: bool = True  # the planning and the orientation requests bind their reply to its JSON schema (plan/reply_schema.py)
 
     def label(self):
         """The agent label of the driver's tables: causal, with one suffix per switch that differs from the default, so that
@@ -53,6 +54,8 @@ class CausalLoopOptions:
             parts.append("norecall")
         if not self.summary_turn:
             parts.append("nosumturn")
+        if not self.structured_output:
+            parts.append("noschema")
         return "_".join(parts)
 
     def to_json(self):

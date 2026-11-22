@@ -70,7 +70,8 @@ def record_causal(ep_dir, result, calls):
         write_json(ep_dir / "plans.json", {"mode_of_first_plan": result.mode_of_first_plan, "differential": result.differential, "plans": result.plans,
                                            "surprises": result.surprises, "revisions": result.revisions, "fallbacks": result.fallbacks,
                                            "model_calls": result.model_calls, "end_reason": result.end_reason, "error": result.error,
-                                           "server": result.server, "board": result.board})
+                                           "server": result.server, "reader_faults": result.reader_faults,
+                                           "replaced_characters": result.replaced_characters, "board": result.board})
         (ep_dir / "plan.txt").write_text(render_plans(result), encoding="utf-8")
         (ep_dir / "answer.txt").write_text(result.answer or "", encoding="utf-8")
         write_json(ep_dir / "trajectory.json", result.trajectory)
@@ -83,6 +84,7 @@ def record_causal(ep_dir, result, calls):
         "surprises": len(result.surprises) if result is not None else "",
         "revisions": result.revisions if result is not None else "",
         "fallbacks": result.fallbacks if result is not None else "",
+        "standing_steps": sum(1 for plan in result.plans for step in plan["steps"] if (step.get("observed") or {}).get("stands")) if result is not None else "",
         "first_plan_mode": (result.mode_of_first_plan or "") if result is not None else "",
         "causal_calls": diagnostics_calls((r["server"], r.get("tool")) for r in trajectory),
     }

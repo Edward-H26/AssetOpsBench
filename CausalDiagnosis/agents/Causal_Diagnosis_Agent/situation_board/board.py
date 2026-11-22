@@ -3,17 +3,64 @@ import re
 from dataclasses import dataclass, field
 from CausalDiagnosis.utils.public_rules.repair_completion import Rules, completion, schedule, verifies, visit_moments, wait_calls
 from CausalDiagnosis.utils.public_rules.visits import joins, keeps_run
+from CausalDiagnosis.agents.utils import core_texts
 from . import asset_rules, text_formatting, troubleshooting_plan_fields
 
 
 # the clock modes in which the agent's thinking plays cycles before an action, so that the record grows during any call (the
 # environment's real_time.THINKING_MODES, which a test ties to this tuple)
 THINKING_CLOCKS = ("generation_time", "generated_tokens")
+DECLARED_CLOCK = "declared"  # the clock mode in which time moves only inside tool calls, by the declared duration of each
 SUMMARY_SECTION = "## Your summary of earlier turns"  # the board's section of step 3 of the compaction
 NO_SUMMARY = "(no summary available)"  # an empty summary reply, or one the engine cut at the context (after Codex)
 # the place of each kind on the board, which breaks ties of the planning turn in the order a summary replaces entries
 SUMMARY_PLACE = {"notifications": 0, "alarm": 1, "closed": 1, "surprises": 2, "notes": 3}
 RECALL_SECTION = "## Recalled readings"  # the rows a recall step brought back
+# the words of the kind recorded levels in the slots of the shared texts (agents/utils/core_texts.py), which the prompts, the
+# board and the reasons of the check fill from this one map until an asset declares the words of its kind
+KIND_WORDS = {"time_unit": "cycle", "series": "sensor group", "target": "component", "repair": "work order"}
+# the line of a stall: planning turns in a row that added no evidence and changed no state, two being the least that is a row
+NO_PROGRESS = "No progress for {count} turns in a row: no turn added evidence or changed a state, and a restated plan is no progress."
+NO_PROGRESS_TURNS = 2
+# the lines of the status on the work orders where a clock runs (_order_lines): the open orders on schedule with their closes and how
+# time passes on the row, the read that verifies a repair whose orders have closed, and every repair verified
+ORDERS_ON_SCHEDULE = "Open work orders, on schedule and not failed: {orders}; the latest answer was at cycle {time}. {clock}."
+ORDER_CLOSES = "{id} on the {component} closes at cycle {close}"
+TIME_ON_ROW = "On this row (clock mode {mode}) {moves}"
+TIME_MOVES = {"declared": "time passes only inside calls that take time", "generation_time": "time passes inside calls and with your response time",
+              "generated_tokens": "time passes inside calls and with the tokens you generate",
+              "instant": "every call and every turn without a call moves the clock one cycle"}
+CLOSE_MEANS = {"wait": "a wait step lets the {noun} run to the close",
+               "read": "a read of {group} whose window reaches past the record plays the cycles to the close"}
+REPAIR_UNVERIFIED = "{orders} closed by cycle {close} and the repair is not verified yet: {next}, and that reading verifies it."
+READ_NOW = "read {group} now"
+WAIT_THEN_READ = "wait to cycle {first}, then read {group}"
+FORWARD_READ = "read {group} for {cycles}, whose window plays past the close"
+ALL_VERIFIED = "Every work order has closed and every repair is verified, the latest consistent: no wait or read is pending, and a finish step ends the episode."
+
+
+def call_text(kind, request):
+    """A call as the status of the board and the reasons of a step name it: the kind, then its keyword fields as the board prints
+    the arguments of a step, where it has any."""
+    return f"{kind} {request}" if request else kind
+
+
+def commitment_text(kind, value):
+    """A commitment as the status of the board states it, (kind, value): the levels that a diagnosis submitted, or the sensor group
+    and the cycles of the separating test of a declaration."""
+    if kind == "diagnose":
+        return "diagnosis submitted: " + text_formatting.combination_text(value)
+    group, cycles = value
+    return f"insufficient evidence declared, separating test {group} for {text_formatting.n_cycles(cycles)}"
+
+
+def value_text(row):
+    """A value of an evidence row as the board prints it: the value, ending in low or high where it lies outside its normal
+    range, as the CausalDiagnosis MCP writes a value of its evidence table."""
+    value = text_formatting.fmt(row["value"])
+    if row["inside_band"] is False:
+        return f"{value} {'low' if row['value'] < row['band_low'] else 'high'}"
+    return value
 
 
 def names(text, identifier):
@@ -81,8 +128,18 @@ class Board:
     reads_take_time: bool = True  # a read plays the cycles it reads on this surface, so it takes their declared duration (tools/)
     summary_call: bool = True  # the change summary after a wait is a tool call on this surface, and answered without one elsewhere (tools/)
     unserved: frozenset = frozenset()  # the step kinds whose tool the row does not serve (tools/, Surface.unserved_kinds)
+    state_writes: dict = field(default_factory=dict)  # step kind -> (state, value) of a write of a public state, the key sets of the general agent's table; no surface declares one
+    states: dict = field(default_factory=dict)  # state -> the value the board knows it to have, which a state write is held against (plan.standing)
     manual_channels: dict = field(default_factory=dict)  # component -> the indicating channels an answer of the repair manual named
     run: object = None  # the visit of the open run of orders: the last call of the environment was an accepted standard order of it
+    answered: list = field(default_factory=list)  # [kind, keyword fields] of every answered request of the opening kinds (note_answered)
+    calls: list = field(default_factory=list)  # [kind, keyword fields, count] of every call a step of a plan bound to a tool (note_call)
+    retired_notes: int = 0  # the notes that left since the state they spoke of passed (retire_notes)
+    reply_schema: dict = None  # the digests of the reply schemas, the requests that carried one and whether the backend carried the field
+    note_ties: dict = field(default_factory=dict)  # note text -> the states whose passing takes it off (add_note), beside notes
+    note_repeats: dict = field(default_factory=dict)  # note text of a plan -> the count of the earlier notes with its reasons that it replaced
+    progress: str = None  # what the episode had done at the start of the latest planning turn (_progress)
+    turns_without_progress: int = 0  # the planning turns in a row before the current one that added no evidence and changed no state
 
     # ----- the clock and the counters -----
     @property
@@ -166,6 +223,13 @@ class Board:
     def record_grows(self):
         """Whether the record grows during any call: a cycle runs after a close on this row and its clock charges thinking."""
         return self.clock_runs and (self.profile or {}).get("clock_mode") in THINKING_CLOCKS
+
+    @property
+    def record_holds_between_calls(self):
+        """Whether the record stays as the latest answer shows it until a call takes time: no cycle runs on this row, or the clock
+        runs by declaration, so that a cycle is recorded only inside a call with a declared duration, whose answer shows the new end
+        of the record. Elsewhere thinking records cycles between calls, or every call plays one (the instant mode)."""
+        return not self.clock_runs or (self.profile or {}).get("clock_mode") == DECLARED_CLOCK
 
     def unpaid_cycles(self, group, cycles=1):
         """On a row that records ahead of its reads, the recorded cycles a read of the group would pay for, the newest first:
@@ -322,6 +386,14 @@ class Board:
         return completion(self.rules(), time, new=components, visits=visits, pending=pending, read_price=self.read_price(group),
                           commit=commit, run=run, verifiable=self.verifies(group, repaired))
 
+    def verifying_tail(self):
+        """What finishing the repair still needs from this board (completion), the waits, the verifying read and finish, when that
+        tail holds a verifying read and fits the budget, the steps and the horizon left; None otherwise. The finish guard of the
+        controller and the status line of a closed repair read this one tail."""
+        tail = self.completion(commit=False)
+        fits = tail.price <= self.budget_left and tail.calls <= self.steps_left and self.time + tail.cycles < self.horizon
+        return tail if tail.reads and fits else None
+
     def wait_calls(self, start, end, visits):
         """The tool calls of a wait step from start to end over the visits (open_visits) (repair_completion)."""
         rules, moments = self.rules(), set()
@@ -331,9 +403,10 @@ class Board:
 
     def limits_line(self):
         """The clock, the budget and the steps of the board in the words of its status, each limit the manifest leaves out named
-        as absent; the board and the closing summary print the same line."""
-        clock = (f"Time {self.time} of {self.horizon} cycles ({self.cycles_left} left)." if self.horizon != asset_rules.UNLIMITED
-                 else f"Time {self.time}, no horizon (no clock runs).")
+        as absent, and a horizon on a row where no clock runs said so, since the tool texts of a surface leave that to the board;
+        the board and the closing summary print the same line."""
+        clock = (f"Time {self.time} of {self.horizon} cycles ({self.cycles_left} left{'' if self.clock_runs else ', no clock runs'})."
+                 if self.horizon != asset_rules.UNLIMITED else f"Time {self.time}, no horizon (no clock runs).")
         budget = (f"Budget left {text_formatting.fmt(self.budget_left)} of {text_formatting.fmt((self.profile or {}).get('budget'))}." if self.budget_limited
                   else "No budget limit (every tool is free).")
         steps = f"Steps left {self.steps_left} (refused calls count)." if self.steps_left != asset_rules.UNLIMITED else "No step cap."
@@ -366,6 +439,7 @@ class Board:
 
     def set_profile(self, result):
         self.profile = copy.deepcopy(result)
+        self.retire_notes("facts")
 
     def set_failure_modes(self, result):
         self.failure_modes = copy.deepcopy(result.get("failure_modes", []))
@@ -435,6 +509,7 @@ class Board:
         # the belief moves with the clock between readings (version 7), so the basis carries the cycle as well
         self.ranking_basis = (self.observations, len(self.closed_orders), self.time)
         self._release_refuted()
+        self.retire_notes("ranking")
 
     def ranking_is_current(self):
         return self.ranking is not None and self.ranking_basis == (self.observations, len(self.closed_orders), self.time)
@@ -605,11 +680,13 @@ class Board:
         return rows
 
     def set_candidates(self, raw):
-        """The candidates of the model's latest plan that listed them; a refuted set is released once the model's top candidate
-        names it again after a further reading, the rule a later ranking follows with the server."""
+        """The candidates of the model's latest plan that listed them, which take off the note on candidates that were not kept; a
+        refuted set is released once the model's top candidate names it again after a further reading, the rule a later ranking
+        follows with the server."""
         self.model_candidates = self.as_candidates(raw)
         self.candidates_seen = self.observations
         self._release_refuted()
+        self.retire_notes("candidates")
 
     def candidate(self, rank):
         return next((c for c in self.candidates() if c.get("rank") == rank), None)
@@ -676,6 +753,8 @@ class Board:
                 "refuted_last": self.refuted_last, "summaries": copy.deepcopy(self.summaries), "notifications": list(self.notifications),
                 "compactions": self.compactions, "compaction_log": copy.deepcopy(self.compaction_log), "reads": copy.deepcopy(self.reads),
                 "server": self.server, "opening_done": list(self.opening_done), "batches": copy.deepcopy(self.batches), "parallel": self.parallel,
+                "answered": copy.deepcopy(self.answered), "calls": copy.deepcopy(self.calls), "retired_notes": self.retired_notes,
+                "reply_schema": copy.deepcopy(self.reply_schema),
                 **({"candidates": copy.deepcopy(self.model_candidates)} if self.model_candidates or not self.server else {})}
 
     # ----- idle compaction -----
@@ -722,6 +801,23 @@ class Board:
         it."""
         self.turn_marks.append((turn, {"notifications": len(self.notifications), "alarm": len(self.alarms), "closed": len(self.closed_orders),
                                        "surprises": len(self.surprises), "notes": len(self.notes)}))
+        done = self._progress()
+        self.turns_without_progress = self.turns_without_progress + 1 if done == self.progress else 0
+        self.progress = done
+
+    def _progress(self):
+        """What the episode has done, which a turn changes only by adding evidence or changing a state: the values, the observations
+        and the notifications, the answers of the opening, the commitment, the work orders with their states, the verdicts, the
+        refuted plans and the timeline. The plan, the notes, the surprises, the candidates, the differential, the ranking, the steps
+        left and the clock are not among them, so a restated plan is no progress, and neither is a cycle that the clock runs alone."""
+        return repr((len(self.evidence) + len(self.absorbed_ids), self.observations, len(self.notifications), self.answered, self.opening_done,
+                     self.diagnosis, self.declaration, sorted((o["id"], o["status"]) for o in self.orders.values()),
+                     sorted((key, verdict.get("status")) for key, verdict in self.verifications.items()), len(self.refuted), len(self.alarms),
+                     len(self.closed_orders)))
+
+    def _no_progress_line(self):
+        """The line of a stall, from NO_PROGRESS_TURNS planning turns in a row without progress on; empty before."""
+        return NO_PROGRESS.format(count=self.turns_without_progress) if self.turns_without_progress >= NO_PROGRESS_TURNS else ""
 
     def _turn_of(self, kind, index):
         turn = 0
@@ -754,6 +850,10 @@ class Board:
         removed = {}
         for kind in ("notes", "notifications", "surprises"):
             gone = {e["index"] for e in entries if e["kind"] == kind}
+            if kind == "notes":  # the ties of a note are keyed by its text, so they leave with it
+                for i in gone:
+                    self.note_ties.pop(self.notes[i], None)
+                    self.note_repeats.pop(self.notes[i], None)
             setattr(self, kind, [x for i, x in enumerate(getattr(self, kind)) if i not in gone])
             removed[kind] = len(gone)
         events = [[e["kind"], self._entry_text(e)] for e in entries if e["kind"] in ("alarm", "closed")]
@@ -876,9 +976,17 @@ class Board:
         return "\n\n".join(p for p in parts if p)
 
     def _render_opening(self):
-        """The board before the profile is read: the reads of the opening the first plan makes."""
-        return (f"# Situation board\nNo profile read yet, so the board holds nothing about the {self.noun}. The first plan reads the opening: "
-                "profile first, then failure_modes and fix_history.")
+        """The board before the profile is read: what a plan made now holds, in the words the plan check refuses a plan by, and the
+        controller's notes, as the board after the profile shows them, so that the reasons of every plan refused before the profile stay in view."""
+        from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import plan_schema  # plan imports this module, so the rule is imported once a board renders
+        rule = plan_schema.OPENING_RULE
+        text = (f"# Situation board\nNo profile read yet, so the board holds nothing about the {self.noun}. {rule[0].upper()}{rule[1:]}: "
+                f"{plan_schema.OPENING_ORDER}. It lists no candidates. Plan every other step {plan_schema.NEXT_REQUEST}.")
+        return "\n".join(line for line in (text, self._no_progress_line(), self._notes_line()) if line)
+
+    def _notes_line(self):
+        """The controller's notes on one line, the same before and after the profile is read; empty while there is none."""
+        return "Controller notes: " + " ".join(self.notes) if self.notes else ""
 
     def _render_terms(self):
         """The head of the board: the read prices, the terms of a work order and the clock tools of the row, which hold for the
@@ -900,21 +1008,27 @@ class Board:
 
     def _render_status(self):
         """The last part of the board, which changes every turn: the time, the budget and the steps left, the commitment, the counts
-        of the evidence, the reads the row still requires and the controller's notes."""
+        of the evidence, what the board holds (_held_lines), a stall of the planning turns, the reads the row still requires and the
+        controller's notes."""
         commitment = "none"
         if self.diagnosis is not None:
-            commitment = "diagnosis submitted: " + text_formatting.combination_text(self.diagnosis["diagnosis"])
+            commitment = commitment_text("diagnose", self.diagnosis["diagnosis"])
         elif self.declaration is not None:
             test = self.declaration["separating_test"]
-            commitment = f"insufficient evidence declared, separating test {test['sensor_group']} for {text_formatting.n_cycles(test['cycles'])}"
+            commitment = commitment_text("declare", (test["sensor_group"], test["cycles"]))
         lines = [f"{self.limits_line()} Commitment: {commitment}."]
         if self.evidence or self.summaries:
             lines.append(f"Evidence so far: {len(self.evidence) + len(self.absorbed_ids)} values from {self.observations} observation(s).")
+        lines += self._order_lines()
+        lines += self._held_lines()
+        no_progress = self._no_progress_line()
+        if no_progress:
+            lines.append(no_progress)
         missing = [kind for kind in self.required_opening if kind not in self.opening_done]
         if missing:
             lines.append("Still to read before a reading on this row, as steps of their own: " + ", ".join(missing) + ".")
         if self.notes:
-            lines.append("Controller notes: " + " ".join(self.notes))
+            lines.append(self._notes_line())
         return "## Status\n" + "\n".join(lines)
 
     def _render_fix_history(self):
@@ -1004,9 +1118,12 @@ class Board:
                 + text_formatting.table(["cycle", "components", "reason"], rows))
 
     def _render_evidence(self):
+        """The evidence: the normal range of every channel once, in a legend that the profile fixes, the collapsed rows, one row
+        per value, and the notifications. A row holds no range of its own, so the section grows only at the end of its rows and
+        two requests share every row that the earlier one held."""
         if not self.evidence and not self.summaries and not self.notifications:
             return "## Evidence\nNo reading yet."
-        parts = []
+        parts = [self._normal_range_legend()]
         if self.summaries:
             parts.append(("Absorbed by the ranking and collapsed" if self.server else "Planned on and collapsed")
                          + f" (cite a value as {self.evidence_form}):\n" + text_formatting.table(
@@ -1016,16 +1133,22 @@ class Board:
                   ", ".join(f"{i} {s['sides'][i]}" if i in s.get("sides", {}) else i for i in s["outside"]) if s["outside"] else "none")
                  for s in self.summaries]))
         if self.evidence:
-            parts.append(text_formatting.table(["id", "t", "group", "value", "normal range", "in normal range"],
-                               [(r["evidence_id"], r["t"], r["sensor_group"], text_formatting.fmt(r["value"]),
-                                 "" if r["band_low"] is None else f"{text_formatting.fmt(r['band_low'])} to {text_formatting.fmt(r['band_high'])}",
-                                 "" if r["inside_band"] is None else ("yes" if r["inside_band"] else "NO"))
-                                for r in self.evidence]))
+            parts.append(text_formatting.table(["id", "t", "group", "value"],
+                                               [(r["evidence_id"], r["t"], r["sensor_group"], value_text(r)) for r in self.evidence]))
         if self.notifications:
             parts.append("Notifications, the public events the tool answers carried (no reading):\n"
                          + text_formatting.table(["t", "event", "detail"], [(n["t"], n["event"], n["detail"]) for n in self.notifications]))
         # the counts of values and observations stand in the status at the end of the board, so that this heading holds
-        return f"## Evidence (the normal range applies to channel {self.statistic}s only)\n" + "\n".join(parts)
+        return f"## Evidence (the normal range applies to channel {self.statistic}s only)\n" + "\n".join(part for part in parts if part)
+
+    def _normal_range_legend(self):
+        """The public normal range of every channel that the profile gives one, once and by field name, empty without any."""
+        bands = self.normal_ranges()
+        if not bands:
+            return ""
+        return ("Normal ranges (a value outside its range ends in low or high):\n"
+                + text_formatting.table(["field", "normal range"], [(name, f"{text_formatting.fmt(band['low'])} to {text_formatting.fmt(band['high'])}")
+                                                                    for name, band in sorted(bands.items())]))
 
     def _render_ranking(self):
         if self.ranking is None:
@@ -1158,10 +1281,8 @@ class Board:
         """The rows a recall step brought back, on the board of the next planning turn only."""
         if not self.recalled or not self.turn_marks or self.turn_marks[-1][0] != self.recall_turn:
             return ""
-        return (f"{RECALL_SECTION} (cite a value by its id)\n" + text_formatting.table(["id", "t", "group", "value", "normal range", "in normal range"],
-                [(r["evidence_id"], r["t"], r["sensor_group"], text_formatting.fmt(r["value"]),
-                  "" if r["band_low"] is None else f"{text_formatting.fmt(r['band_low'])} to {text_formatting.fmt(r['band_high'])}",
-                  "" if r["inside_band"] is None else ("yes" if r["inside_band"] else "NO")) for r in self.recalled]))
+        return (f"{RECALL_SECTION} (cite a value by its id)\n"
+                + text_formatting.table(["id", "t", "group", "value"], [(r["evidence_id"], r["t"], r["sensor_group"], value_text(r)) for r in self.recalled]))
 
     def _render_plan(self):
         if not self.plan:

@@ -1,14 +1,18 @@
 import asyncio
-import json
 import time
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from CausalDiagnosis.agents.utils import core_texts
 from CausalDiagnosis.agents.utils.mcp_sessions import SESSIONS, ToolTransportError, open_sessions
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import Board, band_verdict, channels_outside, combination_text, fmt
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import (ESTIMATE, OPENING_KINDS, Plan, PlanError, Step, batch_reads, check_plan, exploration, parse_differential, parse_plan, ranking_detail, rule_evidence,
-                   rule_plan)
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board.board import KIND_WORDS
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import (ESTIMATE, OPENING_KINDS, Plan, Refusal, Step, batch_reads, check_plan, exploration, parse_differential, parse_usable_plan, ranking_detail,
+                   read_reply, reply_schema, rule_evidence, rule_plan, standing, step_problems, submitted_levels)
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan.plan_check import NOT_COLLAPSED, second_commitment
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan.standing import standing_commitment
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import earlier_turns_turn, orientation_turn, planning_turn, summary_turn
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import CAUSAL_SERVER, RigSurface, not_json
 from CausalDiagnosis.agents.utils.idle_hook import aiteration_end
+from CausalDiagnosis.agents.utils.tool_answers import json_object
 from . import agent_options, episode_result
 
 
@@ -19,7 +23,18 @@ DEADLINE_RULE = "the wall limit of the row (CausalDiagnosis.utils.model_request_
 CUT_REPLY = ("the reply was cut at the token cap before the JSON object was complete, so nothing of it was used. Return the object "
              "alone and shorter.")
 UNJUDGED = "its expectation was not judged, since another read step of its batch stopped the plan"
+# the reasons of the guards of a diagnosis and of a work order, each naming the change
+GUARD_RANK = "rank {rank} is not among the candidates that the plan was made from; name a rank among the {count} candidates shown"
+GUARD_COMMIT_FIRST = "put a commitment before this step, since none stands on the board"
+SURROGATES = range(0xD800, 0xE000)  # the code points that no UTF-8 text holds, which a string can still hold one by one
+REPLACEMENT_CHARACTER = chr(0xFFFD)  # U+FFFD REPLACEMENT CHARACTER, in place of a character that a text cannot hold
 CUT = "RunStopped: cancelled"  # the error of the call that was in flight when the caller cut the run: given up with the run, not by the transport
+
+
+def named_steps(first, kinds):
+    """The steps from first on by number and kind, as step 4 (read) or as steps 4 (read), 5 (diagnose) and 6 (finish)."""
+    names = [f"{n} ({kind})" for n, kind in enumerate(kinds, first)]
+    return f"step {names[0]}" if len(names) == 1 else "steps " + ", ".join(names[:-1]) + f" and {names[-1]}"
 
 
 def observation_order(evidence_id):
@@ -72,9 +87,14 @@ class CausalLoopRunner:
                            parallel=options.parallel, summary_call=self.surface.summary_is_call, recall_offered=options.recall)
         self.trajectory, self.plans, self.surprises = [], [], []
         self.model_calls = self.revisions = self.fallbacks = 0
+        self.reader_faults = []  # the replies that only the last guard of the reader refused, a fault of the reader (_json_reply)
+        self.replaced_characters = []  # the characters of a summary that UTF-8 cannot encode, replaced (_kept_summary)
         self.mode_of_first_plan = None
         self.answer = ""
         self._retry = None  # the reasons a turn without a usable plan hands to the next planning turn
+        self._not_run = None  # the steps of a cut plan that did not run, with the reasons, which the next planning turn names
+        self._stood = None  # the standing steps of the last plan as (number, kind, reason), which the next planning turn names
+        self._schemas = {}  # the response format of each reply that a schema binds (_reply_schemas)
         self._ended_idle = False  # the environment ended the episode at the no_call step of a turn without a call
         self._oriented = False
         self._orient_turn = None  # the planning turn in which the differential was last asked for
@@ -89,6 +109,7 @@ class CausalLoopRunner:
                 # the served list of the row's level, from the opening listing; the episode folder of the launchers names the row
                 self.surface.listed(sessions.tools, where=str(next(iter(self._server_paths.values()), "")).rsplit("/", 1)[0] or None)
                 self.board.summary_call, self.board.unserved = self.surface.summary_is_call, self.surface.unserved_kinds()
+                self._schemas = self._reply_schemas()
                 while not self.board.over and not self._ended_idle:
                     self._turn_index += 1
                     self.board.mark_turn(self._turn_index)
@@ -115,21 +136,61 @@ class CausalLoopRunner:
             question=question, answer=self.answer, plans=[asdict(p) for p in self.plans], trajectory=[asdict(t) for t in self.trajectory],
             model_calls=self.model_calls, surprises=list(self.surprises), revisions=self.revisions, fallbacks=self.fallbacks,
             mode_of_first_plan=self.mode_of_first_plan, differential=list(self.board.differential), board=self.board.to_json(),
-            end_reason=self.board.end_reason, error=error, server=self.server, end=end)
+            end_reason=self.board.end_reason, error=error, server=self.server, end=end, reader_faults=list(self.reader_faults),
+            replaced_characters=list(self.replaced_characters))
 
     # ----- the model -----
-    def _generate(self, prompt):
-        """One model call; whether the endpoint cut the reply at the token cap is kept for the parser of the reply (_cut)."""
+    def _reply_schemas(self):
+        """The schemas of the plan and of the differential of this row, built once after the listing from the kinds and the modes
+        that the row serves and the options of the run, with their digests and whether the backend takes a response format on the
+        board; the response format of each with the switch on, else none."""
+        board = self.board
+        kinds = reply_schema.served_kinds(board.unserved, self.surface.opening_kinds(board), self.options.recall)
+        schemas = {reply_schema.PLAN: reply_schema.plan_schema_of(kinds, reply_schema.served_modes(board.unserved), self.options.plan_length),
+                   reply_schema.DIFFERENTIAL: reply_schema.differential_schema()}
+        board.reply_schema = {**{name: reply_schema.digest(schema) for name, schema in schemas.items()}, "bound": 0,
+                              "carried": self._takes_schema()}
+        if not self.options.structured_output:
+            return {}
+        return {name: reply_schema.response_format(name, schema) for name, schema in schemas.items()}
+
+    def _takes_schema(self):
+        """Whether the backend binds a reply to a JSON schema; one that does not is sent no field."""
+        return bool(getattr(self._llm, "takes_response_format", False))
+
+    def _generate(self, prompt, schema=None):
+        """One model call, its reply bound to the response format schema where one is given, which the board counts; whether the
+        endpoint cut the reply at the token cap is kept for the parser of the reply (_cut)."""
         self.model_calls += 1
-        result = self._llm.generate_with_usage(prompt, TEMPERATURE)
+        bound = {"response_format": schema} if schema is not None and self._takes_schema() else {}
+        if bound:
+            self.board.reply_schema["bound"] += 1
+        result = self._llm.generate_with_usage(prompt, TEMPERATURE, **bound)
         self._cut = getattr(result, "finish_reason", None) == "length"
         return result.text or ""
 
-    def _json_reply(self, text, parse):
-        """The object a reply holds, parsed by parse, or a PlanError; a reply cut at the token cap is not parsed, whatever it holds."""
+    def _json_reply(self, text, parse, *args):
+        """What parse reads from a reply through the boundary of the reader (read_reply), or a Refusal; a reply cut at the token cap
+        is not read, whatever it holds. A refusal that only the last guard of the reader gave is kept in reader_faults with the class
+        of its exception and the number of the model call, a fault of the reader that the records of the episode show."""
         if self._cut:
-            raise PlanError(CUT_REPLY)
-        return parse(text)
+            return Refusal(reason=CUT_REPLY)
+        read = read_reply(parse, text, *args)
+        if isinstance(read, Refusal) and read.fault is not None:
+            self.reader_faults.append({"model_call": self.model_calls, "reader": parse.__name__, "fault": read.fault})
+        return read
+
+    def _kept_summary(self, text, summary):
+        """A summary of the model as the controller keeps it, the closing summary or the summary of the earlier turns, which pass no
+        reader: every character that UTF-8 cannot encode, a lone surrogate that the client of an endpoint hands over when the
+        endpoint's JSON escapes one, is replaced by U+FFFD, since the board, the requests, the finish call and answer.txt encode the
+        summary. The count goes to replaced_characters with the number of the model call, while the record of the call keeps the
+        endpoint's text."""
+        count = sum(1 for character in text if ord(character) in SURROGATES)
+        if not count:
+            return text
+        self.replaced_characters.append({"model_call": self.model_calls, "summary": summary, "characters": count})
+        return "".join(REPLACEMENT_CHARACTER if ord(character) in SURROGATES else character for character in text)
 
     def _orient(self):
         """The orientation once the profile is on the board: the differential from the profile and the failure modes the opening read,
@@ -147,18 +208,20 @@ class CausalLoopRunner:
         retry, self._orient_retry = self._orient_retry, None
         text = self._generate(orientation_turn(self.question, board.profile, board.failure_modes, length, retry=retry,
                                                surface=self.surface, server=self.server, reads=self.options.reads,
-                                               parallel=self.options.parallel, recall=self.options.recall))
-        try:
-            board.differential = self._json_reply(text, parse_differential)
-            self._oriented = True
-        except PlanError as exc:
+                                               parallel=self.options.parallel, recall=self.options.recall),
+                              self._schemas.get(reply_schema.DIFFERENTIAL))
+        read = self._json_reply(text, parse_differential)
+        if isinstance(read, Refusal):
             self.fallbacks += 1
-            self._orient_retry = f"The reply could not be parsed as a differential: {exc}"
-            board.notes.append(f"The orientation reply could not be parsed ({exc}); you are asked again for the differential.")
+            self._orient_retry = f"The reply could not be parsed as a differential: {read.reason}"
+            board.add_note(f"The orientation reply could not be parsed ({read.reason}); you are asked again for the differential.", tie="differential")
+        else:
+            board.set_differential(read)
+            self._oriented = True
 
     def _summarize(self, note=None):
-        text = self._generate(summary_turn(self.board, self.options.plan_length, note,
-                                           surface=self.surface)).strip()
+        text = self._kept_summary(self._generate(summary_turn(self.board, self.options.plan_length, note,
+                                                             surface=self.surface)), "closing").strip()
         return text or (note or "The episode ended.")
 
     # ----- planning -----
@@ -186,37 +249,75 @@ class CausalLoopRunner:
         return record
 
     def _model_plan(self, record):
-        """One planning call. A reply that does not parse, or a plan the check refuses, runs nothing: the turn makes no counted
-        call, so it takes the no_call step of a turn without a call, and its reasons go to the next planning turn. There is no count
-        of retries and no second request inside the turn."""
+        """One planning call. A plan runs up to its first step that the controller cannot use, a step that does not parse, a finish
+        with steps after it or a step that the check refuses on its own: the steps before it run as the model wrote them, and that
+        step and every step after it do not run and go to the next planning turn with the reasons (_cut_plan). A reply that does not
+        parse as a plan, a plan whose first step cannot be used, and a plan with a reason on the whole of it, its candidates,
+        branch or mode or the fit to the budget, the horizon and the step cap, run nothing: the turn makes no counted call, so it
+        takes the no_call step of a turn without a call, and its reasons go to the next planning turn. The candidates of a plan made
+        before the profile is read are set aside, since no profile names their levels yet, and a note of the board says so. There
+        is no count of retries and no second request inside the turn."""
         board, length = self.board, self.options.plan_length
         retry, self._retry = self._retry, None
-        plan = self._parse(self._generate(planning_turn(board, length, retry=retry, surface=self.surface)), record)
-        if plan is None:
+        not_run, self._not_run = self._not_run, None
+        stood, self._stood = self._stood, None
+        parsed = self._parse(self._generate(planning_turn(board, length, retry=retry, surface=self.surface, not_run=not_run, stood=stood),
+                                            self._schemas.get(reply_schema.PLAN)), record)
+        if parsed is None:
             return self._no_plan(record, "no_plan_after_parse_failure", f"could not be parsed: {record.parse_errors[-1]}",
                                  f"The reply could not be parsed as a plan: {record.parse_errors[-1]}")
-        problems = check_plan(plan, board)
-        if problems:
-            record.check_problems.append(problems)
-            return self._no_plan(record, "no_plan_after_check_failure", "was refused: " + "; ".join(problems),
-                                 "The plan was refused for these reasons:\n- " + "\n- ".join(problems))
+        plan, unusable = parsed
+        if board.profile is None and plan.candidates:  # no profile names their components and levels yet, so they are set aside
+            plan = replace(plan, candidates=[])
+            board.add_note(f"The candidates of your plan of turn {record.index} were not kept, since no profile was on the board; list "
+                           "them again in your next plan.", tie="candidates", turn=record.index)
+        refused = step_problems(plan, board)
+        if refused:
+            record.check_problems.append([reason for _step, reason in refused])
+        if unusable is not None:
+            record.parse_errors.extend(unusable.reasons)
+        reasons = [reason for _step, reason in refused] + (unusable.reasons if unusable is not None else [])
+        cut = min([step for step, _reason in refused if step is not None] + ([unusable.step] if unusable is not None else []), default=None)
+        if not refused and cut == 1:  # the first step of the reply does not parse
+            return self._no_plan(record, "no_plan_after_parse_failure", f"could not be parsed: {reasons[0]}",
+                                 f"The reply could not be parsed as a plan: {reasons[0]}")
+        if any(step is None for step, _reason in refused) or cut == 1:
+            return self._no_plan(record, "no_plan_after_check_failure", "was refused: " + "; ".join(reasons),
+                                 "The plan was refused for these reasons:\n- " + "\n- ".join(reasons))
+        if cut is not None:
+            return self._cut_plan(record, plan, cut, reasons, unusable)
         return plan, "model"
+
+    def _cut_plan(self, record, plan, cut, reasons, unusable):
+        """A plan cut at its first step that the controller cannot use: the steps before it run as the model wrote them, while that
+        step and every step after it do not, and the record (PlanRecord.cut), the board's notes and the next planning turn name
+        them with the reasons. A cut plan is a plan of the model and no fallback."""
+        kinds = [step.kind for step in plan.steps[cut - 1:]] + (unusable.kinds if unusable is not None else [])
+        steps = named_steps(cut, kinds)
+        record.cut = {"step": cut, "steps": kinds, "reasons": list(reasons)}
+        self._not_run = f"{steps[0].upper()}{steps[1:]} did not run, for these reasons:\n- " + "\n- ".join(reasons)
+        # written before the steps run, so it says where the plan was cut and not how far it ran, which a surprise can shorten
+        self.board.add_note(f"Your plan of turn {record.index} was cut before step {cut}, so {steps} did not run: " + "; ".join(reasons) + ".",
+                            turn=record.index)
+        return Plan(branch=plan.branch, mode=plan.mode, why=plan.why, steps=plan.steps[:cut - 1], raw=plan.raw, candidates=plan.candidates), "model_cut"
 
     def _no_plan(self, record, source, why, retry):
         """A turn without a usable plan: nothing runs, the reasons go to the board's notes and, quoted, to the next planning turn,
         and the turn counts as a fallback."""
         self.fallbacks += 1
         self._retry = retry
-        self.board.notes.append(f"Your plan of turn {record.index} {why}.")
+        self.board.add_note(f"Your plan of turn {record.index} {why}.", turn=record.index)
         return Plan(branch=None, mode=None, why=f"controller: no usable plan, the reply {why}", steps=[]), source
 
     def _parse(self, text, record):
+        """(the plan of the reply up to its first step that the parser cannot use, that step or None) (parse_usable_plan), or None
+        for a reply that does not parse as a plan, whose error the record keeps."""
         components = self.board.profile["components"] if self.board.profile is not None else ()
-        try:
-            return self._json_reply(text, lambda reply: parse_plan(reply, self.options.plan_length, components))
-        except PlanError as exc:
-            record.parse_errors.append(str(exc))
+        read = self._json_reply(text, parse_usable_plan, self.options.plan_length, components)
+        if isinstance(read, Refusal):
+            record.parse_errors.append(read.reason)
             return None
+        return read
 
     def _rule_or_finish(self, record):
         """The rule's plan for the turn, the internal test tool; when not even that fits what is left, a bare finish, whose guard
@@ -236,15 +337,20 @@ class CausalLoopRunner:
     # ----- execution -----
     async def _execute(self, record):
         """The steps of a plan in order. A run of consecutive read steps is one batch (_read_batch), and one step with the switch
-        off. The board is compacted after every other step and every batch, and the first surprise stops the plan."""
+        off; a read step that stands when the run is formed is handled alone (_stand_read), so a batch is a run of steps that each
+        made a call. The board is compacted after every other step and every batch, and the first surprise stops the plan. The
+        standing steps are kept for the next planning turn."""
         steps = [Step(**s) for s in record.plan["steps"]]
         calls_before = sum(1 for t in self.trajectory if t.server in self.surface.action_servers)
         k = 1
         while k <= len(steps) and not self.board.over:
             step = steps[k - 1]
-            if step.kind == "read":
+            if step.kind == "read" and standing(step, self.board, record=record) is not None:
+                outcomes = [await self._read_step(step, record, k)]
+            elif step.kind == "read":
                 run = 1
-                while self.options.parallel and k + run <= len(steps) and steps[k + run - 1].kind == "read":
+                while (self.options.parallel and k + run <= len(steps) and steps[k + run - 1].kind == "read"
+                       and standing(steps[k + run - 1], self.board, record=record) is None):
                     run += 1
                 outcomes = await self._read_batch(steps[k - 1:k - 1 + run], record, k)
             else:
@@ -263,6 +369,7 @@ class CausalLoopRunner:
                 self.board.surprises.append(surprise)
                 break
             k += len(outcomes)
+        self._stood = [(number, s["kind"], s["note"]) for number, s in enumerate(record.steps, 1) if s["status"] == "standing"] or None
         made_calls = sum(1 for t in self.trajectory if t.server in self.surface.action_servers) > calls_before
         # the driver's idle hook (CausalDiagnosis/agents/utils/idle_hook.py) at the end of every planning turn: with acted False it makes the no_call
         # step of a turn without a call; it answers whether the episode is over, and outside an episode
@@ -282,13 +389,18 @@ class CausalLoopRunner:
         status = "surprise" if self.options.expectations else "failed"
         return episode_result.StepRecord(kind=step.kind, args=dict(step.args), expect=dict(step.expect), status=status, observed=observed or {}, note=reason)
 
+    def _stand(self, step, stands, observed=None):
+        """A step whose effect already stands (plan.standing): no call, its clause under observed["stands"] and its reason as the note."""
+        return episode_result.StepRecord(kind=step.kind, args=dict(step.args), expect=dict(step.expect), status="standing",
+                                         observed={**(observed or {}), "stands": stands.clause}, note=stands.reason)
+
     async def _recall(self, step, record, k):
         """A recall step: the full rows of a group's collapsed observations come back on the next board. It calls no tool and
         costs nothing; a turn of recalls alone makes no counted call and takes the no_call step."""
         group, (first, last) = step.args["sensor_group"], step.args["observations"]
         rows = self.board.recall(group, first, last)
         if not rows:
-            return self._fail(step, f"no collapsed row of {group} in observations {first} to {last} to recall")
+            return self._fail(step, NOT_COLLAPSED.format(**KIND_WORDS, name=group, first=first, last=last))
         return self._done(step, {"rows": rows})
 
     def _done(self, step, observed=None, note=""):
@@ -301,21 +413,30 @@ class CausalLoopRunner:
 
     async def _opening_step(self, step, record, k):
         """A free read of the opening, which the model plans: the profile, the failure modes of every component or of
-        the one named, the fix history, and the clock and the extent of the record that a surface needs before a reading."""
+        the one named, the fix history, and the clock and the extent of the record that a surface needs before a reading. A read
+        whose answer stands on the board makes no call (plan.standing); a failure_modes step for every component calls only for
+        the components whose answer the board does not hold. Every answered request is noted on the board."""
         board, kind = self.board, step.kind
+        stands = standing(step, board, record=record)
+        if stands is not None:
+            return self._stand(step, stands)
         if kind == "failure_modes":
             component = step.args.get("component")
             modes = []
             for request in ([{"component": component}] if component else self.surface.failure_mode_requests(board)):
+                if board.holds_answer(kind, request):
+                    continue
                 env = await self._act("failure_modes", **request)
                 if "refused" in env:
                     return self._fail(step, f"the failure modes read was refused: {env['refused']}")
                 modes += (env.get("result") or {}).get("failure_modes", [])
+                board.note_answered(kind, request)
             board.add_failure_modes(modes)
         else:
             env = await self._act(kind)
             if "result" not in env:
                 return self._fail(step, f"the {kind} read was refused: {env.get('refused')}")
+            board.note_answered(kind, {})
             if kind == "profile":
                 board.set_profile(env["result"])
                 board.required_opening = list(self.surface.opening_kinds(board))
@@ -327,7 +448,10 @@ class CausalLoopRunner:
         return self._done(step)
 
     async def _read_step(self, step, record, k):
-        """One read step alone, a batch of one."""
+        """One read step alone: one that stands (_stand_read), else a batch of one."""
+        stands = standing(step, self.board, record=record)
+        if stands is not None:
+            return await self._stand_read(step, record, stands)
         return (await self._read_batch([step], record, k))[-1]
 
     async def _read_batch(self, steps, record, k):
@@ -335,14 +459,17 @@ class CausalLoopRunner:
         other, each logged with what the ranking before the batch expected of its group, then one ranking with the server, the
         record of the batch on the board, the verification of every repair the readings can verify, and the expectations of the
         steps against that ranking: with the server the top candidate, its mass or the effective hypotheses, and with or without
-        it the channels expected outside their normal ranges. A read that is not made, that the environment refuses or that serves no
-        cycle the board does not hold ends the batch, and its record comes last. A refuted plan is the surprise of the last read
-        judged, else the first expectation that fails is the surprise, and the reads made before or after it are done with their
-        expectation not judged. Returns one step record per read handled; for a run of one read the calls and the checks are
-        those of one read step."""
+        it the channels expected outside their normal ranges. A read that the environment refuses or that serves no cycle the board
+        does not hold ends the batch, and its record comes last; a read that stands by the time it is reached, since an earlier
+        reading of the batch took its last unread cycle, ends the batch before it and is handled alone. A refuted plan is the
+        surprise of the last read judged, else the first expectation that fails is the surprise, and the reads made before or after
+        it are done with their expectation not judged. Returns one step record per read handled; for a run of one read the calls
+        and the checks are those of one read step."""
         board, made, ended = self.board, [], None
         advised = self._advised(record)
         for offset, step in enumerate(steps):
+            if offset and standing(step, board, record=record) is not None:
+                break
             observed, failure = await self._take_reading(step, record, k + offset, advised)
             if failure is not None:
                 ended = failure
@@ -364,8 +491,8 @@ class CausalLoopRunner:
         judged = made
         if not self._served[(record.index, k + len(made) - 1)]:  # the read was made, so the turn is not idle, and it showed no cycle the board does not hold
             step, observed = made[-1]
-            ended = self._fail(step, f"the read of {step.args['sensor_group']} served no cycle the board does not hold; the record ends at cycle "
-                                     f"{board.status.get('recorded_until')}", {**observed, "served": 0})
+            ended = self._fail(step, core_texts.NOTHING_NEW_AFTER_CALL.format(**KIND_WORDS, last=board.status.get("recorded_until")),
+                               {**observed, "served": 0})
             judged = made[:-1]
             if not judged:
                 return [ended]
@@ -382,6 +509,18 @@ class CausalLoopRunner:
                     outcomes.append(self._judge_reading(step, record, observed, top))
         return outcomes + ([ended] if ended is not None else [])
 
+    async def _stand_read(self, step, record, stands):
+        """A read step that stands, alone: the ranking brought up to date where it is stale, as before a diagnosis, and its expectation
+        judged on the board as it stands, which no call of the step could change; one that fails is a surprise whose reason names the
+        change, and the step keeps its clause."""
+        if self.server and not self.board.ranking_is_current():
+            await self._rank()
+        judged = self._judge_reading(step, record, {}, self.board.ranked_top() if self.server else None)
+        if judged.status == "done":
+            return self._stand(step, stands, judged.observed)
+        return self._fail(step, core_texts.STANDS_EXPECTATION.format(stands=stands.reason, detail=judged.note),
+                          {**judged.observed, "stands": stands.clause})
+
     def _advised(self, record):
         """The sensor groups the board advises when a batch starts: before a commitment with the server the reads it advises, and
         the reads of the schedule recorded with the plan."""
@@ -390,14 +529,11 @@ class CausalLoopRunner:
         return groups | {read["sensor_group"] for read in (record.schedule or {}).get("reads") or []}
 
     async def _take_reading(self, step, record, k, advised):
-        """One reading of a batch: the refusal of a read with nothing unread on a row whose clock does not run, the call, the rows
-        on the board and the entry of the read log, with what the ranking before the batch expected of its group. Returns
-        (observed, None) for a read made and (None, the record of the step) for one that is not."""
+        """One reading of a batch: the call, the rows on the board and the entry of the read log, with what the ranking before the
+        batch expected of its group. Returns (observed, None) for a read made and (None, the record of the step) for one that the
+        environment refused."""
         board = self.board
         group, cycles = step.args["sensor_group"], step.args["cycles"]
-        if board.new_cycles(group, cycles) == 0 and not board.clock_runs:  # no cycle can have been recorded since, so no call is made
-            return None, self._fail(step, f"every recorded cycle of {group} up to cycle {board.status.get('recorded_until')} is read already, so the read "
-                                          "would show nothing new and was not made", {"unread_cycles": 0})
         expected = dict(board.elimination_of(group) or {}) if self.server else {}
         env = await self._read(group, cycles)
         if "refused" in env:
@@ -461,28 +597,29 @@ class CausalLoopRunner:
             await self._rank()
         want = self._planned_candidate(record, step.args["rank"])
         if want is None:
-            return self._fail(step, f"guard: rank {step.args['rank']} is not among the candidates the plan was made from")
+            return self._fail(step, GUARD_RANK.format(rank=step.args["rank"], count=len(record.candidates)))
         observed = {}
         if self.server and not want.get("own"):
             # without an expectation the step expects the candidate on top, which the advice of the server names
             expected = self._planned_candidate(record, step.expect.get("top_rank", 1))
             if expected is None:
-                return self._fail(step, f"guard: the expected top rank {step.expect.get('top_rank', 1)} is not in the ranking the plan was made from")
+                return self._fail(step, GUARD_RANK.format(rank=step.expect.get("top_rank", 1), count=len(record.candidates)))
             top = board.ranked_top()
             observed = {"top": None if top is None else combination_text(top["combination"]), "top_mass": None if top is None else top["probability"]}
             if self.options.expectations and top is not None and top["combination"] != expected["combination"]:
                 return self._fail(step, "the ranking's top is " + ("unknown" if top is None else f"({combination_text(top['combination'])})")
                                   + f", not the planned candidate ({combination_text(expected['combination'])})", observed)
             current = next((c for c in board.candidates() if c["combination"] == want["combination"]), None)
-            evidence = self._evidence(step.evidence, (current or {}).get("evidence_ids") or [])
-            # the diagnosis states the condition now, scored at the cycle of the write (version 7), so it submits the current combination
-            levels = (current or {}).get("current_combination") or want.get("current_combination") or want["combination"]
+            extra = (current or {}).get("evidence_ids") or []
         else:
-            # a candidate of the model's own, the only kind without the server: its combination, with the channel means outside their
-            # normal ranges as the evidence behind it
-            evidence = self._evidence(step.evidence, rule_evidence(board, None))
-            levels = want["combination"]
-        env = await self._act("diagnose", levels=levels, evidence=evidence)
+            # a candidate of the model's own, the only kind without the server, with the channel means outside their normal ranges as
+            # the evidence behind it
+            extra = rule_evidence(board, None)
+        held = self._held_commitment(step, record, observed)
+        if held is not None:
+            return held
+        # the diagnosis states the condition now, scored at the cycle of the write (version 7), so it submits the current combination
+        env = await self._act("diagnose", levels=submitted_levels(board, want), evidence=self._evidence(step.evidence, extra))
         if "refused" in env:
             return self._fail(step, f"the diagnosis was refused: {env['refused']}", observed)
         board.diagnosis = env["result"]
@@ -499,12 +636,25 @@ class CausalLoopRunner:
             extra = [*((top or {}).get("evidence_ids") or []), *readings[-1:]]
         else:
             extra = [*rule_evidence(board, None), *self._last_reading()]
+        held = self._held_commitment(step, record)
+        if held is not None:
+            return held
         evidence = self._evidence(step.evidence, extra)
         env = await self._act("declare", sensor_group=step.args["sensor_group"], cycles=step.args["cycles"], evidence=evidence)
         if "refused" in env:
             return self._fail(step, f"the declaration was refused: {env['refused']}")
         board.declaration = env["result"]
         return self._done(step)
+
+    def _held_commitment(self, step, record, observed=None):
+        """Right before the call of a commit step: the step stands where the board holds the commitment it would make, and where
+        another commitment stands it makes no call and is a surprise, since the environment takes one; None where the call is made."""
+        stands = standing(step, self.board, record=record)
+        if stands is not None:
+            return self._stand(step, stands, observed)
+        if self.board.committed:
+            return self._fail(step, second_commitment(standing_commitment(self.board)), observed)
+        return None
 
     def _last_reading(self):
         """The identifier of a value of the latest reading on the board, which a declaration without the server cites: the newest
@@ -515,7 +665,7 @@ class CausalLoopRunner:
     async def _order(self, step, record, k):
         board = self.board
         if not board.committed:  # guard: no order without a prior diagnosis or declaration
-            return self._fail(step, "guard: no diagnosis or declaration precedes the work order")
+            return self._fail(step, GUARD_COMMIT_FIRST)
         if not self.server:
             # no prediction exists without the server: the orders of one plan form one repair plan, keyed by the plan, which the read
             # after its last close verifies on the normal ranges
@@ -532,7 +682,7 @@ class CausalLoopRunner:
                 return self._fail(step, f"the estimate failed: {estimate['error']}")
             board.add_estimate(estimate)
             if prediction_id != ESTIMATE:
-                board.notes.append(f"The prediction {prediction_id} was unknown, so an estimate ({estimate['prediction_id']}) replaced it.")
+                board.add_note(f"The prediction {prediction_id} was unknown, so an estimate ({estimate['prediction_id']}) replaced it.")
             prediction_id = estimate["prediction_id"]
         prediction = board.predictions[prediction_id]
         observed = {"prediction_id": prediction_id, "recovery": prediction.get("recovery")}
@@ -650,11 +800,10 @@ class CausalLoopRunner:
             return None
         if not board.clock_runs:
             for key, _closed_t in unverified:
-                board.notes.append(f"No cycle runs after the close of the orders citing {key} on this row, so it stays unverified.")
+                board.add_note(f"No cycle runs after the close of the orders citing {key} on this row, so it stays unverified.")
             return None
-        tail = board.completion(commit=False)  # the waits, the verifying read and finish, as the plan check counts them
-        fits = tail.price <= board.budget_left and tail.calls <= board.steps_left and board.time + tail.cycles < board.horizon
-        if not tail.reads or not fits:
+        tail = board.verifying_tail()  # the waits, the verifying read and finish, as the plan check counts them, when they fit
+        if tail is None:
             return None
         last, first, group = board.time + tail.to_close, tail.first, board.verification_group(board.repaired())
         if pending and "wait" in board.unserved:
@@ -677,7 +826,7 @@ class CausalLoopRunner:
     async def _rank(self):
         data = await self._diag("rank", branch_detail=ranking_detail(self.board))  # compact, or the long form under an arm
         if "error" in data:
-            self.board.notes.append(f"the ranking failed: {data['error']}")
+            self.board.add_note(f"the ranking failed: {data['error']}", tie="ranking")
             return None
         self.board.set_ranking(data)
         return data
@@ -745,7 +894,7 @@ class CausalLoopRunner:
             elif item in cited:
                 dropped.append(item)
         if dropped:
-            self.board.notes.append(f"{len(dropped)} cited identifier(s) not on the board were dropped: {', '.join(dropped)}.")
+            self.board.add_note(f"{len(dropped)} cited identifier(s) not on the board were dropped: {', '.join(dropped)}.")
         return kept
 
     def _compact(self):
@@ -799,7 +948,7 @@ class CausalLoopRunner:
         text = self._generate(request(low))
         if longest is not None:
             self._llm.longest_reply = longest
-        return ("" if self._cut else text), low
+        return ("" if self._cut else self._kept_summary(text, "earlier turns")), low
 
     def _request_fits(self, board):
         """Whether the planning request built on the board fits the context of the pinned model service: the backend's
@@ -840,6 +989,8 @@ class CausalLoopRunner:
             data = self.surface.local(kind, self.board, **fields)
         else:
             server, tool, args = binding
+            if kind != "changes":  # the change summary is the controller's own call, not a step of a plan
+                self.board.note_call(kind, fields)
             text, error = await self._call(server, tool, args)
             data = {"refused": error} if error else self.surface.parse(kind, tool, text, self.board, **fields)
             self.board.note_step(kind, data)
@@ -853,13 +1004,8 @@ class CausalLoopRunner:
         """A diagnostics kind, bound to its tool by the surface; the answer is the server's JSON object or an error."""
         server, tool, args = self.surface.bind(kind, self.board, **fields)
         text, error = await self._call(server, tool, args)
-        try:
-            data = json.loads(text) if text else None
-        except ValueError:
-            data = None
-        if not isinstance(data, dict):
-            data = {"error": error or not_json(tool, text)}
-        return data
+        data = json_object(text)
+        return data if data is not None else {"error": error or not_json(tool, text)}
 
     def _end_reason(self, data, kind):
         """The reason the end event of the environment carries, where a notification of the answer holds it, and otherwise the

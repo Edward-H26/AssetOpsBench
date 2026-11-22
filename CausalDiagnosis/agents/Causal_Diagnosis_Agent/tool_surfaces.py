@@ -50,10 +50,12 @@ HYDRAULIC_RIG = {
                      lambda component, prediction_id, evidence: {"component": component, "prediction_id": prediction_id, "evidence_ids": ",".join(evidence)}),
     "wait": Binding(RIG_SERVER, "wait_for_notification", lambda timeout: {"timeout": timeout}),
     "finish": Binding(RIG_SERVER, "finish", lambda summary: {"summary": summary}),
+    # the diagnostics tools answer at the level raw, the whole answer that the board reads field by field
     "rank": Binding(CAUSAL_SERVER, "rank_root_causes",
-                    lambda top_k=None, branch_detail=None: {k: v for k, v in (("top_k", top_k), ("branch_detail", branch_detail)) if v is not None}),
-    "estimate": Binding(CAUSAL_SERVER, "estimate_intervention_effect", lambda action: {"action": action}),
-    "verify": Binding(CAUSAL_SERVER, "verify_outcome", lambda prediction_id: {"prediction_id": prediction_id}),
+                    lambda top_k=None, branch_detail=None: {**{k: v for k, v in (("top_k", top_k), ("branch_detail", branch_detail)) if v is not None},
+                                                            "response_format": "raw"}),
+    "estimate": Binding(CAUSAL_SERVER, "estimate_intervention_effect", lambda action: {"action": action, "response_format": "raw"}),
+    "verify": Binding(CAUSAL_SERVER, "verify_outcome", lambda prediction_id: {"prediction_id": prediction_id, "response_format": "raw"}),
 }
 
 

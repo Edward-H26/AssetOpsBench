@@ -74,8 +74,8 @@ def test_a_kind_the_row_does_not_serve_is_named_nowhere_and_refused(kind, server
     board = _synthetic_board()
     board.unserved = surface.unserved_kinds()
     args = {"declare": {"sensor_group": "tier2", "cycles": 1}, "wait": {"cycles": 2}, "time": {}}[kind]
-    noun = {"declare": "declaration", "wait": "wait", "time": "time step"}[kind]
-    assert f"step 1 ({kind}): this row serves no {noun}" in check_plan(Plan(branch=1, mode="test_first", why="", steps=[Step(kind, args)]), board)
+    assert f"step 1 ({kind}): leave this step out, since this row serves no {kind} step" in check_plan(
+        Plan(branch=1, mode="test_first", why="", steps=[Step(kind, args)]), board)
 
 
 @pytest.mark.parametrize("server", (False, True))
@@ -92,7 +92,7 @@ def test_the_mode_declare_is_refused_where_no_declaration_is_served():
     plan = Plan(branch=1, mode="declare", why="", steps=[Step("declare", {"sensor_group": "tier2", "cycles": 1})])
     assert check_plan(plan, board) == []
     board.unserved = frozenset({"declare"})
-    assert "mode declare: this row serves no declaration" in check_plan(plan, board)
+    assert "mode declare: choose a mode among test_first, act_now and repair_as_test, since this row serves no declare step" in check_plan(plan, board)
 
 
 def test_the_rule_writes_no_kind_the_row_does_not_serve():

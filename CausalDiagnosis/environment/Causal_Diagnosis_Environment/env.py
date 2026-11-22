@@ -785,7 +785,8 @@ class HydraulicRigEnv:
         if mode == "emergency" and not self.config.emergency_on():
             return self._refuse(action, "the emergency mode is off in this episode", think)
         if self.clock.order_open_on(component):
-            return self._refuse(action, f"a work order on the {component} is open", think)
+            close = next(o.close_t for o in self.clock.open_orders() if o.component == component)
+            return self._refuse(action, f"a work order on the {component} is open; it closes at cycle {close}", think)
         visit = self._joinable if joins(self._joinable is not None, mode) else None
         visit_charge = 0 if visit is not None else self.config.prices["visit"]
         price = self.config.order_price(component, mode) + visit_charge

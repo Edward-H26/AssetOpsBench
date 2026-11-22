@@ -55,7 +55,8 @@ def _causal(answers=(ANSWER,), errors=(None,), ends=("max_steps",), calls=((),),
         if cut is not None and (error or "").startswith(run_episodes.WALL_LIMIT):
             run_episodes.CUT_FACTS[str(_state(launchers).parent)] = {**cut, "at_wall": time.time()}
         result = SimpleNamespace(answer=answers[min(k, len(answers) - 1)], error=error, end=end, end_reason=end, trajectory=[],
-                                 plans=[], surprises=[], revisions=0, fallbacks=0, mode_of_first_plan="", differential=[], model_calls=0, server=False, board={})
+                                 plans=[], surprises=[], revisions=0, fallbacks=0, mode_of_first_plan="", differential=[], model_calls=0, server=False, board={},
+                                 reader_faults=[], replaced_characters=[])
         return result, error, 0.0
     run_causal.played = played
     return run_causal

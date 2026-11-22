@@ -7,7 +7,7 @@ class of the CausalDiagnosis agent on this surface.
 """
 from datetime import datetime, timedelta
 
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import (CLOCK_WITHOUT_WAIT, DIAGNOSTICS_KINDS, HYDRAULIC_RIG, SUMMARY_TOOL, TIME_TOOL,
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import (DIAGNOSTICS_KINDS, HYDRAULIC_RIG, SUMMARY_TOOL, TIME_TOOL,
                                                                  WAIT_TOOL, RigSurface, Surface, _write, bind, not_json)
 from CausalDiagnosis.agents.utils.tool_answers import json_object
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_receipts import ended, split_receipt
@@ -16,6 +16,12 @@ IOT_SERVER, FMSR_SERVER, WO_SERVER, TASK_SERVER = "iot", "fmsr", "wo", "task"  #
 AOB_SERVERS = (IOT_SERVER, FMSR_SERVER, WO_SERVER, TASK_SERVER)
 ORDER_PRIORITY, ORDER_WORK_TYPE = 2, "CM"  # a corrective order of normal priority, as the briefing of the rows asks for
 RECORD_FIELDS = ("asset_id", "timestamp")  # the fields of a telemetry row that carry no value
+# the clock of a row is learned from its answers, so the tool text states the row with a clock and the row without one from the first
+# request on, and the status of the board says which holds: the system prompt is then the same in every request of an episode
+WITHOUT_WAIT = (" Where a clock runs, time passes with your thinking, since this row serves no wait: a history window past the present plays "
+                "the cycles it reaches where reads take time, and a work order closes after its lead time and downtime; where none runs, a "
+                "work order closes as it is created.")
+CLOCK_STATED = " The status of the board says whether a clock runs."
 
 
 class AobSurface(Surface):
@@ -56,20 +62,18 @@ class AobSurface(Surface):
 
     @property
     def prompt_tools(self):
-        # the model plans the opening, so before the profile is read the row's clock is unknown and goes unsaid
-        clock = ("" if self.site is None else " A wait calls wait_for_notification"
-                 + (" and the time is read with get_current_time" if self.serves(TIME_TOOL) else "") + " of the task server."
-                 if self.clock and self.serves(WAIT_TOOL) else CLOCK_WITHOUT_WAIT if self.clock
-                 else " No clock runs on this row, so no wait is possible and a work order closes as it is created.")
+        clock = (" Where a clock runs, a wait calls wait_for_notification" + (" and the time is read with get_current_time" if self.serves(TIME_TOOL) else "")
+                 + " of the task server; where none runs, no wait is possible and a work order closes as it is created."
+                 if self.serves(WAIT_TOOL) else WITHOUT_WAIT) + CLOCK_STATED
         return ("\nOn this row the controller calls AssetOpsBench's servers for the kinds: read calls history of the iot server over the "
                 f"newest recorded cycles the group has not paid for, with the group's sensors{self.summary_fields()}; order calls "
                 "generate_work_order of the wo server on the child asset of the component, with work_type CM and the prediction and the "
                 "evidence in aob_source; " + ("diagnose and finish" if "declare" in self.unserved_kinds() else "diagnose, declare and finish")
                 + " call the task server." + clock
                 + " The failure modes come from get_failure_modes of the fmsr server and the fix history from list_workorders of the wo server."
-                + (" One more kind of the opening exists on this row, after the profile, and a reading needs it first: extent, no args, the "
+                + (" One more kind of the opening exists on this row, in a plan after the profile is read, and a reading needs it first: extent, no args, the "
                    "extent of the record by stream_extent of the iot server." if "time" in self.unserved_kinds() else
-                   " Two more kinds of the opening exist on this row, after the profile, and a reading needs them first: time, no args, the clock by "
+                   " Two more kinds of the opening exist on this row, in a plan after the profile is read, and a reading needs them first: time, no args, the clock by "
                    "get_current_time of the task server where the profile lists it, and extent, no args, the extent of the record by stream_extent "
                    "of the iot server."))
 
@@ -82,7 +86,8 @@ class AobSurface(Surface):
         return getattr(self, f"_bind_{kind}")(board, **fields)
 
     def _bind_profile(self, board):
-        return TASK_SERVER, "get_asset_profile", {}
+        # the level raw, the whole profile that _read_profile reads field by field
+        return TASK_SERVER, "get_asset_profile", {"response_format": "raw"}
 
     def _bind_extent(self, board):
         return IOT_SERVER, "stream_extent", {"site_name": self.site, "asset_id": self.asset_id}
@@ -165,8 +170,9 @@ class AobSurface(Surface):
     def read_window(self, board, group, cycles):
         """The newest run of the group's unpaid recorded cycles (Board.unpaid_cycles), at most `cycles` of them, as (first,
         last). A window never spans a cycle the working memory holds or a cycle without a record of the group. When none is
-        unread, the open window after the newest known cycle, (newest + 1, None), which the controller asks for only where a
-        clock runs, since elsewhere no cycle can have been recorded since (runner._read_step)."""
+        unread, the open window after the newest known cycle, (newest + 1, None), which the controller asks for only where the
+        record may have grown since the latest answer, since where no clock runs or the clock runs by declaration no cycle can
+        have been recorded since and the read stands (plan.standing)."""
         unread = board.unpaid_cycles(group, cycles)
         if self.forward_reads and (not unread or board.reads_forward(group)):
             return self.newest + 1, self.newest + cycles  # a bounded window plays its cycles to the close where no wait is served

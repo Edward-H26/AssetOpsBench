@@ -841,7 +841,8 @@ def test_every_record_function_counts_every_attempted_diagnostics_call_whatever_
     trajectory = [{"server": CAUSAL_SERVER, "tool": "rank_root_causes", "error": "boom"}, {"server": CAUSAL_SERVER, "tool": "rank_root_causes", "error": None},
                   {"server": RIG_SERVER, "tool": "read_sensors", "error": None}]
     result = SimpleNamespace(trajectory=trajectory, plans=[], surprises=[], revisions=0, fallbacks=0, mode_of_first_plan="act_now", answer="done",
-                             differential=[], model_calls=1, end_reason="finish", error=None, board={}, server=True)
+                             differential=[], model_calls=1, end_reason="finish", error=None, board={}, server=True, reader_faults=[],
+                             replaced_characters=[])
     causal = run_episodes.record_causal(tmp_path / "causal", result, [])
     assert read_json(tmp_path / "causal" / "plans.json")["server"] is True
     assert pe["causal_calls"] == aat["causal_calls"] == causal["causal_calls"] == 2 and aat["react_steps"] == 4

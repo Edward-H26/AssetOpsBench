@@ -229,8 +229,9 @@ class StubEngine:
             return self._refuse(action, "mode must be standard or emergency")
         if mode == "emergency":
             return self._refuse(action, "the emergency mode is off in this episode")
-        if any(o["component"] == component and o["status"] != "closed" for o in self._orders):
-            return self._refuse(action, f"a work order on the {component} is open")
+        open_order = next((o for o in self._orders if o["component"] == component and o["status"] != "closed"), None)
+        if open_order is not None:
+            return self._refuse(action, f"a work order on the {component} is open; it closes at cycle {open_order['expected_close_t']}")
         if not self._charge(action, self.config.order_price):
             return None, "budget"
         order = {"id": f"wo-{len(self._orders) + 1}", "component": component, "created_t": self.time,

@@ -60,7 +60,7 @@ ABLATIONS = (  # identifier, family and short name of the supporting ablations o
     ("L5", "Environment", "the deterioration and failure of layer 5"),
     ("Ag1", "Agent", "the candidate troubleshooting plans"), ("Ag2", "Agent", "the number of candidate troubleshooting plans"),
     ("Ag3", "Agent", "the plan length"), ("Ag7", "Agent", "the read the board advises"),
-    ("Ag9", "Agent", "the schedule of candidate plans"),
+    ("Ag9", "Agent", "the schedule of candidate plans"), ("Ag10", "Agent", "the structured output of the replies"),
 )
 # label suffix of the CausalDiagnosis agent (CausalLoopOptions.label): ablation and arm, with len<N> as Ag3. The suffixes noexp
 # and noback of the expectation checks and of replanning stay in the agent, but the experiments no longer play their rows, so a label with one of them stops the
@@ -72,6 +72,7 @@ SWITCHES = {
     "ec2": ("Ag7", "the agent's own read, one step edge cutting over repair plan classes from the long form of the reply, against the advice "
                    "of the MCP that the registered agent follows"),
     "seq": ("Ag9", "the schedule of candidate plans off, every read step alone with its own ranking"),
+    "noschema": ("Ag10", "structured output off, the planning and the orientation replies decoded without the JSON schema of their form, as the two reimplemented designs decode"),
 }
 REFERENCES = ("oracle", "do_nothing", "greedy", "random", "declare", "scripted")  # labels without a model, of which the page shows ANCHORS
 ANCHORS = ("oracle", "declare")  # the best of the five reference policies and the most a constant declaration can earn, under the main table and on no other line

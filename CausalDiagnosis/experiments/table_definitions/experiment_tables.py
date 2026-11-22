@@ -109,7 +109,7 @@ ROWS_BY_ID = {row_id(row): row for row in AGENT_ROWS}
 # the record and then the diagnosis of rank one, so they play the priced layer. Ag9 turns the schedule of candidate plans off on the top
 # layer, the one layer of its registered pair. A place whose rows do not play its preset in the main table, the ladder, the
 # reference lines without the MCP or the part environment gets the reference line of the rows as released from grid_lines.ablation()
-AGENT_ABLATIONS = ("Ag1", "Ag2", "Ag3")
+AGENT_ABLATIONS = ("Ag1", "Ag2", "Ag3", "Ag10")
 PRICED_ABLATIONS = ("Ag7",)
 PARALLEL_ABLATION = "Ag9"
 ABLATION_PLACES = {**{ablation: (AGENTS_PRESET, (CD_MCP,)) for ablation in AGENT_ABLATIONS},

@@ -40,6 +40,9 @@ if importlib.util.find_spec("mcp") is None:
 
 from CausalDiagnosis.experiments.episode_runners import run_episodes  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent import agent_options, controller, episode_result  # noqa: E402
+from CausalDiagnosis.agents.utils import core_texts  # noqa: E402
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan.reply_parser import NO_OBJECT  # noqa: E402
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board.board import KIND_WORDS  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import Board, band_verdict, channels_outside, n_cycles  # noqa: E402
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import (ESTIMATE, OPENING_KINDS, Plan, PlanError, Step, act_options, advice, batch_reads, check_plan,  # noqa: E402
@@ -81,7 +84,7 @@ BRANCH_PREDICTION = re.compile(r"(\w+): (pred/b\d+)")
 PLAN_PREDICTION = re.compile(r"every order of the plan cites (pred/\S+?)\b")
 ADVISED = re.compile(r"Advised reads[^:]*: (\w+) x(\d+)")  # the head of the reads the board advises
 STILL_TO_READ = re.compile(r"Still to read before a reading on this row, as steps of their own: ([a-z_, ]+)\.")
-MODEL_SOURCES = ("model", "model_retry", "model_repaired")  # the sources of a plan the model wrote
+MODEL_SOURCES = ("model", "model_cut", "model_retry", "model_repaired")  # the sources of a plan the model wrote
 VERIFYING_READ = {"kind": "read", "args": {"sensor_group": "tier3", "cycles": 1}, "expect": {}, "evidence": []}  # after the last close
 
 
@@ -354,11 +357,14 @@ def _in_process(ep_dir, **fake):
         yield servers
 
 
-def _play(tmp_path, planner, options, seed=0, config_name="static", **fake):
+def _play(tmp_path, planner, options, seed=0, config_name="static", development=False, **fake):
     """One episode of the causal agent through EpisodeRunner, as main() plays it, with the servers in process; returns the
-    episode folder, the row and the recording backend."""
+    episode folder, the row and the recording backend. development plays the first development start of the asset
+    (_on_first_development_start)."""
     facts_path, cycles, blocks = load_world()
     config_name, config = load_config(config_name)
+    if development:
+        config = _on_first_development_start(config, blocks)
     backend = RecordingBackend(planner)
     runner = EpisodeRunner(config, config_name, "causal", (RIG_SERVER, CAUSAL_SERVER), cycles, blocks, facts_path, "causal-test",
                            {"judge": None, "grade": True, "ranking_model": run_episodes.DEFAULT_RANKING_MODEL}, backend=backend, scripted=planner,
@@ -661,10 +667,13 @@ def test_the_system_prompt_tells_that_a_turn_without_a_call_takes_a_step():
     a count of retries."""
     text = system_prompt(None)
     assert "A turn that calls no tool of the" in text and "still takes one step" in text and "as the step cap allows end the episode" in text
-    assert "refuses twice" not in text and "asked again with its reasons" in text
+    assert "refuses twice" not in text and "asked again with the reasons" in text
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import LOOP, NOUN_MARK
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import idle_turn_sentence
-    assert idle_turn_sentence(NOUN_MARK) in LOOP  # the sentence that both briefings state beside the step cap, in the same words
+    # the sentence that both briefings state beside the step cap, whose two clauses the loop of the shared texts and the tail of the
+    # agent's own state, each in the same words
+    step, end = idle_turn_sentence(NOUN_MARK).removesuffix(".").split(", and ", 1)
+    assert f"{step[0].upper()}{step[1:]}." in LOOP and f"{end}." in LOOP
 
 
 def test_a_read_is_judged_on_the_faulty_set_on_top_and_its_mass_summed_over_the_set():
@@ -781,7 +790,7 @@ def test_a_recall_step_brings_collapsed_rows_back_on_the_next_board_only():
         parse_step({"kind": "recall", "args": {"sensor_group": "tier3", "observations": [3, 2]}}, 1)
     assert not [p for p in check_plan(Plan(branch=None, mode="test_first", why="", steps=[step]), board) if "(recall)" in p]
     empty, = parse_step({"kind": "recall", "args": {"sensor_group": "tier2", "observations": [1, 1]}}, 1)
-    assert any("nothing comes back" in p for p in check_plan(Plan(branch=None, mode="test_first", why="", steps=[empty]), board))
+    assert any("so nothing would come back" in p for p in check_plan(Plan(branch=None, mode="test_first", why="", steps=[empty]), board))
     runner = controller.CausalLoopRunner(llm=None, server_paths={CAUSAL_SERVER: "unused"})
     runner.board, runner.trajectory = board, []
     board.mark_turn(1)
@@ -880,9 +889,9 @@ def test_a_reply_without_json_runs_nothing_and_its_error_goes_to_the_next_turn(t
     _assert_repairs_verified(ep_dir, verdict)
     plans = read_json(ep_dir / "plans.json")
     failed = [p for p in plans["plans"] if p["source"] == "no_plan_after_parse_failure"]
-    assert len(failed) == 1 and failed[0]["parse_errors"] == ["no JSON object found in the reply"] and failed[0]["steps"] == []
+    assert len(failed) == 1 and failed[0]["parse_errors"] == [NO_OBJECT] and failed[0]["steps"] == []
     assert decision_plans(plans)[0]["source"] == "model" and row["fallbacks"] == 1
-    assert any("could not be parsed as a plan: no JSON object found" in c["prompt"] for c in backend.calls)
+    assert any(f"could not be parsed as a plan: {NO_OBJECT}" in c["prompt"] for c in backend.calls)
 
     def prose(prompt, call):
         return "Still thinking."
@@ -1253,7 +1262,7 @@ def test_the_plan_check_enforces_the_guards_and_the_rule_plan_follows_the_decisi
     no_clock.clock_runs = False
     # where no cycle runs after a close no read verifies a repair, and no wait is possible either
     assert not [p for p in check_plan(unread, no_clock) if "verifies the repair" in p]
-    assert "step 3 (wait): no clock runs on this row, so no wait is possible" in check_plan(unread, no_clock)
+    assert "step 3 (wait): leave this step out, since no cycle passes on this row" in check_plan(unread, no_clock)
     assert [s.kind for s in rule_plan(_synthetic_board(read_first=False), 1).steps] == ["diagnose"]
     without = rule_plan(_synthetic_board(read_first=False, branches=False), 6)
     assert without.steps[1].args["prediction_id"] == ESTIMATE and _synthetic_board(branches=False).branches() == []
@@ -1781,8 +1790,8 @@ AOB_EVIDENCE_ID = re.compile(r"^\| (obs/\S+) \|", re.MULTILINE)  # the citation 
 
 def act_now_on_assetopsbench(prompt, call):
     """The act now plan on the AssetOpsBench rows: the head of the advised batch while the board advises one, else diagnose rank
-    1, order the faulty components of the top branch citing the plan's prediction, and where a clock runs (the surface's tool
-    line says when none does) wait one cycle for the close and read the cycle after it, which verifies the repair, then finish."""
+    1, order the faulty components of the top branch citing the plan's prediction, and where a clock runs (the
+    status of the board says when none does) wait one cycle for the close and read the cycle after it, which verifies the repair, then finish."""
     advised = advised_read(prompt)
     if advised:
         return advised
@@ -1797,7 +1806,7 @@ def act_now_on_assetopsbench(prompt, call):
         pid = ids.get(component, ESTIMATE)
         steps.append({"kind": "order", "args": {"component": component, "prediction_id": pid},
                       "expect": {"prediction_id": pid, "recovery_at_least": 0.0}, "evidence": [pid] if pid != ESTIMATE else []})
-    if "no wait is possible" not in prompt:
+    if "no clock runs)" not in prompt:  # the status of the board, which says whether a clock runs on the row
         steps.append({"kind": "wait", "args": {"cycles": 1}, "expect": {"no_new_alarm": True}, "evidence": []})
         steps.append(dict(VERIFYING_READ))
     steps.append({"kind": "finish", "args": {}, "expect": {}, "evidence": []})
@@ -1975,15 +1984,20 @@ def test_without_a_count_a_plan_is_bounded_by_the_budget_the_horizon_and_the_ste
         free, counted = system_prompt(None, server=server), system_prompt(6, server=server)
         assert free.count(PAID_STEPS) == 1 and "entries under steps, finish included" not in free.replace(PAID_STEPS, "")
         assert counted.count(COUNTED_STEPS.replace("<PLAN_LENGTH>", "6")) == 1 and PAID_STEPS not in counted
-    assert PAID_STEPS == ("with as many entries under steps as the budget, the horizon and the step cap pay, finish included, and candidates "
-                          "best first; a plan they cannot pay is refused and you are asked again.")
+    assert PAID_STEPS == ("with at least one entry under steps and as many as the budget, the horizon and the step cap pay, finish included, "
+                          "and candidates best first; a plan they cannot pay is refused and you are asked again.")
     assert "which count against the step limit" in system_prompt(None)
 
 
 def test_the_planning_turn_names_a_count_only_when_one_is_set():
-    board = Board(question="q")
-    assert planning_turn(board, None).endswith("Return one plan as the JSON object described above, and nothing after it.")
-    assert planning_turn(board, 6).endswith("Return one plan as the JSON object described above, with at most 6 steps and nothing after it.")
+    """The ask of the planning turn is the objective with or without a count, and a count stands in the plan block of the system
+    prompt alone."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import COUNTED_STEPS, OPENING_TURN, PLAN_LENGTH_MARK
+    board = _synthetic_board()
+    for length in (None, 6):
+        assert planning_turn(board, length).endswith(core_texts.OBJECTIVE)
+        assert planning_turn(Board(question="q"), length).endswith(f"{core_texts.OBJECTIVE} {OPENING_TURN.strip()}")
+    assert COUNTED_STEPS.replace(PLAN_LENGTH_MARK, "6") in planning_turn(board, 6) and COUNTED_STEPS.replace(PLAN_LENGTH_MARK, "6") not in planning_turn(board, None)
 
 
 def test_a_step_keeps_every_identifier_it_cites_and_the_prompt_asks_for_few():
@@ -1998,7 +2012,7 @@ def test_a_step_keeps_every_identifier_it_cites_and_the_prompt_asks_for_few():
     for server in (True, False):
         text = system_prompt(6, server=server)
         assert "the few that moved you" in text and "at most 8" not in text and "at most 5 candidates" not in text
-    assert "never copy the ranking's evidence list" in system_prompt(6)
+    assert "Never copy the ranking's evidence list" in system_prompt(6)
 
 
 def test_a_count_of_cycles_takes_the_singular_only_for_one():
@@ -2081,8 +2095,8 @@ def test_a_history_window_covers_unread_cycles_in_one_run_and_never_a_read_one()
 
 def test_a_read_of_a_group_with_every_recorded_cycle_read_makes_no_call(tmp_path):
     """On the base row of AssetOpsBench, where no clock runs and the record does not grow, a plan that reads the whole record
-    of the cheapest group and then a plan that reads it again: the second read makes no history call and comes back as a
-    surprise that says why, and the next plan acts (the model decides what follows)."""
+    of the cheapest group and then a plan that reads it again: the second read makes no history call and stands, with the reason
+    that names the change, no surprise, and the next plan acts (the model decides what follows)."""
     def plans(prompt, call):
         if call == 1:
             return plan_json([{"kind": "read", "args": {"sensor_group": "tier1", "cycles": 6}, "expect": {}, "evidence": []}], mode="test_first")
@@ -2097,7 +2111,46 @@ def test_a_read_of_a_group_with_every_recorded_cycle_read_makes_no_call(tmp_path
     reads = [t for t in trajectory if t["tool"] == "history" and set(t["tool_args"]["sensors"]) == {f for n in tier1 for f in (n, f"{n}_std")}]
     assert len(reads) == 1  # the first read took the whole record, at most the six cycles asked for, and nothing read it again
     second = decision_plans(read_json(ep_dir / "plans.json"))[1]
-    assert second["steps"][0]["status"] == "surprise" and "every recorded cycle of tier1" in second["steps"][0]["note"]
+    assert second["steps"][0]["status"] == "standing" and second["surprise"] is None
+    assert second["steps"][0]["note"].startswith(core_texts.STANDS_NOTHING_NEW.format(**KIND_WORDS, name="tier1"))
+
+
+@pytest.mark.parametrize("case", ["stands", "wait_first", "rule_of_the_row_without_a_clock"])
+def test_a_read_of_a_group_with_every_recorded_cycle_read_stands_on_a_declared_clock_and_reads_again_after_a_wait(tmp_path, monkeypatch, case):
+    """On the deterioration row with the thinking time off, whose clock runs by declaration and which serves the wait, through
+    AssetOpsBench's servers: a plan reads the whole record of tier3, then a plan reads tier3 again before a diagnosis and finish.
+    The second read makes no history call and stands with the reason of the declared clock, and the diagnosis and the finish after
+    it run. With a wait of two cycles first, the read calls history and serves the two cycles that the wait recorded. The control:
+    with the clause of the row without a clock alone, as before the declared clock stood a read, the second read calls history,
+    which serves no row, and its surprise stops the plan before the diagnosis."""
+    if case == "rule_of_the_row_without_a_clock":
+        monkeypatch.setattr(Board, "record_holds_between_calls", property(lambda board: not board.clock_runs))
+
+    def plans(prompt, call):
+        if call == 1:
+            return plan_json([{"kind": "read", "args": {"sensor_group": "tier3", "cycles": 200}, "expect": {}, "evidence": []}], mode="test_first")
+        if call >= 3:  # reached only where the surprise stopped the second plan
+            return plan_json([{"kind": "finish", "args": {}, "expect": {}, "evidence": []}])
+        steps = [{"kind": "wait", "args": {"cycles": 2}, "expect": {}, "evidence": []}] if case == "wait_first" else []
+        steps += [{"kind": "read", "args": {"sensor_group": "tier3", "cycles": 2}, "expect": {}, "evidence": []},
+                  {"kind": "diagnose", "args": {"rank": 1}, "expect": {}, "evidence": AOB_EVIDENCE_ID.findall(prompt)[:3]},
+                  {"kind": "finish", "args": {}, "expect": {}, "evidence": []}]
+        return plan_json(steps)
+    ep_dir, row, _backend = _aob_run(tmp_path, "deterioration_thinking_off", ScriptedPlanner(plans), {})
+    assert row["error"] == "" and row["end_reason"] == "finish", (row["error"], row["end_reason"])
+    assert json.loads((ep_dir / "episode.json").read_text())["config"]["clock_mode"] == "declared"
+    histories = [t for t in read_json(ep_dir / "trajectory.json") if t["tool"] == "history"]
+    served = [len(json.JSONDecoder().raw_decode(t["response"])[0].get("observations") or []) for t in histories]
+    second = decision_plans(read_json(ep_dir / "plans.json"))[1]
+    statuses = [s["status"] for s in second["steps"]]
+    assert served[0] > 0, served
+    if case == "wait_first":
+        assert served[1:] == [2] and statuses == ["done"] * 4, (served, second["steps"])
+    elif case == "stands":
+        assert len(served) == 1 and statuses == ["standing", "done", "done"], (served, second["steps"])
+        assert second["steps"][0]["note"].startswith(core_texts.STANDS_NOTHING_RECORDED.format(**KIND_WORDS, name="tier3")) and second["surprise"] is None
+    else:
+        assert served[1:] == [0] and statuses == ["surprise"] and second["surprise"] is not None, (served, second["steps"])
 
 
 def test_the_working_memory_names_every_prediction_of_the_mcp_as_a_prediction():
@@ -2631,8 +2684,8 @@ def test_the_board_shows_the_advice_of_the_server_and_the_rank_call_asks_for_its
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import HYDRAULIC_RIG, bind
     assert ranking_detail(board) == "compact"
     assert ranking_detail(_advised(ADVISED_READ, read_advice="ec2")) == "summary"
-    assert bind(HYDRAULIC_RIG, "rank")[2] == {}  # no top_k from the agent: the server's default of five applies
-    assert bind(HYDRAULIC_RIG, "rank", branch_detail="compact")[2] == {"branch_detail": "compact"}
+    assert bind(HYDRAULIC_RIG, "rank")[2] == {"response_format": "raw"}  # no top_k from the agent: the server's default of five applies
+    assert bind(HYDRAULIC_RIG, "rank", branch_detail="compact")[2] == {"branch_detail": "compact", "response_format": "raw"}
 
 
 # ----- one session per server and episode -----
@@ -2858,11 +2911,12 @@ def test_a_cycle_without_a_record_is_not_offered_or_priced_again():
     assert board.new_cycles("tier1", 3) == 0 and board.read_price("tier1", 3) == 0 and board.unrecorded("tier1") == {1, 2}
 
 
-def _recorded_reader(clock, rows):
+def _recorded_reader(clock, rows, mode="declared"):
     """A controller on the AssetOpsBench surface without the diagnostics server whose board has read every recorded cycle of
-    tier1, the record ending at cycle 0 with the clock at 1, and whose history tool answers the rows of the given cycles."""
+    tier1, the record ending at cycle 0 with the clock at 1 in the clock mode given, and whose history tool answers the rows of the
+    given cycles."""
     board = Board(server=False, reads_take_time=False, evidence_form=AobSurface.evidence_form)
-    board.set_profile(_synthetic_board().profile)
+    board.set_profile({**_synthetic_board().profile, "clock_mode": mode})
     board.clock_runs = clock
     surface = _recorded_surface(board, 0, 0)
     surface.clock = clock
@@ -2886,21 +2940,27 @@ def _read_one(loop_runner):
     return asyncio.run(loop_runner._read_step(step, episode_result.PlanRecord(index=1, source="model", plan={}, candidates=[]), 1))
 
 
-def test_a_read_with_no_unread_cycle_known_is_answered_by_the_server_where_a_clock_runs():
-    """The board's record ends at cycle 0 and every cycle of it is read. Where a clock runs the read is made on the open window
-    after the newest known cycle and serves the cycle recorded since, and a read that serves nothing names the end of the record;
-    either made a call, so the turn is not idle. Where no clock runs no cycle can have been recorded since, and no call is made."""
+def test_a_read_with_no_unread_cycle_known_is_answered_by_the_server_where_the_record_may_have_grown():
+    """The board's record ends at cycle 0 and every cycle of it is read. Where thinking records cycles between calls, and in the
+    instant mode, where every call plays one, the read is made on the open window after the newest known cycle and serves the
+    cycle recorded since, and a read that serves nothing names the end of the record; either made a call, so the turn is not idle.
+    Where no clock runs, and where the clock runs by declaration, so that only a call that takes time records a cycle, none can have
+    been recorded since, and no call is made."""
     import asyncio
-    loop_runner, calls = _recorded_reader(True, [1])
-    outcome = _read_one(loop_runner)
-    assert [c[:2] for c in calls] == [("iot", "history")] and "end" not in calls[0][2] and calls[0][2]["start"] == loop_runner.surface.timestamp(1)
-    assert outcome.status == "done" and loop_runner.board.observations == 2 and loop_runner.board.status["recorded_until"] == 1
-    loop_runner, calls = _recorded_reader(True, [])
-    outcome = _read_one(loop_runner)
-    assert len(calls) == len(loop_runner.trajectory) == 1 and outcome.status == "surprise" and "the record ends at cycle 0" in outcome.note
+    for mode in ("generation_time", "generated_tokens", "instant"):
+        loop_runner, calls = _recorded_reader(True, [1], mode)
+        outcome = _read_one(loop_runner)
+        assert [c[:2] for c in calls] == [("iot", "history")] and "end" not in calls[0][2] and calls[0][2]["start"] == loop_runner.surface.timestamp(1)
+        assert outcome.status == "done" and loop_runner.board.observations == 2 and loop_runner.board.status["recorded_until"] == 1
+        loop_runner, calls = _recorded_reader(True, [], mode)
+        outcome = _read_one(loop_runner)
+        assert len(calls) == len(loop_runner.trajectory) == 1 and outcome.status == "surprise" and "the record ends at cycle 0" in outcome.note
     loop_runner, calls = _recorded_reader(False, [1])
     outcome = _read_one(loop_runner)
-    assert calls == [] and outcome.status == "surprise" and "every recorded cycle of tier1" in outcome.note
+    assert calls == [] and outcome.status == "standing" and outcome.note == core_texts.STANDS_NOTHING_NEW.format(**KIND_WORDS, name="tier1")
+    loop_runner, calls = _recorded_reader(True, [1], "declared")
+    outcome = _read_one(loop_runner)
+    assert calls == [] and outcome.status == "standing" and outcome.note == core_texts.STANDS_NOTHING_RECORDED.format(**KIND_WORDS, name="tier1")
 
 
 def _ranked_rows(prompt):
@@ -3233,7 +3293,8 @@ def test_on_a_start_with_no_fault_the_agent_diagnoses_all_healthy_and_finishes_w
     assert {c: diagnosis["tool_args"][c] for c in COMPONENTS} == dict(HEALTHY)
     assert "create_work_order" not in [t["tool"] for t in trajectory] and trajectory[-1]["tool"] == "finish"
     planning = [c["prompt"] for c in backend.calls if PLANNING_HEADING in c["prompt"]]
-    assert planning and all("none when no component is faulty" in p for p in planning)
+    # the ask of every planning turn is the task within the limits, which asks for no work order
+    assert planning and all(core_texts.OBJECTIVE in p and "Objective: exactly one diagnosis" not in p for p in planning)
 
 
 def test_a_candidate_without_a_fault_is_an_option_of_the_rule():
@@ -3617,10 +3678,11 @@ TAIL_PLACES = {"plan/repair_budget.py": {"read_affordable": True, "_fits_beside_
                                         "order_reserve": True, "order_reserve_calls": True, "_branch_costs": True},
                "plan/read_advice.py": {"exploration": True}, "plan/rule_controller.py": {"rule_plan": True},
                "plan/plan_check.py": {"_verification_problem": False, "_tail_fits": False},
-               "candidate_plan_schedule.py": {"needs_of": True, "limit": True, "remaining": False}, "controller.py": {"_unverified_reason": True}}
+               "candidate_plan_schedule.py": {"needs_of": True, "limit": True, "remaining": False}, "controller.py": {"_unverified_reason": True},
+               "situation_board/board.py": {"verifying_tail": True, "_unverified_line": True}}
 TAIL_ARITHMETIC = {"read_price", "plan_price", "order_price", "visit_charge", "read_duration", "wait_cycles", "visit_closes", "first_cycle_after",
                    "order_duration", "visit_schedule", "visit_moments"}
-TAIL_CALLERS = {"completion", "reserve_completion", "needs_of", "_fits_beside_reserve", "wait_calls"}
+TAIL_CALLERS = {"completion", "reserve_completion", "needs_of", "_fits_beside_reserve", "wait_calls", "verifying_tail"}
 
 
 def _functions(path):
@@ -3646,13 +3708,13 @@ def test_every_place_that_counts_the_tail_of_a_repair_calls_the_one_rule():
             assert names & TAIL_CALLERS or not calls_rule, (name, function, "calls no function of the one rule")
             assert not names & TAIL_ARITHMETIC - ({"read_price", "read_duration"} if function == "read_affordable" else set()), (
                 name, function, sorted(names & TAIL_ARITHMETIC))
-    wait = next(n for n in __import__("ast").walk(_functions(package / "plan/plan_check.py")["check_plan"]) if isinstance(n, __import__("ast").If)
+    wait = next(n for n in __import__("ast").walk(_functions(package / "plan/plan_check.py")["step_problems"]) if isinstance(n, __import__("ast").If)
                 and "wait" in __import__("ast").unparse(n.test) and "step.kind" in __import__("ast").unparse(n.test))
     helper = _functions(Path(__file__))["separating_test_affordable"]
     assert "_fits_beside_reserve" in _names(helper) and not _names(helper) & {"order_reserve", "order_reserve_calls", "order_duration"}
     body = set().union(*(_names(n) for n in wait.body))
     assert "wait_calls" in body and "closes" not in body
-    finish = _functions(package / "plan/plan_check.py")["check_plan"]
+    finish = _functions(package / "plan/plan_check.py")["step_problems"]
     assert "tail_from" in _names(finish) and "completion" in _names(_functions(package / "plan/plan_check.py")["tail_from"])
 
 
@@ -3723,7 +3785,7 @@ def _tail_planner(components_of):
         if tail.reads:
             steps.append({"kind": "read", "args": {"sensor_group": board.verification_group(board.repaired()), "cycles": 1}, "expect": {}, "evidence": []})
         return plan_json(steps + [{"kind": "finish", "args": {}, "expect": {}, "evidence": []}])
-    check = controller.check_plan
+    check = controller.step_problems
 
     def spy(plan, board):
         seen["board"] = board
@@ -3746,7 +3808,7 @@ def test_the_completion_of_a_repair_is_what_the_environment_charges(tmp_path, mo
     else:
         components_of = lambda prompt: top_faulty(prompt) or [COMPONENTS[0]]  # noqa: E731
     planner, seen, spy = _tail_planner(components_of)
-    monkeypatch.setattr(controller, "check_plan", spy)
+    monkeypatch.setattr(controller, "step_problems", spy)
     if surface == "rig":
         ep_dir, row, _backend = _play(tmp_path, planner, {}, config_name=config_name)
     else:
@@ -3858,13 +3920,16 @@ def test_the_controller_verifies_a_repair_on_its_first_verifying_reading(server)
 
 
 def test_time_and_extent_wait_for_the_profile_on_every_surface():
-    """A plan made before the profile is read that names time or extent is refused with the sentence the model already reads
-    before the profile, also after a profile step in the same plan, so no surface ever calls a kind it does not bind."""
+    """A plan made before the profile is read that names time or extent is refused, also after a profile step in the same plan,
+    so no surface ever calls a kind it does not bind, and the reason names the change: the step leaves the plan for the next
+    request, since the profile says whether the row needs it, as the tool line of the rows with the two kinds says."""
     board = Board()
     for kinds in (["profile", "extent", "finish"], ["profile", "time"], ["time"]):
         plan = Plan(branch=None, mode="test_first", why="", steps=[Step(k) for k in kinds])
         problems = check_plan(plan, board)
-        assert problems and all("read the profile first, which names the components and the record" in p for p in problems), (kinds, problems)
+        assert problems and all("leave this step out and plan it in the next request, once the profile is on the board, since the profile "
+                                "says whether this row needs it" in p for p in problems), (kinds, problems)
+    assert "Two more kinds of the opening exist on this row, in a plan after the profile is read" in AobSurface().prompt_tools
 
 
 def test_a_first_plan_with_an_extent_step_on_the_rig_ends_without_an_error(tmp_path):
@@ -3881,7 +3946,7 @@ def test_a_first_plan_with_an_extent_step_on_the_rig_ends_without_an_error(tmp_p
     ep_dir, row, _backend = _play(tmp_path, ExtentFirst(plans), {})
     assert row["error"] == "", row["error"]
     first = read_json(ep_dir / "plans.json")["plans"][0]
-    assert any("read the profile first" in p for p in first["check_problems"][0])
+    assert any("leave this step out and plan it in the next request" in p for p in first["check_problems"][0])
 
 
 def test_a_wait_on_a_row_without_a_clock_is_refused_with_the_sentence_of_the_prompt():
@@ -3889,10 +3954,12 @@ def test_a_wait_on_a_row_without_a_clock_is_refused_with_the_sentence_of_the_pro
     board = _synthetic_board(read_first=False)
     board.clock_runs = False
     problems = check_plan(Plan(branch=1, mode="act_now", why="", steps=[Step("wait", {"cycles": 1}), Step("finish")]), board)
-    assert problems == ["step 1 (wait): no clock runs on this row, so no wait is possible"]
+    assert problems == ["step 1 (wait): leave this step out, since no cycle passes on this row"]
     surface = AobSurface()
+    before = surface.prompt_tools
     surface.site = "MAIN"  # a surface that has read the profile of a row without a clock
-    assert "No clock runs on this row, so no wait is possible" in surface.prompt_tools
+    # the tool text says where no clock runs no wait is possible, in the same words before and after the profile
+    assert "where none runs, no wait is possible" in surface.prompt_tools and surface.prompt_tools == before
 
 
 def test_the_closing_summary_words_the_limits_as_the_board_does():
@@ -4033,18 +4100,18 @@ def test_a_second_order_on_a_component_is_refused_only_while_the_first_is_open()
     board.diagnosis = {"diagnosis": dict(board.candidate(1)["combination"]), "evidence_ids": []}
     order = Step("order", {"component": "pump", "prediction_id": "pred/b1"}, {"prediction_id": "pred/b1"})
     twice = Plan(branch=1, mode="act_now", why="", steps=[order, order])
-    assert any("is still open at this step; the environment refuses an order on a component with an open order" in p for p in check_plan(twice, board))
+    assert any("is still open at this step and the environment takes no second one on it" in p for p in check_plan(twice, board))
     after_close = Plan(branch=1, mode="act_now", why="", steps=[order, Step("wait", {"cycles": 5}), order])
-    assert not [p for p in check_plan(after_close, board) if "open order" in p]
+    assert not [p for p in check_plan(after_close, board) if "is still open at this step" in p]
 
 
 def test_the_role_text_names_every_end_of_an_episode_and_the_lead_time_of_its_row():
     """The role names every end of an episode, each where the row sets it, and a lead time only where the row sets
     one; the prompt without the server says a fault usually shows a channel outside its normal range."""
-    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import ROLE
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import ROW_RULES
     for end in ("finish", "the horizon", "the step cap", "the budget", "the limit of wall time", "a component failure", "where the row sets it"):
-        assert end in ROLE, end
-    assert "after the lead time of its row, where the row sets one" in ROLE
+        assert end in ROW_RULES, end
+    assert "after the lead time of its row, where the row sets one" in ROW_RULES
     without = system_prompt(6, server=False)
     assert "outside its normal range, while a fault usually shows at least one" in without and "and a fault shows at least one" not in without
 
@@ -4217,3 +4284,1117 @@ def test_no_text_states_the_visit_of_one_cycle():
              for path in sorted((root / folder).rglob("*")) if path.suffix in (".py", ".md", ".json") and "tests" not in path.parts
              for n, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1) if old.search(line)]
     assert not found, found
+
+
+# ----- the rule of the opening, the notes of refused plans and the reasons of the plan check -----
+
+# made-up replies written for these tests, of four shapes of a reply before the profile is read: the opening followed by further
+# steps, a plan that starts with a reading, a plan with an unknown step kind in the middle, and prose without JSON
+MADE_UP_OPENING_AND_MORE = plan_json([{"kind": "profile"}, {"kind": "failure_modes", "args": {"component": ""}}, {"kind": "fix_history"},
+                                      {"kind": "read", "args": {"sensor_group": "tier1", "cycles": 1}, "expect": {}, "evidence": []},
+                                      {"kind": "diagnose", "args": {"rank": 1}, "expect": {"top_rank": 1}, "evidence": []},
+                                      {"kind": "finish", "args": {}, "expect": {}, "evidence": []}], mode="test_first")
+MADE_UP_READ_FIRST = plan_json([{"kind": "read", "args": {"sensor_group": "tier1", "cycles": 1}, "expect": {}, "evidence": []},
+                                {"kind": "diagnose", "args": {"rank": 1}, "expect": {"top_rank": 1}, "evidence": []}], mode="test_first")
+MADE_UP_UNKNOWN_KIND = plan_json([{"kind": "profile"}, {"kind": "failure_modes", "args": {"component": ""}}, {"kind": "fix_history"},
+                                  {"kind": "check_the_repair", "args": {}, "expect": {}, "evidence": []},
+                                  {"kind": "finish", "args": {}, "expect": {}, "evidence": []}], mode="test_first")
+MADE_UP_PROSE = "The profile comes first, so the plan starts there and goes on to the readings."
+MADE_UP_REPLIES = (MADE_UP_OPENING_AND_MORE, MADE_UP_READ_FIRST, MADE_UP_UNKNOWN_KIND, MADE_UP_PROSE)
+NOTE_OF_A_TURN = re.compile(r"Your plan of turn (\d+) ")
+
+
+def _on_first_development_start(config, blocks):
+    """The preset widened to the development starts of its asset, as --starts development plays it, with the first of them as its
+    start, so that a test plays no start of the test set."""
+    from CausalDiagnosis.datasets.splits.development_split import development_starts
+    from CausalDiagnosis.experiments.episode_runners.run_episodes import planned_episodes, play_one_episode
+    first = development_starts(play_one_episode.get_profile(config.asset_id), set(blocks))[0]
+    widened = planned_episodes.development_config(config, blocks)
+    return type(widened).from_json(dataclasses.replace(widened, start={"combination": list(first), "entry_offset": 0}).to_json())
+
+
+# the made-up replies that run nothing before the profile is read, a plan whose first step is refused and prose without JSON,
+# which the stand-in writes in turn before the opening followed by further steps, whose opening runs
+RUN_NOTHING = (MADE_UP_READ_FIRST, MADE_UP_PROSE)
+
+
+class OpeningAfterTheNotes(ScriptedPlanner):
+    """A stand-in model that, before the profile is read, writes the made-up replies that run nothing in turn, the next one for
+    every note of a turn that it sees on the board, and then the opening followed by further steps; after the profile its plans
+    answer. On a board that shows no note before the profile it never leaves its first reply, and where no plan runs in part it
+    never leaves the opening followed by further steps."""
+
+    def generate(self, prompt, temperature=0.0):
+        if PLANNING_HEADING in prompt and "No profile read yet" in prompt:
+            self.prompts.append(prompt)
+            seen = len(set(NOTE_OF_A_TURN.findall(prompt)))
+            return RUN_NOTHING[seen] if seen < len(RUN_NOTHING) else MADE_UP_OPENING_AND_MORE
+        return super().generate(prompt, temperature)
+
+
+def act_now_reading_as_told(prompt, call):
+    """act_now, whose wait and verifying read follow the reason of the turn before where it named the read that verifies the
+    repair, its group and the cycle it starts at, as a model that follows the reasons of the plan check does."""
+    told = re.search(r"so read (\w+) for 1 cycle at or after cycle (\d+)", prompt)
+    now = re.search(r"^Time (\d+)", prompt, re.MULTILINE)
+    if told is None or now is None or advised_read(prompt):
+        return act_now(prompt, call)
+    group, start = told.group(1), int(told.group(2))
+    steps = act_now_steps(prompt) if "## Troubleshooting plans" in prompt else act_now_steps(prompt, prediction=ESTIMATE)
+    steps = [{**s, "args": {"cycles": max(1, start - int(now.group(1)))}} if s["kind"] == "wait" else s for s in steps]
+    return plan_json([{**s, "args": {**s["args"], "sensor_group": group}} if s == VERIFYING_READ else s for s in steps])
+
+
+def _requests_before_the_profile(prompts):
+    return [p for p in prompts if PLANNING_HEADING in p and "No profile read yet" in p]
+
+
+def _assert_notes_of_every_earlier_turn(requests):
+    """Each request before the profile names every earlier turn in a note of the controller, the third request the refused plan and
+    the reply that did not parse."""
+    assert len(requests) == len(RUN_NOTHING) + 1, len(requests)
+    for k, request in enumerate(requests):
+        assert sorted({int(n) for n in NOTE_OF_A_TURN.findall(request)}) == list(range(1, k + 1)), (k, request[-1500:])
+    assert "Your plan of turn 1 was refused" in requests[2] and "Your plan of turn 2 could not be parsed" in requests[2]
+
+
+def _assert_no_claim_of_steps_that_did_not_run(request, record):
+    """No sentence of a request after a cut plan claims a step that the record of that plan does not show as run: the request names
+    the steps that did not run, its closing ends at what the board shows, and the board shows the status of every kept step."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import NOT_RUN_CLOSING
+    assert request.endswith(NOT_RUN_CLOSING) and not re.search(r"\bran (step|steps|up to)\b", request), request[-1500:]
+    statuses = {n: s["status"] for n, s in enumerate(record["steps"], 1)}
+    table = _section(request, "## Last plan")
+    for n, step in enumerate(record["plan"]["steps"], 1):
+        assert re.search(rf"^\| {n} \| {step['kind']} \|.*\| {statuses.get(n, 'pending')} \|$", table, re.MULTILINE), (n, table)
+
+
+def _assert_the_cut_of_the_opening(plans, prompts):
+    """The third plan, the made-up opening followed by further steps, ran its opening and was cut at its first step after it: the
+    record names that step, the steps that did not run and the reasons, and the next planning request, the first after the profile,
+    names those steps with the reasons, says that the steps before them ran and asks for a plan from the board as it stands."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import NOT_RUN_CLOSING, NOT_RUN_HEADING
+    assert [p["source"] for p in plans[:3]] == ["no_plan_after_check_failure", "no_plan_after_parse_failure", "model_cut"], plans[:3]
+    cut = plans[2]
+    assert [s["kind"] for s in cut["plan"]["steps"]] == ["profile", "failure_modes", "fix_history"] and [s["status"] for s in cut["steps"]] == ["done"] * 3
+    assert cut["cut"]["step"] == 4 and cut["cut"]["steps"] == ["read", "diagnose", "finish"] and len(cut["cut"]["reasons"]) == 2
+    after = next(p for p in prompts if PLANNING_HEADING in p and "No profile read yet" not in p)
+    assert f"{NOT_RUN_HEADING}\nSteps 4 (read), 5 (diagnose) and 6 (finish) did not run, for these reasons:" in after
+    assert all(reason in after for reason in cut["cut"]["reasons"]) and after.endswith(NOT_RUN_CLOSING) and RETRY_HEADING not in after
+    _assert_no_claim_of_steps_that_did_not_run(after, cut)
+
+
+@pytest.mark.parametrize("server", [True, False])
+def test_before_the_profile_the_request_states_the_rule_that_the_check_refuses_by(server):
+    """Told equals done before the profile is read: the board line asks for the reads of the opening alone and leaves every other
+    step to the next request, the list of what the controller refuses states the exact rule, on both surfaces, and every refusal
+    of a made-up plan that reads the opening and goes on names the change first and its rule in the words of the board line."""
+    board = Board(noun="unit", question="q", server=server)
+    reasons = check_plan(parse_plan(MADE_UP_OPENING_AND_MORE, None), board)
+    assert [r.split(":", 1)[0] for r in reasons] == ["step 4 (read)", "step 5 (diagnose)"]
+    for surface in (None, AobSurface()):
+        request = planning_turn(board, None, surface=surface)
+        assert ("A plan made before the profile is read holds only the reads of the opening: profile first, then failure_modes and fix_history. "
+                "It lists no candidates. Plan every other step in the next request, once the profile is on the board.") in request
+        assert "before the profile is read, a step that is neither a read of the opening nor a finish, or a failure_modes step before the profile step;" in request
+        assert ("A plan made before the profile is read lists no candidates, since a candidate names levels of the profile, and the controller "
+                "keeps none that such a plan lists.") in request
+        assert "Before the profile is read this plan holds only the reads of the opening, and the next request asks for the rest." in request
+        assert "at most a finish" not in request  # the instruction offers no finish after the opening
+        for reason in reasons:
+            change, _since, rule = reason.split(": ", 1)[1].partition(", since ")
+            assert change == "leave this step out and plan it in the next request, once the profile is on the board", reason
+            assert rule and rule[0].upper() + rule[1:] in request, reason
+
+
+def test_the_board_shows_the_notes_on_one_line_before_and_after_the_profile():
+    """The controller's notes stand on the board before the profile is read in the line that the status of the board after it
+    holds, so a request before the profile names every plan refused so far."""
+    board = Board()
+    board.notes += ["Your plan of turn 1 was refused: one reason.", "Your plan of turn 2 could not be parsed: another reason."]
+    line = "Controller notes: Your plan of turn 1 was refused: one reason. Your plan of turn 2 could not be parsed: another reason."
+    assert board.render().endswith("\n" + line)
+    after = _synthetic_board()
+    after.notes = list(board.notes)
+    assert line in after.render().split("## Status", 1)[1]
+
+
+def test_before_the_profile_every_request_names_the_turns_refused_before_it(tmp_path):
+    """Before the profile is read the board shows the controller's notes as it does after it, so a model can see that it repeats a
+    refused plan: a made-up plan whose first step is refused and prose without JSON run nothing, the request after them names both,
+    and the made-up opening followed by further steps runs its opening and comes back from its first step after it, so the episode
+    plays to its finish on a development start. A plan cut at a step is no fallback."""
+    ep_dir, row, backend = _play(tmp_path, OpeningAfterTheNotes(act_now_reading_as_told), {}, development=True)
+    verdict = _assert_episode_files(ep_dir, row)
+    prompts = [c["prompt"] for c in backend.calls]
+    _assert_notes_of_every_earlier_turn(_requests_before_the_profile(prompts))
+    plans = read_json(ep_dir / "plans.json")
+    _assert_the_cut_of_the_opening(plans["plans"], prompts)
+    assert all(p["steps"] == [] and p["plan"]["steps"] == [] for p in plans["plans"][:2]) and verdict["end_reason"] == "finish"
+    assert row["fallbacks"] == sum(1 for p in plans["plans"] if p["source"].startswith("no_plan")) < len(plans["plans"])
+
+
+def test_through_the_driver_a_model_that_reads_the_board_leaves_the_opening_on_the_development_starts(tmp_path, monkeypatch):
+    """The path that ships: the driver's command on the base row of AssetOpsBench's servers with the CausalDiagnosis MCP, every
+    model call through a local endpoint that answers with the made-up replies before the profile and with the opening once the
+    board names every earlier turn, on the development starts that the start cap keeps, which cover every faulty level.
+    In every episode each request before the profile names every earlier turn, the opening runs from the plan that goes on after it
+    and its further steps come back with the reasons, and the episode plays to its finish."""
+    server, _requests = _planner_endpoint(OpeningAfterTheNotes(act_now_on_assetopsbench))
+    monkeypatch.setenv("API_KEY", "stand-in-key")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    base = f"http://127.0.0.1:{server.server_address[1]}/v1/"
+    try:
+        run_episodes.main(["--config", pinned_preset(tmp_path, "base"), "--servers", "aob", "--store", "memory", "--agent", "causal",
+                           "--model", "vendor/stand-in-1.0", "--base-url", base, "--seeds", "1", "--starts", "development", "--start-cap", str(_covering_cap()),
+                           "--out", str(tmp_path / "run")])
+    finally:
+        server.shutdown()
+    run_dir = next(p for p in (tmp_path / "run").iterdir() if p.is_dir())
+    import csv
+    with open(run_dir / "scores.csv", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert read_json(run_dir / "run.json")["starts"] == "development" and len(rows) == _covering_cap() and all(r["error"] == "" for r in rows), rows
+    for row in rows:
+        ep_dir = run_dir / f"seed{int(row['seed']):06d}"
+        prompts = [c["prompt"] for c in read_json(ep_dir / "llm_calls.json")]
+        _assert_notes_of_every_earlier_turn(_requests_before_the_profile(prompts))
+        _assert_the_cut_of_the_opening(read_json(ep_dir / "plans.json")["plans"], prompts)
+        assert read_json(ep_dir / HIDDEN / "verdict.json")["end_reason"] == "finish", row
+
+
+# made-up replies with heads and fields that are malformed or out of place, each written once with no profile and once after it
+ODD_PLANS = [
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": [{"levels": {"pump": 1}, "failure_mode_ids": []}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": [{"levels": {"fan": 1}}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": [{"levels": {"pump": "high"}}, {"levels": {"pump": [1]}}, {"levels": {"pump": {"x": 1}}}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": {"levels": {}}},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": ["pump"]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "candidates": [{"levels": {"pump": 1}, "failure_mode_ids": "fmea/x/y"}]},
+    {"mode": "test_first", "branch": "x", "steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "branch": 0, "steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "branch": True, "steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "branch": 99, "steps": [{"kind": "profile"}]},
+    {"mode": "declare", "steps": [{"kind": "profile"}]},
+    {"mode": 5, "steps": [{"kind": "profile"}]},
+    {"steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "why": 5, "steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "why": None, "steps": [{"kind": "profile"}]},
+    {"mode": "test_first", "steps": []},
+    {"mode": "test_first", "steps": "profile"},
+    {"mode": "test_first", "steps": [5]},
+    {"mode": "test_first", "steps": [{"kind": "read"}]},
+    {"mode": "test_first", "steps": [{"kind": "read", "args": {"sensor_group": 5, "cycles": 1}}]},
+    {"mode": "test_first", "steps": [{"kind": "read", "args": {"sensor_group": "tier1", "cycles": 1}, "expect": {"top_rank": "x"}}]},
+    {"mode": "test_first", "steps": [{"kind": "profile", "args": [1]}]},
+    {"mode": "test_first", "steps": [{"kind": "profile", "args": {"x": 1}, "expect": {"y": 2}, "evidence": ["obs/1/x"]}]},
+    {"mode": "test_first", "steps": [{"kind": "profile", "evidence": "obs/1/x"}]},
+    {"mode": "test_first", "steps": [{"kind": "profile", "evidence": [5]}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}, {"kind": "failure_modes", "args": {"component": 5}}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}, {"kind": "failure_modes", "args": {"component": "fan"}}]},
+    {"mode": "test_first", "steps": [{"kind": "finish"}, {"kind": "profile"}]},
+    {"mode": "test_first", "steps": [{"kind": "recall", "args": {"sensor_group": "tier1", "observations": [1, 2]}}]},
+    {"mode": "act_now", "steps": [{"kind": "order", "args": {"component": "pump+valve", "prediction_id": ["p"]}}]},
+    {"mode": "act_now", "steps": [{"kind": "order", "args": {"component": "pump+valve"}}, {"kind": "diagnose", "args": {"rank": "1"}}]},
+    {"mode": "test_first", "steps": [{"kind": "advance", "args": {"cycles": 2}}, {"kind": "time"}, {"kind": "extent"}]},
+    {"mode": "test_first", "steps": [{"kind": "profile"}], "differential": [{"component": "pump"}]},
+    {"plan": {"mode": "test_first", "steps": [{"kind": "profile"}]}},
+]
+
+
+class FixedReply(ScriptedPlanner):
+    """A stand-in model that answers every planning turn with one made-up reply, the turn before the profile included."""
+
+    def __init__(self, reply):
+        super().__init__(lambda prompt, call: reply)
+        self.reply = reply
+
+    def generate(self, prompt, temperature=0.0):
+        if PLANNING_HEADING in prompt:
+            self.prompts.append(prompt)
+            return self.reply
+        return super().generate(prompt, temperature)
+
+
+@pytest.mark.parametrize("profile_read", [False, True])
+@pytest.mark.parametrize("server", [True, False])
+def test_no_reply_raises_out_of_the_planning_call_before_or_after_the_profile(profile_read, server):
+    """The class, not the instance: a planning turn that receives a made-up reply whose head or step fields are malformed or out of
+    place, with no profile on the board and after it, with the diagnostics server and without it, never raises; the controller
+    either runs the plan or runs nothing and keeps the reasons, among them candidates before the profile, which no profile can
+    name yet."""
+    for reply in [json.dumps(p) for p in ODD_PLANS] + ["[1, 2, 3]", "{\"mode\": \"test_first\", \"steps\": [{\"kind\": \"profile\"}"]:
+        board = (_synthetic_board(read_first=False) if server else _synthetic_board_without_server()) if profile_read else Board(server=server)
+        loop_runner = controller.CausalLoopRunner(llm=FixedReply(reply), server_paths={RIG_SERVER: "unused", **({CAUSAL_SERVER: "unused"} if server else {})})
+        loop_runner.board, loop_runner.plans, loop_runner._retry, loop_runner._not_run, loop_runner._stood, loop_runner._schemas = board, [], None, None, None, {}
+        loop_runner.fallbacks = loop_runner.model_calls = loop_runner.revisions = 0
+        loop_runner.mode_of_first_plan = None
+        record = loop_runner._plan()
+        assert loop_runner._llm.prompts and (PLANNING_HEADING in loop_runner._llm.prompts[-1]), reply  # the made-up reply was the one planned on
+        assert record.source in ("model", "model_cut", "no_plan_after_parse_failure", "no_plan_after_check_failure"), (reply, record.source)
+        assert profile_read or board.model_candidates == [], (reply, board.model_candidates)  # no candidate is kept before the profile
+        assert (record.source == "model") == (not record.parse_errors and not record.check_problems), (reply, record)
+    refused = check_plan(parse_plan(json.dumps(ODD_PLANS[0]), None), Board())
+    assert refused == ["leave candidates out of a plan made before the profile is read, and list them in the next request, once the profile is on the board"]
+
+
+def test_the_candidates_of_a_plan_before_the_profile_are_set_aside_and_the_episode_plays_on(tmp_path):
+    """A made-up opening that lists candidates of its own runs before the profile is read with its candidates set aside, the next
+    request says in one sentence that they were not kept and asks for them again, the note stays until a plan lists candidates
+    again, and the episode plays to its finish on a development start, where before it the controller raised."""
+    listed = plan_json([{"kind": "profile"}, {"kind": "failure_modes", "args": {"component": ""}}, {"kind": "fix_history"}], mode="test_first")
+    candidates = [{"levels": {"pump": 1}, "failure_mode_ids": []}]
+    listed = json.dumps({**json.loads(listed), "candidates": candidates})
+    note = "The candidates of your plan of turn 1 were not kept, since no profile was on the board; list them again in your next plan."
+
+    class CandidatesFirst(ScriptedPlanner):
+        def generate(self, prompt, temperature=0.0):
+            if PLANNING_HEADING in prompt and "No profile read yet" in prompt and not NOTE_OF_A_TURN.search(prompt):
+                self.prompts.append(prompt)
+                return listed
+            reply = super().generate(prompt, temperature)
+            if PLANNING_HEADING in prompt and note in prompt:  # the first plan after the profile lists the candidates again
+                return json.dumps({**json.loads(reply), "candidates": candidates})
+            return reply
+    ep_dir, row, backend = _play(tmp_path, CandidatesFirst(act_now_reading_as_told), {}, development=True)
+    verdict = _assert_episode_files(ep_dir, row)
+    first = read_json(ep_dir / "plans.json")["plans"][0]
+    assert first["source"] == "model" and [s["status"] for s in first["steps"]] == ["done"] * 3 and not first["check_problems"]
+    after = [c["prompt"] for c in backend.calls if PLANNING_HEADING in c["prompt"] and "No profile read yet" not in c["prompt"]]
+    # the note speaks of the candidates, so it stays past the profile and leaves once a plan lists candidates again
+    retired = read_json(ep_dir / "plans.json")["board"]["retired_notes"]
+    assert after[0].count(note) == 1 and note not in after[1] and retired >= 1
+    assert "It lists no candidates." in backend.calls[0]["prompt"] and verdict["end_reason"] == "finish"
+
+
+def _limits_board(steps_left):
+    board = _synthetic_board(read_first=False)
+    board.status["steps_left"] = steps_left
+    return board
+
+
+# rows of the table of reasons, each a board, a plan that breaks the rule and the head of the reason, which names the change
+MENDED_REASONS = {
+    "opening": (Board, [Step("profile"), Step("read", {"sensor_group": "tier1", "cycles": 1})],
+                "step 2 (read): leave this step out and plan it in the next request, once the profile is on the board, since a plan made"),
+    "time or extent": (Board, [Step("profile"), Step("time")],
+                       "step 2 (time): leave this step out and plan it in the next request, once the profile is on the board, since the profile says"),
+    "failure modes first": (Board, [Step("failure_modes", {"component": ""}), Step("profile")],
+                            "step 1 (failure_modes): put the profile step before this step, since the profile names the components"),
+    "order of an unknown component": (lambda: _synthetic_board(read_first=False),
+                                      [Step("diagnose", {"rank": 1}, {"top_rank": 1}), Step("order", {"component": "fan", "prediction_id": "pred/b1"})],
+                                      "step 2 (order): unknown component 'fan', and the components are " + ", ".join(COMPONENTS)),
+    "budget": (lambda: _synthetic_board(read_first=False),
+               [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("read", {"sensor_group": "tier3", "cycles": 40})],
+               "step 2 (read): end the plan before this step or make the steps up to it cheaper, since the plan's prices"),
+    "horizon": (lambda: _synthetic_board(read_first=False), [Step("wait", {"cycles": 5}), Step("wait", {"cycles": 59}), Step("finish")],
+                "step 2 (wait): end the plan before this step or shorten the waits and reads up to it, since the plan reaches cycle"),
+    "step cap": (lambda: _limits_board(2), [Step("read", {"sensor_group": g, "cycles": 1}) for g in ("tier1", "tier2", "tier3")],
+                 "step 3 (read): end the plan before this step, since the plan needs 3 tool calls on the action server but 2 steps are left, and this step "
+                 "passes them"),
+    "second commitment": (lambda: _with(_synthetic_board(read_first=False), diagnosis={"diagnosis": dict(_synthetic_board().candidate(1)["combination"]),
+                                                                                       "evidence_ids": []}),
+                          [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("diagnose", {"rank": 2})],
+                          "step 2 (diagnose): leave this step out, since another commitment already stands"),
+    "open repair": (_open_order_board, [Step("read", {"sensor_group": "tier3", "cycles": 1}), Step("order", {"component": "pump", "prediction_id": "pred/b1"})],
+                    "step 2 (order): leave this step out, since the work order on the component pump"),
+    "a kind the row does not serve": (lambda: _with(_synthetic_board(read_first=False), unserved=frozenset({"declare"})),
+                                      [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("declare", {"sensor_group": "tier2", "cycles": 1})],
+                                      "step 2 (declare): leave this step out, since this row serves no declare step"),
+    "a kind the row does not need": (lambda: _synthetic_board(read_first=False), [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("time")],
+                                     "step 2 (time): leave this step out, since this row needs no time step"),
+    "a wait where no cycle passes": (lambda: _with(_synthetic_board(read_first=False), clock_runs=False),
+                                     [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("wait", {"cycles": 1})],
+                                     "step 2 (wait): leave this step out, since no cycle passes on this row"),
+    "a recall the run does not offer": (lambda: _with(_synthetic_board(read_first=False), recall_offered=False),
+                                        [Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("recall", {"sensor_group": "tier1", "observations": [1, 1]})],
+                                        "step 2 (recall): leave this step out, since this run offers no recall step"),
+    "a recall of rows that no compaction collapsed": (lambda: _synthetic_board(read_first=False),
+                                                      [Step("read", {"sensor_group": "tier1", "cycles": 1}),
+                                                       Step("recall", {"sensor_group": "tier1", "observations": [1, 1]})],
+                                                      "step 2 (recall): leave this step out, since no row of sensor group tier1 in observations 1 to 1"),
+}
+
+
+def _with(board, **fields):
+    """The board with these fields set."""
+    for name, value in fields.items():
+        setattr(board, name, value)
+    return board
+
+
+@pytest.mark.parametrize("row", sorted(MENDED_REASONS))
+def test_a_mended_reason_names_the_change_and_the_steps_before_its_step_pass(row):
+    """Each reason of these rows names the change first, and the steps before the step it names pass the check, so the reason points
+    at the step to change."""
+    board_of, steps, head = MENDED_REASONS[row]
+    reasons = check_plan(Plan(branch=1, mode="test_first", why="", steps=steps), board_of())
+    named = [r for r in reasons if r.startswith(head)]
+    assert len(named) == 1, (row, reasons)
+    step = int(named[0].split(" ", 2)[1])
+    assert step == 1 or check_plan(Plan(branch=1, mode="test_first", why="", steps=steps[:step - 1]), board_of()) == [], row
+
+
+# Every reason that the plan check, the parser and the reader of a reply can give, keyed by a fragment of its text in the code, with
+# the words in which the texts a model reads state its rule; None where a text states it by leaving out what the row or the run
+# does not offer, or where no text of the model can mend it.
+REASON_RULES = {
+    # plan/plan_check.py
+    "{plan_schema.OPENING_RULE}": "before the profile is read, a step that is neither a read of the opening nor a finish",
+    "since the profile says whether this row needs it": "in a plan after the profile is read",
+    "put the profile step before this step": "a failure_modes step before the profile step",
+    "candidate {i}: unknown component": "no candidate of yours with a component or a level that the profile does not hold",
+    "has the levels": "no candidate of yours with a component or a level that the profile does not hold",
+    "branch {plan.branch} is not among": "no step or branch with a rank outside the candidates shown",
+    "mode {plan.mode}: choose a mode among": None,  # the plan schema of such a row lists no such mode (prompts.WITHOUT_KIND)
+    "leave candidates out of a plan made before the profile is read": "and the controller keeps none that such a plan lists",
+    "{name}: leave this step out, since this row serves no": "no step of a kind this row does not serve",
+    "this row needs no": "no step of a kind this row does not serve or does not need",
+    "{name}: unknown component": "no step that names a component or a sensor group that the profile does not hold",
+    "unknown sensor group": "no step that names a component or a sensor group that the profile does not hold",
+    "a reading on this row needs the steps": "no reading before the steps this row needs first",
+    "expect.top_rank {rank} is not among": "no step or branch with a rank outside the candidates shown",
+    "no ranking exists yet": "no step or branch with a rank outside the candidates shown",
+    "no candidate exists yet": "no diagnosis without your candidates",
+    "rank {rank} is not among": "no step or branch with a rank outside your candidates",
+    "since another commitment already stands": "that differs from the commitment that stands",
+    "a declaration counts only when it cites a reading": "no declaration before a reading it can cite",
+    "must precede every work order": "no work order without a prior diagnosis or declaration",
+    "is still open at this step": "no work order on a component with an open order",
+    "passes on this row": "no wait where no clock runs",
+    "since this run offers no": None,  # with the recall step off the prompts name no recall (prompts.without_recall)
+    "so nothing would come back": "no recall of observations the board did not collapse",
+    "finish precedes the close of a work order": "no finish before the close of every work order",
+    "finish comes before the reading that verifies the repair": "and the reading that verifies the last order",
+    "exceed the budget left": "no plan that the budget, the horizon or the step cap cannot pay",
+    "ends at the horizon": "no plan that the budget, the horizon or the step cap cannot pay",
+    "steps are left": "no plan that the budget, the horizon or the step cap cannot pay",
+    # plan/reply_parser.py
+    "the JSON object of the plan is not complete": "return one JSON object",
+    "no JSON object was found in the reply": "return one JSON object",
+    "the plan needs a non empty list under steps": "with at least one",
+    "steps, at most {plan_length} are allowed": "and at most 6 entries under steps",
+    "once the joined components of its order steps are split": "a step that joins several names is split into one order per component",
+    "mode must be one of": '"mode": "test_first" | "act_now" | "repair_as_test" | "declare"',
+    "why must be a string": '"why": "<one line>"',
+    "must be an integer, got": '"cycles": <n, at least 1>',
+    "must be an integer of at least": '"cycles": <n, at least 1>',
+    "must lie between 0 and 1": "<probability>",
+    "must be a number between 0 and 1": "<probability>",
+    "must be a non empty string": '"sensor_group": <group>',
+    "is not an object": '"steps": [{"kind": ..., "args": {...}, "expect": {...}}',
+    "kind must be one of": "Step kinds.",
+    "args and expect must be objects": '"args": {...}, "expect": {...}',
+    "evidence must be a list of identifier strings": 'carries "evidence", a list of the identifiers from the board',
+    "finish must be the last step of the plan": "it is the last step of the plan",
+    "candidates must be a list": '"candidates": [{"levels": {"<component>": <level>, ...}, "failure_mode_ids": ["fmea/<source>/<code>", ...]}, ...]',
+    "needs levels, an object from component to level": '{"levels": {"<component>": <level>, ...}',
+    "failure_mode_ids must be a list of identifier strings": '"failure_mode_ids": ["fmea/<source>/<code>", ...]',
+    "expect.outside must be a list of channel names": 'expect {"outside": [<the channel',
+    "must be a finite number": None,  # a field of the rule's own plans (rule_controller.read_step), which no prompt offers
+    "must be an integer of at most": "an integer of at most 9007199254740991",
+    "the reply nests its lists and objects deeper than the controller can read": "return one JSON object",
+    "the reply could not be read": None,  # the last guard of the reader: a fault of the reader, which the records name with its class
+    "half of a surrogate pair, which no text holds alone": None,  # a character no text holds, which no prompt offers; the reason names the change
+    # controller.py
+    "the reply was cut at the token cap": None,  # the cap is the serving's, and the reason names the change
+    "observations must be [first, last]": '"observations": [<first>, <last>]',
+    "component must be a component name, or empty for every component": '"component": <a component, or "" for every component>',
+    "the reply needs a list under differential": '{"differential": [{"component": "<component>"',
+    "differential entry {i} needs a component": '{"differential": [{"component": "<component>"',
+    "differential entry {i}: failure_mode_ids must be a list of strings": '"failure_mode_ids": ["fmea/<source>/<code>", ...]',
+    # plan/standing.py: a step whose effect already stands, which the controller names with its reason and does not refuse
+    "which holds for the whole episode": "makes no call and does not stop the plan",
+    "and no time passes in this episode, so the answer cannot change": "makes no call and does not stop the plan",
+    "so the call would return nothing new": "is on the board makes no call and stands",
+    "is already {value}": None,  # clause state_holds, whose state write no surface of this agent declares, so no prompt offers it
+    "since the board already holds this commitment": "makes no call and does not stop the plan",
+}
+
+
+def _reason_texts(path):
+    """The text of every reason a module gives, read from its code: the argument of each problems.append, of each raise of
+    PlanError, the reason of each Refusal and each f-string that a function named for a problem returns, a value written in braces
+    as its expression, a module constant as its text and a (step, reason) as its reason; a reason handed on whole, as
+    problems.append(problem), is read where it is written."""
+    import ast
+
+    tree = ast.parse(Path(path).read_text(encoding="utf-8"))
+    constants = {target.id: node.value.value for node in tree.body if isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant)
+                 and isinstance(node.value.value, str) for target in node.targets if isinstance(target, ast.Name)}
+    functions = {node.name: node for node in tree.body if isinstance(node, ast.FunctionDef)}
+
+    def text(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
+        if isinstance(node, ast.Name) and node.id in constants:
+            return constants[node.id]
+        if isinstance(node, ast.Attribute) and ast.unparse(node.value) == "core_texts":  # a constant of the shared texts
+            return getattr(core_texts, node.attr)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "format":  # a constant with its slots
+            return text(node.func.value)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in functions:  # a reason a function of the module writes
+            return text([n for n in ast.walk(functions[node.func.id]) if isinstance(n, ast.Return)][-1].value)
+        if isinstance(node, ast.Tuple):  # (step, reason)
+            return text(node.elts[-1])
+        if isinstance(node, ast.JoinedStr):
+            return "".join(v.value if isinstance(v, ast.Constant) else text(v.value) for v in node.values)
+        return "{" + ast.unparse(node) + "}"
+    texts = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "append" and ast.unparse(node.func.value) == "problems":
+            texts.append(text(node.args[0]))
+        elif isinstance(node, ast.Raise) and isinstance(node.exc, ast.Call) and ast.unparse(node.exc.func).endswith("PlanError"):
+            texts.append(text(node.exc.args[0]))
+        elif isinstance(node, ast.Call) and ast.unparse(node.func).endswith("Refusal"):
+            texts += [text(keyword.value) for keyword in node.keywords if keyword.arg == "reason"] + [text(arg) for arg in node.args[:1]]
+        elif isinstance(node, ast.FunctionDef) and node.name.endswith("_problem"):
+            texts += [text(n.value) for n in ast.walk(node) if isinstance(n, ast.Return) and isinstance(n.value, ast.JoinedStr)]
+        elif isinstance(node, ast.Call) and ast.unparse(node.func) == "Standing":  # the reason of a standing step
+            texts.append(text(node.args[1]))
+    return [t for t in texts if not re.fullmatch(r"\{[^{}]*\}", t)]
+
+
+def test_every_reason_of_the_plan_check_and_the_parser_has_its_rule_in_the_texts_a_model_reads():
+    """The class, not the instance: every reason that plan_check.py and reply_parser.py can give and every refusal of the reader
+    in controller.py, read from their code, matches a row of REASON_RULES, no row is stale, and the texts that a model reads state the rule of every row in its words (the system
+    prompts with and without the server and with a count of steps, the prompt on AssetOpsBench's servers, the board before the
+    profile and the orientation), or leave out what the row or the run does not offer. A new reason fails here until its row and
+    its rule are written."""
+    package = Path(__file__).resolve().parents[1]
+    reasons = (_reason_texts(package / "plan" / "plan_check.py") + _reason_texts(package / "plan" / "reply_parser.py") + _reason_texts(package / "controller.py")
+               + _reason_texts(package / "plan" / "standing.py"))
+    assert len(reasons) > 40
+    unmatched = [r for r in reasons if not any(fragment in r for fragment in REASON_RULES)]
+    stale = [fragment for fragment in REASON_RULES if not any(fragment in r for r in reasons)]
+    assert not unmatched and not stale, (unmatched, stale)
+    missing = _rules_missing(_rule_texts())
+    assert not missing, missing
+
+
+def _rule_texts():
+    """The texts that a model reads, where the rule of every reason stands."""
+    return [system_prompt(None), system_prompt(None, server=False), system_prompt(6), system_prompt(None, AobSurface()), Board().render(),
+            orientation_turn("q", _synthetic_board().profile, [], None)]
+
+
+def _rules_missing(texts):
+    return {fragment: words for fragment, words in REASON_RULES.items() if words is not None and not any(words in t for t in texts)}
+
+
+@pytest.mark.parametrize("words", ["that differs from the commitment that stands", "is on the board makes no call and stands",
+                                   "makes no call and does not stop the plan"])
+def test_a_rule_of_a_standing_step_or_a_second_commitment_taken_out_of_the_texts_is_missed(words):
+    """The control of the test above for the sentences on a standing step and on a second commitment: the texts without one of them
+    leave its rows unmatched."""
+    assert not _rules_missing(_rule_texts())
+    assert words in set(_rules_missing([t.replace(words, "") for t in _rule_texts()]).values())
+
+
+# ----- a plan runs up to its first step that the controller cannot use -----
+
+PASSING_READ = {"kind": "read", "args": {"sensor_group": "tier1", "cycles": 1}, "expect": {}, "evidence": []}
+UNKNOWN_RANK = {"kind": "diagnose", "args": {"rank": 9}, "expect": {}, "evidence": []}
+# made-up replies, each the steps of a plan and its branch, with the source of the turn, the kinds of the steps that run and the
+# step at which the plan is cut
+CUT_ROWS = {
+    "a step that the check refuses after one that passes": ([PASSING_READ, UNKNOWN_RANK], 1, "model_cut", ["read"], 2),
+    "a first step that the check refuses": ([UNKNOWN_RANK, PASSING_READ], 1, "no_plan_after_check_failure", [], None),
+    "a plan that the budget cannot pay": ([PASSING_READ, {"kind": "read", "args": {"sensor_group": "tier3", "cycles": 40}, "expect": {}, "evidence": []}],
+                                          1, "no_plan_after_check_failure", [], None),
+    "a branch outside the candidates": ([PASSING_READ], 9, "no_plan_after_check_failure", [], None),
+    "a step that does not parse after one that does": ([PASSING_READ, {"kind": "check_the_repair"}], 1, "model_cut", ["read"], 2),
+    "a first step that does not parse": ([{"kind": "check_the_repair"}, PASSING_READ], 1, "no_plan_after_parse_failure", [], None),
+    "a finish with steps after it": ([PASSING_READ, {"kind": "finish"}, {"kind": "diagnose", "args": {"rank": 1}}], 1, "model_cut", ["read"], 2),
+    "a plan that passes": ([PASSING_READ], 1, "model", ["read"], None),
+}
+
+
+@pytest.mark.parametrize("row", sorted(CUT_ROWS))
+def test_a_plan_runs_up_to_its_first_step_that_the_controller_cannot_use(row):
+    """The rule for any plan and any reason, on one planning turn with a made-up reply: the steps before the first step that does
+    not parse or that the check refuses on its own run, while that step and the steps after it go to the record, the board's notes
+    and the next request with the reasons; a plan whose first step cannot be used, or that a reason on the whole of it refuses,
+    here the budget and the branch, runs nothing, as before. A cut plan is no fallback."""
+    steps, branch, source, kinds, cut = CUT_ROWS[row]
+    loop_runner = controller.CausalLoopRunner(llm=ScriptedPlanner(lambda prompt, call: plan_json(steps, mode="test_first", branch=branch)),
+                                              server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board = _synthetic_board(read_first=False)
+    loop_runner._retry = loop_runner._not_run = loop_runner._stood = None
+    loop_runner._schemas = {}
+    loop_runner.fallbacks = loop_runner.model_calls = 0
+    record = episode_result.PlanRecord(index=1, source="", plan={}, candidates=[])
+    plan, got = loop_runner._model_plan(record)
+    assert (got, [s.kind for s in plan.steps]) == (source, kinds), (row, record)
+    assert loop_runner.fallbacks == (0 if source.startswith("model") else 1), row
+    if cut is None:
+        assert record.cut is None and loop_runner._not_run is None and (source == "model") == (loop_runner._retry is None), row
+        return
+    left = [s["kind"] for s in steps[cut - 1:]]
+    assert record.cut == {"step": cut, "steps": left, "reasons": record.cut["reasons"]} and record.cut["reasons"] and loop_runner._retry is None
+    named = controller.named_steps(cut, left)
+    assert loop_runner._not_run.startswith(f"{named[0].upper()}{named[1:]} did not run, for these reasons:\n- " + record.cut["reasons"][0])
+    assert loop_runner.board.notes[-1].startswith(f"Your plan of turn 1 was cut before step {cut}, so {named} did not run: ")
+
+
+@pytest.mark.parametrize("server", [True, False])
+def test_a_plan_before_the_profile_runs_its_opening_with_its_candidates_set_aside(server):
+    """With the diagnostics server and without it, a made-up plan before the profile that reads the opening, goes on and lists
+    candidates of its own is cut after the opening and keeps no candidate, and the board says so in one note; the planning call
+    does not raise."""
+    reply = json.dumps({**json.loads(MADE_UP_OPENING_AND_MORE), "candidates": [{"levels": {"pump": 1}, "failure_mode_ids": []}]})
+    loop_runner = controller.CausalLoopRunner(llm=FixedReply(reply), server_paths={RIG_SERVER: "unused", **({CAUSAL_SERVER: "unused"} if server else {})})
+    loop_runner.board, loop_runner.plans, loop_runner._retry, loop_runner._not_run, loop_runner._stood, loop_runner._schemas = Board(server=server), [], None, None, None, {}
+    loop_runner.fallbacks = loop_runner.model_calls = loop_runner.revisions = 0
+    loop_runner.mode_of_first_plan = None
+    record = loop_runner._plan()
+    assert record.source == "model_cut" and [s["kind"] for s in record.plan["steps"]] == ["profile", "failure_modes", "fix_history"]
+    assert record.cut["step"] == 4 and loop_runner.board.model_candidates == [] and "candidates" not in record.plan
+    assert "The candidates of your plan of turn 1 were not kept, since no profile was on the board; list them again in your next plan." in loop_runner.board.notes
+
+
+def test_equal_notes_on_candidates_that_were_not_kept_stand_once_with_their_count():
+    """Two plans before the profile that list candidates leave one note on them, the latest, with the count of the earlier one,
+    as equal notes of plans stand; it stays past the profile, since it speaks of the candidates."""
+    reply = json.dumps({**json.loads(MADE_UP_OPENING_AND_MORE), "candidates": [{"levels": {"pump": 1}, "failure_mode_ids": []}]})
+    loop_runner = controller.CausalLoopRunner(llm=FixedReply(reply), server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board, loop_runner.plans, loop_runner._retry, loop_runner._not_run, loop_runner._stood, loop_runner._schemas = Board(), [], None, None, None, {}
+    loop_runner.fallbacks = loop_runner.model_calls = loop_runner.revisions = 0
+    loop_runner.mode_of_first_plan = None
+    for _turn in (1, 2):
+        loop_runner._plan()
+    kept = "The candidates of your plan of turn {} were not kept, since no profile was on the board; list them again in your next plan."
+    notes = [n for n in loop_runner.board.notes if "were not kept" in n]
+    assert notes == [kept.format(2) + core_texts.NOTE_REPEATED.format(count=1)], notes
+    loop_runner.board.set_profile(_synthetic_board().profile)
+    assert [n for n in loop_runner.board.notes if "were not kept" in n] == notes
+
+
+def test_after_a_cut_no_sentence_of_the_next_request_claims_a_step_that_did_not_run(tmp_path):
+    """The two cases of a cut plan after the profile: its kept steps all run, and a surprise stops them early. In both the next
+    request names the steps that did not run, closes on what the board shows, and claims no step that the record does not show as
+    run; in the second the step that the surprise kept from running stands pending in the table of the last plan."""
+    def kept(first_read_expect):
+        state = {"first": True}
+
+        def plans(prompt, call):
+            if state["first"]:
+                state["first"] = False
+                return plan_json([{"kind": "read", "args": {"sensor_group": "tier1", "cycles": 1}, "expect": first_read_expect, "evidence": []},
+                                  {"kind": "wait", "args": {"cycles": 1}, "expect": {"no_new_alarm": True}, "evidence": []},
+                                  dict(UNKNOWN_RANK)], mode="test_first")
+            return act_now_reading_as_told(prompt, call)
+        return plans
+    for case, expect, statuses in (("all run", {}, ["done", "done"]), ("surprise", {"top_rank": 1, "top_mass_at_least": 1.0}, ["surprise"])):
+        ep_dir, row, backend = _play(tmp_path / case.replace(" ", "_"), ScriptedPlanner(kept(expect)), {}, development=True)
+        record = next(p for p in read_json(ep_dir / "plans.json")["plans"] if p["source"] == "model_cut")
+        assert [s["status"] for s in record["steps"]] == statuses and record["cut"]["step"] == 3, (case, record["steps"])
+        after = next(c["prompt"] for c in backend.calls if PLANNING_HEADING in c["prompt"] and "### Steps of your previous plan" in c["prompt"])
+        assert "Step 3 (diagnose) did not run, for these reasons:" in after, case
+        _assert_no_claim_of_steps_that_did_not_run(after, record)
+        assert row["error"] == "", (case, row["error"])
+
+
+def test_each_reason_of_the_check_belongs_to_its_step_or_to_the_whole_plan():
+    """step_problems gives each reason the step it belongs to, and None to a reason on the plan as a whole, its candidates, its
+    branch, its mode and the fit to the budget, the horizon and the step cap, which also name the first step past the limit, so
+    that only a reason on one step cuts a plan."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import step_problems
+    board = _synthetic_board(read_first=False)
+    board.unserved, board.status["steps_left"] = frozenset({"declare"}), 2
+    plan = Plan(branch=9, mode="declare", why="", steps=[Step("read", {"sensor_group": "tier1", "cycles": 1}), Step("diagnose", {"rank": 9}),
+                                                          Step("wait", {"cycles": 59}), Step("read", {"sensor_group": "tier3", "cycles": 40})],
+                candidates=[{"levels": {"fan": 1}, "failure_mode_ids": []}])
+    owned = step_problems(plan, board)
+    whole = ("candidate 1: unknown component", "branch 9 is not among", "mode declare: choose a mode among", "exceed the budget left",
+             "ends at the horizon", "steps are left")
+    assert [step for step, reason in owned if "rank 9 is not among" in reason] == [2]
+    assert all(any(w in reason for w in whole) == (step is None) for step, reason in owned), owned
+    assert all(any(w in reason for _step, reason in owned) for w in whole)
+
+
+def test_the_parser_cuts_a_plan_at_its_first_step_that_does_not_parse_and_refuses_a_broken_head_whole():
+    """parse_usable_plan keeps the steps before the first step that does not parse, or before a finish with steps after it, and
+    names that step, the kinds written from it on and the reasons; a head, candidates or a count that do not parse refuse the
+    whole reply, as parse_plan refuses it."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import parse_usable_plan, plan_schema
+    plan, unusable = parse_usable_plan(MADE_UP_UNKNOWN_KIND, None)
+    assert [s.kind for s in plan.steps] == ["profile", "failure_modes", "fix_history"] and (unusable.step, unusable.kinds) == (4, ["check_the_repair", "finish"])
+    assert unusable.reasons == ["step 4: kind must be one of " + ", ".join(plan_schema.KINDS) + ", got 'check_the_repair'"]
+    zero = plan_json([dict(PASSING_READ), {"kind": "read", "args": {"sensor_group": "tier1", "cycles": 0}}, {"kind": "finish"}])
+    plan, unusable = parse_usable_plan(zero, None)
+    assert [s.kind for s in plan.steps] == ["read"] and unusable.reasons == ["step 2 (read): cycles must be an integer of at least 1, got 0"]
+    plan, unusable = parse_usable_plan(plan_json([dict(PASSING_READ), {"kind": "finish"}, {"kind": "read", "args": {"sensor_group": "x", "cycles": 0}}]), None)
+    assert [s.kind for s in plan.steps] == ["read"] and unusable.step == 2 and unusable.kinds == ["finish", "read"] and len(unusable.reasons) == 2
+    assert parse_usable_plan(plan_json([dict(PASSING_READ), {"kind": "finish"}]), None)[1] is None
+    for broken, error in (('{"mode": "wander", "steps": [{"kind": "finish"}]}', "mode must be one of"),
+                          (json.dumps({"mode": "act_now", "steps": [PASSING_READ], "candidates": {"levels": {}}}), "candidates must be a list"),
+                          (json.dumps({"mode": "act_now", "steps": [PASSING_READ, PASSING_READ]}), "at most 1 are allowed"), ("prose", "no JSON object")):
+        with pytest.raises(PlanError, match=error):
+            parse_usable_plan(broken, 1)
+
+
+# malformed replies, each with the source of the planning turn before the profile, the kinds of the steps that run, and the start
+# of the reason that the reader refuses it by, None where the reader returns the plan
+MALFORMED_REPLIES = {
+    "prose around the JSON object": (f"The profile comes first.\n{MADE_UP_UNKNOWN_KIND}\nThe repair is checked after the reads.",
+                                     "model_cut", ["profile", "failure_modes", "fix_history"], None),
+    "a JSON object that breaks off": (MADE_UP_OPENING_AND_MORE[:MADE_UP_OPENING_AND_MORE.index('"kind": "read"')], "no_plan_after_parse_failure", [],
+                                      "the JSON object of the plan is not complete ("),
+    "an empty reply": ("", "no_plan_after_parse_failure", [], NO_OBJECT),
+}
+
+
+@pytest.mark.parametrize("row", sorted(MALFORMED_REPLIES))
+def test_the_reader_takes_a_plan_out_of_prose_and_refuses_a_truncated_or_empty_reply_with_its_reason(row):
+    """The one way in for a planning reply (read_reply with parse_usable_plan) on three malformed forms: prose before and after the
+    JSON object leaves the plan as the object writes it, stopped at its first step that does not parse, while an object that the
+    reply breaks off and an empty reply are refused with the reason that names each, and none raises. Before the profile, the
+    planning call runs the opening of the plan in prose and nothing of the other two, whose reason it keeps."""
+    reply, source, kinds, reason = MALFORMED_REPLIES[row]
+    loop_runner = controller.CausalLoopRunner(llm=FixedReply(reply), server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board, loop_runner.plans, loop_runner._retry, loop_runner._not_run, loop_runner._stood, loop_runner._schemas = Board(server=True), [], None, None, None, {}
+    loop_runner.fallbacks = loop_runner.model_calls = loop_runner.revisions = 0
+    loop_runner.mode_of_first_plan = None
+    record = loop_runner._plan()
+    assert (record.source, [s["kind"] for s in record.plan["steps"]]) == (source, kinds), (row, record)
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import parse_usable_plan, plan_schema, read_reply
+    read = read_reply(parse_usable_plan, reply, None)
+    if reason is None:
+        plan, unusable = read
+        assert [s.kind for s in plan.steps] == kinds and (unusable.step, unusable.kinds) == (4, ["check_the_repair", "finish"]), (row, read)
+        return
+    assert isinstance(read, plan_schema.Refusal) and read.fault is None and read.reason.startswith(reason), (row, read)
+    assert record.parse_errors == [read.reason], (row, record.parse_errors)
+
+
+# ----- the reader of a reply is total: no reply makes the planning call raise -----
+
+# odd values that a generated reply writes at a position of the plan schema, as JSON text: a value of every JSON type, so that each
+# position also receives the types it does not take, empty values, huge integers and floats, NaN and the infinities as JSON and as
+# text, negatives, doubled signs, digits of other scripts, very long strings and nesting past the depth that the decoder follows
+ODD_VALUES = ('"x"', "5", "0.5", "true", "false", "null", "[]", "[1]", "{}", '{"x": 1}', '""', '"   "',
+              "1" + "0" * 400, "-1" + "0" * 400, "9" * 5_000, "9007199254740992", "1e308", "1e400", "-1e400", "NaN", "Infinity", "-Infinity",
+              '"NaN"', '"nan"', '"Infinity"', '"inf"', '"-inf"', '"1e400"', "-1", "-0.5", '"-1"', '"--5"', '"+-5"', '"++5"', "--5",
+              *(json.dumps(digit, ensure_ascii=False) for digit in ("²", "①", "٣", "５", "\U0001d7d3")),
+              json.dumps("a" * 100_000), json.dumps("9" * 5_000), "[" * 100_000 + "]" * 100_000, '{"a": ' * 5_000 + "1" + "}" * 5_000)
+# the forms of a key: in capitals, and written twice with an odd value last or first, of which the decoder keeps the last
+KEY_FORMS = (("capitals", None), ("odd_last", '"x"'), ("odd_first", '"x"'))
+
+
+def _plan_of_every_field(board):
+    """A made-up plan that writes every field of the plan schema once: the head, one candidate of the model's own and one step of
+    every kind with every argument and expectation that its kind reads, in the names of the profile once it is on the board."""
+    profile = board.profile or {}
+    component = (profile.get("components") or ["pump"])[0]
+    group = next(iter(profile.get("sensor_groups") or {"tier1": None}))
+    channel = ((profile.get("sensor_groups") or {}).get(group) or ["PS1"])[0]
+    level = ((profile.get("levels") or {}).get(component) or [1])[-1]
+
+    def step(kind, args=None, expect=None, evidence=None):
+        return {"kind": kind, "args": args or {}, "expect": expect or {}, "evidence": evidence or []}
+    return {"branch": 1, "mode": "test_first", "why": "made up", "candidates": [{"levels": {component: level}, "failure_mode_ids": ["fmea/made_up/1"]}],
+            "steps": [step("profile"), step("failure_modes", {"component": ""}), step("fix_history"), step("time"), step("extent"),
+                      step("read", {"sensor_group": group, "cycles": 1}, {"top_rank": 1, "top_mass_at_least": 0.5, "effective_at_most": 2.0,
+                                                                         "outside": [channel]}, ["obs/1/made_up"]),
+                      step("diagnose", {"rank": 1}, {"top_rank": 1}), step("declare", {"sensor_group": group, "cycles": 1}),
+                      step("order", {"component": component, "prediction_id": ESTIMATE}, {"prediction_id": ESTIMATE, "recovery_at_least": 0.5}),
+                      step("wait", {"cycles": 1}, {"no_new_alarm": True}), step("recall", {"sensor_group": group, "observations": [1, 2]}),
+                      step("finish")]}
+
+
+def _differential_of_every_field(board):
+    """A made-up differential that writes every field of the orientation's schema once."""
+    component = ((board.profile or {}).get("components") or ["pump"])[0]
+    return {"differential": [{"component": component, "expected_symptoms": "made up", "failure_mode_ids": ["fmea/made_up/1"]}]}
+
+
+def _positions(node, path=()):
+    """Every position of a JSON value as the path of keys and list indices that reaches it, the value itself first, each before
+    the positions it holds."""
+    yield path
+    for key, inner in (node.items() if isinstance(node, dict) else enumerate(node) if isinstance(node, list) else ()):
+        yield from _positions(inner, path + (key,))
+
+
+def _written(node, marks, path=()):
+    """The JSON text of a value with marks in place: a path mapped to JSON text is written as that text, and the key of a path
+    mapped to a form of KEY_FORMS is written in that form."""
+    if isinstance(marks.get(path), str):
+        return marks[path]
+    if isinstance(node, list):
+        return "[" + ", ".join(_written(inner, marks, path + (i,)) for i, inner in enumerate(node)) + "]"
+    if not isinstance(node, dict):
+        return json.dumps(node)
+    parts = []
+    for key, inner in node.items():
+        value, form = _written(inner, marks, path + (key,)), marks.get(path + (key,))
+        odd = form[1] if isinstance(form, tuple) else None
+        parts += ([f"{json.dumps(key.upper())}: {value}"] if form and form[0] == "capitals" else
+                  [f"{json.dumps(key)}: {value}", f"{json.dumps(key)}: {odd}"] if form and form[0] == "odd_last" else
+                  [f"{json.dumps(key)}: {odd}", f"{json.dumps(key)}: {value}"] if form and form[0] == "odd_first" else
+                  [f"{json.dumps(key)}: {value}"])
+    return "{" + ", ".join(parts) + "}"
+
+
+def _deepest_nesting():
+    """The deepest nesting of lists that the JSON decoder reads where it is called, found by bisection."""
+    low, high = 1, 1 << 17
+    while low < high:
+        middle = (low + high + 1) // 2
+        try:
+            json.loads("[" * middle + "]" * middle)
+            low = middle
+        except RecursionError:
+            high = middle - 1
+    return low
+
+
+def _generated_replies(template, deepest):
+    """The made-up replies of the generator, (name, text), produced one by one: every odd value at every position of the template
+    alone, a nesting of lists at each position at and just below the depth that the decoder reads (deepest) there, every key in
+    each form of KEY_FORMS, and every pair of positions of which neither holds the other, with odd values in turn."""
+    positions = list(_positions(template))
+    for path in positions:
+        near = ["[" * m + "]" * m for m in (deepest - len(path) - k for k in (0, 1, 2, 3, 5, 8)) if m > 0]
+        for value in (*ODD_VALUES, *near):
+            yield f"{path} = {value[:16]}", _written(template, {path: value})
+        if path and isinstance(path[-1], str):
+            for form in KEY_FORMS:
+                yield f"{path} {form[0]}", _written(template, {path: form})
+    apart = [(p, q) for i, p in enumerate(positions) for q in positions[i + 1:] if q[:len(p)] != p]
+    for j, (p, q) in enumerate(apart):
+        first, second = ODD_VALUES[j % len(ODD_VALUES)], ODD_VALUES[(7 * j + 3) % len(ODD_VALUES)]
+        yield f"{p} = {first[:16]} and {q} = {second[:16]}", _written(template, {p: first, q: second})
+
+
+class OneReply(ScriptedPlanner):
+    """A stand-in model that answers every request with one made-up reply, for a twin of the controller that makes one call."""
+
+    def __init__(self, reply):
+        super().__init__(act_now)
+        self.reply = reply
+
+    def generate(self, prompt, temperature=0.0):
+        return self.reply
+
+
+def _twin(runner, text):
+    """A twin of the controller that answers its one model call with text, on a copy of the board at this turn, with the surface, the
+    options and the servers that the driver gave the controller."""
+    import copy
+    twin = copy.copy(runner)
+    twin.board, twin.plans, twin.reader_faults, twin._llm = copy.deepcopy(runner.board), list(runner.plans), [], OneReply(text)
+    return twin
+
+
+def _hand_each(runner, replies, call):
+    """Hands each reply to one call of a twin of the controller (_twin), call the planning call (_plan) or the orientation call
+    (_orient) of the controller. Returns the count of replies and the faults: a reply whose call raised, that reached the last guard
+    of the reader, or whose turn ran nothing and kept no reason."""
+    count, faults = 0, []
+    for name, text in replies:
+        count += 1
+        twin = _twin(runner, text)
+        try:
+            record = call(twin)
+        except Exception as exc:  # noqa: BLE001 - what leaves the call is the finding
+            faults.append((name, f"{type(exc).__name__}: {str(exc)[:200]}"))
+            continue
+        silent = (record.source.startswith("no_plan") and not (record.parse_errors or record.check_problems) if record is not None
+                  else not twin._oriented and not twin._orient_retry)
+        if twin.reader_faults or silent:
+            faults.append((name, twin.reader_faults or "a turn that ran nothing without a reason"))
+    return count, faults
+
+
+class _Enough(Exception):
+    """Ends an episode of the generator once every call has had its replies."""
+
+
+def _covering_cap():
+    """The fewest development starts that --start-cap takes, those that cover every faulty level of the asset's development starts
+    (planned_episodes.capped_starts)."""
+    from CausalDiagnosis.datasets.splits.development_split import DEVELOPMENT_SEED, coverage_order, development_starts, faulty_levels
+    from CausalDiagnosis.experiments.episode_runners.run_episodes import play_one_episode
+    _facts, _cycles, blocks = load_world()
+    _name, config = load_config("static")
+    healthy = [config.healthy[c] for c in config.components]
+    starts = development_starts(play_one_episode.get_profile(config.asset_id), set(blocks))
+    return len(coverage_order(starts, lambda start: faulty_levels(start, healthy), DEVELOPMENT_SEED)[0])
+
+
+def _odd_replies_through_the_driver(tmp_path, monkeypatch, surface, server, replies=_generated_replies, hand=_hand_each, flags=()):
+    """One episode of the driver's command on a development start, on the hydraulic rig or on AssetOpsBench's servers, with or
+    without the diagnostics server, whose controller hands every made-up reply of replies (by default _generated_replies) to the
+    planning call of its first turn before the profile, to its orientation call and to the planning call of its first turn after the
+    orientation, each on a twin of the controller at that turn (by default _hand_each); the episode ends after the last of them, and
+    every later episode of the run at its first planning call. Returns {call: (count, faults)}."""
+    found = {}
+    plan, orient = controller.CausalLoopRunner._plan, controller.CausalLoopRunner._orient
+
+    def plan_on_each(self):
+        if len(found) == 3:
+            raise _Enough("every call had its replies")
+        when = "planning before the profile" if self.board.profile is None else "planning after the orientation" if self._oriented else None
+        if when is not None and when not in found:
+            found[when] = hand(self, replies(_plan_of_every_field(self.board), _deepest_nesting()), plan)
+            if len(found) == 3:
+                raise _Enough("every call had its replies")
+        return plan(self)
+
+    def orient_on_each(self):
+        if "orientation" not in found:
+            found["orientation"] = hand(self, replies(_differential_of_every_field(self.board), _deepest_nesting()), orient)
+        return orient(self)
+    monkeypatch.setattr(controller.CausalLoopRunner, "_plan", plan_on_each)
+    monkeypatch.setattr(controller.CausalLoopRunner, "_orient", orient_on_each)
+    endpoint, _requests = _planner_endpoint(ScriptedPlanner(act_now_on_assetopsbench if surface == "aob" else act_now))
+    monkeypatch.setenv("API_KEY", "stand-in-key")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    base = f"http://127.0.0.1:{endpoint.server_address[1]}/v1/"
+    row = ["--config", pinned_preset(tmp_path, "base"), "--servers", "aob", "--store", "memory"] if surface == "aob" else ["--config", "static"]
+    try:
+        run_episodes.main([*row, "--agent", "causal", "--model", "vendor/stand-in-1.0", "--base-url", base, "--seeds", "1", "--starts", "development",
+                           "--start-cap", str(_covering_cap()), "--out", str(tmp_path / "run"), *([] if server else ["--no-diagnostics"]), *flags])
+    finally:
+        endpoint.shutdown()
+    return found
+
+
+@pytest.mark.parametrize("structured", [True, False], ids=["schema", "noschema"])
+@pytest.mark.parametrize("surface", ["rig", "aob"])
+@pytest.mark.parametrize("server", [True, False])
+def test_no_odd_value_at_any_position_of_the_plan_schema_makes_the_planning_call_raise(tmp_path, monkeypatch, surface, server, structured):
+    """The reader of a reply is total by construction, and a generator shows it through the path that the driver takes: the
+    driver's command on the hydraulic rig and on AssetOpsBench's servers, with the diagnostics server and without it, hands every
+    generated reply, an odd value at every position of the plan schema and of the differential alone and in pairs, to the
+    planning call before the profile and after the orientation and to the orientation call. No call raises, the last guard of
+    the reader is reached by none of them, and every turn that runs nothing names its reasons."""
+    found = _odd_replies_through_the_driver(tmp_path, monkeypatch, surface, server, flags=() if structured else ("--causal-no-structured-output",))
+    assert sorted(found) == ["orientation", "planning after the orientation", "planning before the profile"], sorted(found)
+    faults = {call: f[:20] for call, (_count, f) in found.items() if f}
+    assert not faults, faults
+
+
+# a lone surrogate as a reply can hold it in a string: the JSON escape of a high and of a low half, the two halves of a pair in the
+# wrong order, and the raw character that the client of an endpoint hands over when the endpoint's JSON escapes one
+LONE_SURROGATE_FORMS = (json.dumps(chr(0xD83D))[1:-1], json.dumps(chr(0xDE00))[1:-1], json.dumps(chr(0xDE00) + chr(0xD83D))[1:-1], chr(0xD83D))
+WHOLE_PAIR = json.dumps(chr(0x1F600))[1:-1]  # both halves of a pair in their order, which write one character
+LONE_SURROGATE_REASON = "half of a surrogate pair, which no text holds alone"
+_FORM_MARK = "@form@"  # where a form goes in the JSON text of a template
+
+
+def _with_form(template, path, form, key=False):
+    """The JSON text of the template with form at path: in the key of path, after a string, or as a string in place of any other
+    value."""
+    import copy
+    node = copy.deepcopy(template)
+    parent = node
+    for step in path[:-1]:
+        parent = parent[step]
+    if key:
+        parent[path[-1] + _FORM_MARK] = parent.pop(path[-1])
+    else:
+        parent[path[-1]] = (parent[path[-1]] if isinstance(parent[path[-1]], str) else "") + _FORM_MARK
+    return json.dumps(node, ensure_ascii=False).replace(_FORM_MARK, form)
+
+
+def _lone_surrogate_replies(template, _deepest):
+    """The made-up replies (name, text) that hold each form of LONE_SURROGATE_FORMS, and the whole pair WHOLE_PAIR, at every
+    position of the template and in every key."""
+    for path in list(_positions(template))[1:]:
+        for form in (*LONE_SURROGATE_FORMS, WHOLE_PAIR):
+            written = "pair" if form == WHOLE_PAIR else f"lone {form!r}"
+            yield f"{path} = {written}", _with_form(template, path, form)
+            if isinstance(path[-1], str):
+                yield f"{path} key {written}", _with_form(template, path, form, key=True)
+
+
+def _not_utf8(*values):
+    """Whether any of the values, written as JSON text, holds a character that UTF-8 cannot encode."""
+    try:
+        json.dumps(values, ensure_ascii=False, default=str).encode("utf-8")
+    except UnicodeEncodeError:
+        return True
+    return False
+
+
+def _hand_each_lone_surrogate(runner, replies, call):
+    """Hands each reply to one call of a twin of the controller (_twin), as _hand_each does. Returns the count of replies and the
+    faults: a call that raised or reached the last guard of the reader, a reply with a lone surrogate that is not refused whole with
+    the reason that names it, a reply with the whole pair that is refused with that reason, and a turn that keeps text that UTF-8
+    cannot encode in its record, the board, its notes, the texts for the next requests or the next planning request."""
+    count, faults = 0, []
+    for name, text in replies:
+        count += 1
+        twin = _twin(runner, text)
+        try:
+            record = call(twin)
+        except Exception as exc:  # noqa: BLE001 - what leaves the call is the finding
+            faults.append((name, f"{type(exc).__name__}: {str(exc)[:200]}"))
+            continue
+        reasons = record.parse_errors if record is not None else [twin._orient_retry or ""]
+        named = any(LONE_SURROGATE_REASON in reason for reason in reasons)
+        whole = record.source == "no_plan_after_parse_failure" if record is not None else not twin._oriented
+        pair = name.endswith("pair")
+        if twin.reader_faults:
+            faults.append((name, twin.reader_faults))
+        elif pair and named:
+            faults.append((name, "refused with the reason of a lone surrogate", reasons[-1:]))
+        elif not pair and not (named and whole):
+            faults.append((name, "not refused whole with the reason that names the lone surrogate", reasons[-1:]))
+        kept = (dataclasses.asdict(record) if record is not None else None, twin.board.to_json(), twin.board.notes, twin._retry, twin._not_run,
+                twin._orient_retry, planning_turn(twin.board, twin.options.plan_length, retry=twin._retry, surface=twin.surface, not_run=twin._not_run))
+        if _not_utf8(*kept):
+            faults.append((name, "the turn keeps text that UTF-8 cannot encode"))
+    return count, faults
+
+
+@pytest.mark.parametrize("surface", ["rig", "aob"])
+@pytest.mark.parametrize("server", [True, False])
+def test_a_lone_surrogate_anywhere_in_a_reply_is_refused_whole_and_no_turn_keeps_one(tmp_path, monkeypatch, surface, server):
+    """A lone surrogate, which no UTF-8 text holds and which the requests, the tool calls and the files of an episode cannot encode,
+    is refused by the reader wherever a reply holds it. Through the driver's command, a reply with one of its forms at any position
+    or in any key of the plan schema and of the differential, handed to the planning call before the profile and after the
+    orientation and to the orientation call, is refused whole with the reason that names it, and the turn keeps nothing that UTF-8
+    cannot encode, while both halves of a pair in their order, which write one character, are no such reason."""
+    found = _odd_replies_through_the_driver(tmp_path, monkeypatch, surface, server, replies=_lone_surrogate_replies, hand=_hand_each_lone_surrogate)
+    assert sorted(found) == ["orientation", "planning after the orientation", "planning before the profile"], sorted(found)
+    faults = {call: f[:20] for call, (_count, f) in found.items() if f}
+    assert not faults, faults
+
+
+def test_a_summary_of_the_earlier_turns_with_a_lone_surrogate_is_kept_with_it_replaced_and_counted():
+    """The summaries of the model pass no reader: a lone surrogate that the client of an endpoint hands over in the summary of the
+    earlier turns is replaced by U+FFFD where the summary enters the controller, the count is kept with the number of its model call,
+    and the board that takes the summary and the next planning request encode in UTF-8."""
+    board = _synthetic_board()
+    entries = board.replaceable()
+    written = "earlier " + chr(0xD83D) + " turns " + chr(0xDE00)
+    runner = controller.CausalLoopRunner(llm=OneReply(written), server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    runner.board, runner.model_calls, runner._cut, runner.replaced_characters = board, 0, False, []
+    text, k = runner._summary_of_earlier_turns(board, entries)
+    assert text == "earlier " + chr(0xFFFD) + " turns " + chr(0xFFFD), ascii(text)
+    assert runner.replaced_characters == [{"model_call": 1, "summary": "earlier turns", "characters": 2}]
+    board.apply_summary(text, entries, k)
+    assert not _not_utf8(board.to_json(), planning_turn(board, None, surface=runner.surface))
+
+
+@pytest.mark.parametrize("surface", ["rig", "aob"])
+def test_a_closing_summary_with_a_lone_surrogate_ends_its_episode_with_it_replaced_and_counted(tmp_path, monkeypatch, surface):
+    """The closing summary passes no reader: a lone surrogate that the client of an endpoint hands over in it, which the finish call
+    and answer.txt cannot encode, is replaced by U+FFFD where the summary enters the controller. Through the driver's command on the
+    hydraulic rig and on AssetOpsBench's servers every episode ends at its finish without an error, answer.txt holds the summary with
+    the replacements, plans.json counts them with the number of the model call, and llm_calls.json keeps the endpoint's text."""
+    import csv
+    written = "The episode ended " + chr(0xD83D) + " here " + chr(0xDE00) + "."
+    planner = ScriptedPlanner(act_now_on_assetopsbench if surface == "aob" else act_now, summary=written)
+    endpoint, _requests = _planner_endpoint(planner)
+    monkeypatch.setenv("API_KEY", "stand-in-key")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    base = f"http://127.0.0.1:{endpoint.server_address[1]}/v1/"
+    preset = (["--config", pinned_preset(tmp_path, "base"), "--servers", "aob", "--store", "memory", "--starts", "development", "--start-cap", str(_covering_cap())]
+              if surface == "aob" else ["--config", "static"])
+    try:
+        run_episodes.main([*preset, "--agent", "causal", "--model", "vendor/stand-in-1.0", "--base-url", base, "--seeds", "1", "--out", str(tmp_path / "run")])
+    finally:
+        endpoint.shutdown()
+    run_dir = next(p for p in (tmp_path / "run").iterdir() if p.is_dir())
+    with open(run_dir / "scores.csv", newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert rows and [row["error"] for row in rows] == [""] * len(rows), [row["error"] for row in rows]
+    kept = written.replace(chr(0xD83D), chr(0xFFFD)).replace(chr(0xDE00), chr(0xFFFD))
+    for row in rows:
+        ep_dir = run_dir / f"seed{int(row['seed']):06d}"
+        calls = read_json(ep_dir / "llm_calls.json")
+        closing = [n for n, call in enumerate(calls, 1) if SUMMARY_HEADING in call["prompt"]]
+        assert closing and calls[closing[-1] - 1]["reply"] == written
+        assert read_json(ep_dir / "plans.json")["replaced_characters"] == [{"model_call": n, "summary": "closing", "characters": 2} for n in closing]
+        assert (ep_dir / "answer.txt").read_text(encoding="utf-8") == kept
+        assert read_json(ep_dir / HIDDEN / "verdict.json")["end_reason"] == "finish"
+
+
+def _first_reason(text):
+    """The reason that the parser gives for the first step that it cannot use, or for the reply as a whole."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import parse_usable_plan
+    try:
+        _plan, unusable = parse_usable_plan(text, None)
+    except PlanError as exc:
+        return str(exc)
+    return unusable.reasons[0] if unusable is not None else None
+
+
+def _odd_read(**fields):
+    return plan_json([{"kind": "read", "args": {"sensor_group": "tier1", "cycles": fields.pop("cycles", 1)}, "expect": fields, "evidence": []}])
+
+
+# the odd values that made the planning call raise before the reader was total, each with the reason that now names it
+NAMED_REASONS = {
+    "a kind written as a list": (plan_json([{"kind": ["profile"]}]), "step 1: kind must be one of read, "),
+    "a kind written as an object": (plan_json([{"kind": {"name": "profile"}}]), "step 1: kind must be one of read, "),
+    "a count with a doubled sign": (_odd_read(cycles="--5"), "step 1 (read): cycles must be an integer of at least 1, got '--5'"),
+    "a count in superscript digits": (_odd_read(cycles="²"), "step 1 (read): cycles must be an integer of at least 1, got '²'"),
+    "a count in circled digits": (_odd_read(cycles="①"), "step 1 (read): cycles must be an integer of at least 1, got '①'"),
+    "a rank with a doubled sign": (plan_json([{"kind": "diagnose", "args": {"rank": "--2"}}]), "step 1 (diagnose): rank must be an integer of at least 1, got '--2'"),
+    "a branch in superscript digits": (plan_json([{"kind": "profile"}], branch="²"), "branch must be an integer of at least 1, got '²'"),
+    "a count past the largest integer": (_odd_read(cycles=2 ** 53), "step 1 (read): cycles must be an integer of at most 9007199254740991, got 9007199254740992"),
+    "a count with more digits than int() converts": (_odd_read().replace('"cycles": 1', '"cycles": ' + "9" * 5_000),
+                                                      "step 1 (read): cycles must be an integer of at most 9007199254740991, got inf"),
+    "a probability written as a huge integer": (_odd_read(top_mass_at_least=10 ** 400), "step 1 (read): expect.top_mass_at_least must lie between 0 and 1, got 1000"),
+    "a recovery written as a huge integer": (plan_json([{"kind": "order", "args": {"component": "pump"}, "expect": {"recovery_at_least": 10 ** 400}}]),
+                                             "step 1 (order): expect.recovery_at_least must lie between 0 and 1, got 1000"),
+    "an effective count written as a huge integer": (_odd_read(effective_at_most=10 ** 400), "step 1 (read): expect.effective_at_most must be a finite number, got 1000"),
+    "an effective count written as NaN": (_odd_read(effective_at_most=math.nan), "step 1 (read): expect.effective_at_most must be a finite number, got nan"),
+    "lists nested past the decoder": ('{"mode": "test_first", "steps": [{"kind": "profile"}], "x": ' + "[" * 100_000 + "]" * 100_000 + "}",
+                                      "the reply nests its lists and objects deeper than the controller can read; return one JSON object"),
+}
+
+
+@pytest.mark.parametrize("row", sorted(NAMED_REASONS))
+def test_each_odd_value_that_raised_before_ends_in_a_reason_of_its_own(row):
+    """The classes that left the planning call as an exception, a kind that is no string, a count that str.isdigit takes and int()
+    refuses, a number past what a float holds and nesting past the decoder, each end in a reason of the parser that names what to
+    write, and none in the refusal of the last guard."""
+    text, head = NAMED_REASONS[row]
+    assert (_first_reason(text) or "").startswith(head), (row, (_first_reason(text) or "")[:300])
+
+
+def test_a_fault_of_the_reader_is_refused_by_its_last_guard_and_recorded_with_its_class(tmp_path, monkeypatch):
+    """The last guard of the reader: a fault planted in the parser of a step, an exception that no reply should cause, leaves no
+    planning call. The turn of the first decision runs nothing with the reason that the reply could not be read, plans.json names
+    the model call, the reader and the class of the exception under reader_faults, and the episode plays on to its finish."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import reply_parser
+    parse_step, planted = reply_parser.parse_step, []
+
+    def faulty(raw, index, components=()):
+        if not planted and isinstance(raw, dict) and raw.get("kind") not in (*OPENING_KINDS, "finish"):
+            planted.append(raw.get("kind"))
+            raise KeyError("a fault planted in the reader")
+        return parse_step(raw, index, components)
+    monkeypatch.setattr(reply_parser, "parse_step", faulty)
+    ep_dir, row, backend = _play(tmp_path, ScriptedPlanner(act_now_reading_as_told), {}, development=True)
+    verdict = _assert_episode_files(ep_dir, row)
+    plans = read_json(ep_dir / "plans.json")
+    refused = [p for p in plans["plans"] if p["parse_errors"] == ["the reply could not be read"]]
+    assert planted and len(refused) == 1 and refused[0]["source"] == "no_plan_after_parse_failure" and refused[0]["steps"] == []
+    planning_calls = [n for n, c in enumerate(backend.calls, 1) if PLANNING_HEADING in c["prompt"]]
+    assert plans["reader_faults"] == [{"model_call": planning_calls[refused[0]["index"] - 1], "reader": "parse_usable_plan", "fault": "KeyError"}]
+    assert row["error"] == "" and verdict["end_reason"] == "finish"
+
+
+def test_a_plan_without_a_usable_step_on_a_board_at_its_horizon_runs_nothing_and_raises_nothing():
+    """A reply whose first step does not parse leaves a plan without a step, which passes no limit by a step of its own: on a board
+    that has reached its horizon the check gives no reason of the limits, and the turn runs nothing with the reason of the parser."""
+    loop_runner = controller.CausalLoopRunner(llm=ScriptedPlanner(lambda prompt, call: plan_json([{"kind": "check_the_repair"}], mode="test_first")),
+                                              server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board = _synthetic_board(read_first=False)
+    loop_runner.board.status["time"] = loop_runner.board.horizon
+    loop_runner._retry = loop_runner._not_run = loop_runner._stood = None
+    loop_runner._schemas = {}
+    loop_runner.fallbacks = loop_runner.model_calls = 0
+    record = episode_result.PlanRecord(index=1, source="", plan={}, candidates=[])
+    plan, source = loop_runner._model_plan(record)
+    assert (source, plan.steps, record.check_problems) == ("no_plan_after_parse_failure", [], []), record
+    assert record.parse_errors and record.parse_errors[0].startswith("step 1: kind must be one of"), record.parse_errors

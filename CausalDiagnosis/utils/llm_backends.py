@@ -5,6 +5,7 @@ at every call, caps every reply at 2048 tokens, lets the SDK client retry a fail
 of a reply. EndpointChatBackend keeps that request shape and adds what a run of the benchmark needs:
 - an endpoint bound to the backend, so that an agent and a judge in one process never share an address;
 - request fields beyond the OpenAI ones (extra_body), such as SGLang's chat_template_kwargs, sent only when given;
+- the request field response_format of a call that binds its reply to a JSON schema, sent only with that call;
 - no reply cap of the harness: the engine gives the reply the rest of the context, and a reply that ends by length is checked
   against that room (CausalDiagnosis.utils.model_reply_room), read from the endpoint's model listing and tokenize route;
 - the engine's refusal of a prompt past the context raised as ContextEnd, the end of the context and never a failed attempt;
@@ -78,13 +79,16 @@ class EndpointChatBackend(OpenAICompatBackend):
         self.max_tokens, self._room, self.longest_reply = max_tokens, room, 0
         self.deadline = deadline
 
+    takes_response_format = True  # a call can bind its reply to a JSON schema (generate_with_usage)
+
     def _endpoint(self) -> tuple[str, str]:
         if self._base_url and self._api_key:
             return self._base_url, self._api_key
         creds = resolve_router_creds(self._model_id)  # strict: clear error if unset
         return creds.base_url, creds.api_key
 
-    def generate_with_usage(self, prompt: str, temperature: float = 0.0) -> ChatResult:
+    def generate_with_usage(self, prompt: str, temperature: float = 0.0, response_format: dict | None = None) -> ChatResult:
+        """One chat request; response_format, where given, is the request field that binds the reply to a JSON schema."""
         import httpx
         from openai import OpenAI
 
@@ -93,6 +97,7 @@ class EndpointChatBackend(OpenAICompatBackend):
                         timeout=httpx.Timeout(CLIENT_TIMEOUT_S, connect=CLIENT_CONNECT_TIMEOUT_S))
         extra = {"extra_body": self.extra_body} if self.extra_body else {}
         cap = {} if self.max_tokens is None else {"max_tokens": self.max_tokens}
+        bound = {} if response_format is None else {"response_format": response_format}
 
         def send(timeout):
             return client.chat.completions.create(
@@ -100,6 +105,7 @@ class EndpointChatBackend(OpenAICompatBackend):
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 **cap,
+                **bound,
                 **extra,
                 # None is a read without a bound inside an episode on a row without a wall limit (CausalDiagnosis.utils.model_request_retry.attempt_timeout),
                 # with the client's own connect timeout

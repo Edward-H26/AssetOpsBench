@@ -1,3 +1,4 @@
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import GUARD_COMMIT_FIRST
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import OPENING_KINDS
 
 
@@ -85,6 +86,10 @@ class Walk:
 
     def step(self, step, label):
         kind, status, note = step["kind"], step.get("status"), step.get("note") or ""
+        if (step.get("observed") or {}).get("stands"):  # a step whose effect already stood made no call of its own
+            if kind == "read" or kind in COMMIT_KINDS:
+                self.take("rank_root_causes", label)  # the ranking brought up to date where it was stale, as before a commitment
+            return
         if kind == "read":
             self.read(label, step)
         elif kind == "failure_modes" and not (step.get("args") or {}).get("component"):
@@ -96,7 +101,7 @@ class Walk:
             self.take("rank_root_causes", label)  # the guard ranks again when the ranking is not on the current evidence
             if status == "done" or "refused" in note:
                 self.take(self.tools[kind], label)
-        elif kind == "order" and not note.startswith("guard"):
+        elif kind == "order" and note != GUARD_COMMIT_FIRST:  # an order without a commitment before it calls nothing
             self.take("estimate_intervention_effect", label)
             if status == "done" or "refused" in note:
                 self.take(self.tools["order"], label)

@@ -8,9 +8,9 @@ EPISODE_OVER = "the episode is over"  # the start of the refusal every server an
 
 
 def json_object(text):
-    """The JSON object a text holds, or None."""
+    """The JSON object a text holds, or None, also for a text that nests deeper than the decoder follows."""
     try:
         value = json.loads(text) if text else None
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, RecursionError):
         return None
     return value if isinstance(value, dict) else None

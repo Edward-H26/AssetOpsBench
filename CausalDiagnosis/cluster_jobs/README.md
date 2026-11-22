@@ -236,7 +236,7 @@ A grid job plays the runs of its cut without the wall clock with `GRID_PARALLEL`
 | the rungs of the environment ladder above the first | `ladder` | 15 | 5 | 75 |
 | the four middle rungs of the environment ladder | `layers` | 12 | 5 | 60 |
 | the evaluation of the training table | `training` | 33 | 5 | 165 |
-| the ablations | `ablations` | 49 | 5 | 245 |
+| the ablations | `ablations` | 50 | 5 | 250 |
 | the optional pilot | `pilot` | 3 | 1 | 3 |
 | the optional development gate | `gate` | 2 | 1 | 2 |
 | the sampling of the training table | `sampling` | 102 | 1 | 102 |

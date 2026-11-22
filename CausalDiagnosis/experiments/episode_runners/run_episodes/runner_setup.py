@@ -135,6 +135,8 @@ def causal_options(a):
                "reads": "separating" if a.causal_e10_reads else "ec2" if a.causal_ec2_reads else "gain", "backtracking": not a.causal_no_backtrack,
                "parallel": not a.causal_sequential,
                "expectation_tolerance": a.causal_expectation_tolerance}
+    if a.causal_no_structured_output:  # recorded only where the run sets it, so the run.json of a run without the flag keeps its keys
+        options["structured_output"] = False
     return options
 
 

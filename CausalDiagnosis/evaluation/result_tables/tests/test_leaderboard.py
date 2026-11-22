@@ -37,7 +37,7 @@ LADDER_AGENTS = [PE_MCP, AAT_MCP, CD_MCP]
 BASE_POINTER = "the rows with the CausalDiagnosis MCP of the main table above"
 # the supporting ablations in the order of the leaderboard: the scoring method, the parts of the environment and of the
 # MCP, the small switches of layers 2, 3 and 5 under the ids of their layers, and the switches of the CausalDiagnosis agent
-PAPER_IDS = ["Sc3", "En4", "En5", "En6", "En7", "En9", "L1", "L2", "L3", "L5", *[f"Ag{i}" for i in (1, 2, 3, 7, 9)]]
+PAPER_IDS = ["Sc3", "En4", "En5", "En6", "En7", "En9", "L1", "L2", "L3", "L5", *[f"Ag{i}" for i in (1, 2, 3, 7, 9, 10)]]
 ARM_PRESETS = {"deterioration_thinking_off": ("L2", "the thinking time off"),
                "deterioration_thinking_price_double": ("L2", "the thinking time at twice its price"),
                "deterioration_thinking_price_half": ("L2", "the thinking time at half its price"),
@@ -272,7 +272,7 @@ def test_every_label_the_driver_writes_maps_and_any_other_stops_the_script(tmp_p
     labels = [run_episodes.agent_label_of("causal", "m", run_episodes.causal_options(parser.parse_args(["--agent", "causal", *flag]))) for flag in flags]
     left = {"causal_noexp_m", "causal_noback_m"}
     assert left <= set(labels)
-    assert sorted(leaderboard.framework_of(label, "m")[1][0] for label in labels if label not in left) == ["Ag1", "Ag2", "Ag3", "Ag7", "Ag7", "Ag9"]
+    assert sorted(leaderboard.framework_of(label, "m")[1][0] for label in labels if label not in left) == ["Ag1", "Ag10", "Ag2", "Ag3", "Ag7", "Ag7", "Ag9"]
     for label, problem in (("causal_rule_m", "switch 'rule'"), ("react_m", "unknown agent label"), ("causal_fast_m", "switch 'fast'"),
                            ("causal_noexp_m", "switch 'noexp'"), ("causal_noback_m", "switch 'noback'"),
                            ("causal_nobranch_single_m", "several switches")):

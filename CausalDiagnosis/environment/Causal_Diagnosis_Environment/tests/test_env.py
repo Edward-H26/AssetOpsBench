@@ -392,8 +392,9 @@ def test_malformed_and_out_of_order_actions_are_refused_without_charge_or_state_
     component = faulty_components(env.initial)[0]
     obs, cost, *_ = order(env, component)
     assert cost == env.config.order_price(component) + env.config.prices["visit"] and obs["result"]["work_order"]["status"] == "open"
+    close = obs["result"]["work_order"]["expected_close_t"]
     obs, cost, done, info = order(env, component)
-    assert info == {"refused": f"a work order on the {component} is open"} and cost == 0
+    assert info == {"refused": f"a work order on the {component} is open; it closes at cycle {close}"} and cost == 0
 
 
 def test_a_declaration_locks_the_diagnosis_and_leaves_reads_and_orders_allowed(make_env):

@@ -19,6 +19,7 @@ SWITCH_ARMS = {
              "of the MCP that the registered agent follows", "--causal-ec2-reads")),
     "Ag9": (("the schedule of candidate plans off, every read step alone with its own ranking, against the agent as released",
              "--causal-sequential"),),
+    "Ag10": (("structured output off, the planning and the orientation replies decoded without the JSON schema of their form, as the two reimplemented designs decode", "--causal-no-structured-output"),),
     "En5": (("the fixed confidence cut against the decision rule of the MCP", "--abstention-rule fixed_cut"),),
     "En6": (("the price table that prices the high fidelity group far above the rest", "--prices full_tier_high"),),
     "En7": (("guidance level 1 against the level 2 of the main comparison", "--guidance 1"),

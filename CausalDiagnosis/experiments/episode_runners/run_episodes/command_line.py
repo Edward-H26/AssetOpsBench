@@ -136,6 +136,9 @@ def build_parser():
     ap.add_argument("--causal-sequential", action="store_true",
                     help="causal agent: run every read step alone with a ranking after it and show no schedule of the candidate plans on the working memory, "
                          "the agent without the schedule of candidate plans (ablation Ag9)")
+    ap.add_argument("--causal-no-structured-output", action="store_true",
+                    help="causal agent: send the planning and the orientation requests without the JSON schema of their reply, so the engine "
+                         "decodes them unconstrained, as the two reimplemented designs decode (ablation Ag10)")
     ap.add_argument("--causal-expectation-tolerance", type=float, default=0.05, help="causal agent: a mass or a recovery this far below an expectation is not a surprise")
     ap.add_argument("--facts", default=None,
                     help="the data file of the asset (default: the file that the variable of its asset file names, else its release file)")

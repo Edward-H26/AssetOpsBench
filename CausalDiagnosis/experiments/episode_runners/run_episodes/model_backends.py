@@ -22,7 +22,7 @@ class RecordingBackend(LLMBackend):
     def generate(self, prompt, temperature=0.0):
         return self.generate_with_usage(prompt, temperature).text
 
-    def generate_with_usage(self, prompt, temperature=0.0):
+    def generate_with_usage(self, prompt, temperature=0.0, response_format=None):
         # the day of the call, which the served model's chat template prints into its system message, for rejection_sampling_examples.py
         # started_at and ended_at in wall time place the call between the tool calls of the episode
         call = {"prompt": prompt, "date": datetime.now().date().isoformat(), "started_at": time.time()}
@@ -44,6 +44,11 @@ class RecordingBackend(LLMBackend):
     @property
     def model_id(self):
         return self.inner.model_id
+
+    @property
+    def takes_response_format(self):
+        """Whether the inner route can bind a reply to a JSON schema, so that the causal runner sends one only where it is carried."""
+        return bool(getattr(self.inner, "takes_response_format", False))
 
     def request_settings(self, temperature=0.0):
         """The blocks decoding and transport of the inner route, at the temperature of a sampling run when it has one."""

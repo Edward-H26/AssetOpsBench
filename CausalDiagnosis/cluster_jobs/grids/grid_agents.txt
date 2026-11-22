@@ -83,6 +83,8 @@
 --config base --servers aob --store couchdb --agent causal --causal-single-hypothesis
 # Ag3, plan length one against no count, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
 --config base --servers aob --store couchdb --agent causal --causal-plan-length 1
+# Ag10, structured output off, the planning and the orientation replies decoded without the JSON schema of their form, as the two reimplemented designs decode, layer 0, CausalDiagnosis agent + CausalDiagnosis MCP
+--config base --servers aob --store couchdb --agent causal --causal-no-structured-output
 # Ag7, the agent's own read, the discriminating test of E10 from the long form of the reply, against the advice of the MCP that the registered agent follows, the priced layer, CausalDiagnosis agent + CausalDiagnosis MCP
 --config priced --servers aob --store couchdb --agent causal --causal-e10-reads
 # Ag7, the agent's own read, one step edge cutting over repair plan classes from the long form of the reply, against the advice of the MCP that the registered agent follows, the priced layer, CausalDiagnosis agent + CausalDiagnosis MCP

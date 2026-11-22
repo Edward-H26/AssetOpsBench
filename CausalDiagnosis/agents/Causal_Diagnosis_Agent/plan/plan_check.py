@@ -1,8 +1,29 @@
+from CausalDiagnosis.agents.utils import core_texts
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import ReadWalk, profile_level, visit_closes
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board.board import KIND_WORDS, commitment_text
 from . import plan_schema
+from .standing import Walked, commitment_of, planned_candidate, requests_of, standing, standing_commitment
 
 
-UNSERVED_NOUNS = {"declare": "declaration", "wait": "wait", "time": "time step"}  # a kind the row does not serve, as the plan check names it
+# the reasons for a step or a mode that the row or the run does not offer, each naming the change first; a reply that a schema bound
+# holds no such kind and no such mode, since the schema of a row leaves them out
+UNSERVED_STEP = "leave this step out, since this row serves no {step_name} step"
+UNSERVED_MODE = "choose a mode among {modes}, since this row serves no {step_name} step"
+UNNEEDED_STEP = "leave this step out, since this row needs no {step_name} step"
+NO_TIME_PASSES = "leave this step out, since no {time_unit} passes on this row"
+NOT_OFFERED = "leave this step out, since this run offers no {step_name} step"
+NOT_COLLAPSED = "leave this step out, since no row of {series} {name} in observations {first} to {last} was collapsed, so nothing would come back"
+
+
+def _joined_names(names, last="and"):
+    """Names joined by commas, the last two by last."""
+    names = list(names)
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + f" {last} {names[-1]}"
+
+
+def second_commitment(stands):
+    """The reason for a commit step that differs from the commitment that stands, (kind, value) as standing_commitment gives it."""
+    return core_texts.SECOND_COMMITMENT.format(commitment=commitment_text(*stands))
 
 
 def candidate_problems(candidates, profile):
@@ -18,16 +39,24 @@ def candidate_problems(candidates, profile):
 
 
 def _opening_problems(plan):
-    """The reasons to refuse a plan made before the profile is read: the board holds nothing about the asset yet, so the plan reads
-    the opening, the profile before what needs its names (the failure modes of a component), and the clock and the extent of
-    the record, which a surface needs or not as its profile says, only in a plan after it."""
+    """The reasons to refuse a plan made before the profile is read: the board holds nothing about the asset yet, so the plan holds
+    only the reads of the opening and at most a finish after them, the profile before what needs its names (the failure modes of a
+    component), and the clock and the extent of the record, which a surface needs or not as its profile says, only in a plan after
+    it, and its own candidates, which name levels of the profile, not at all. Each reason names the change first, in the words that
+    the board and the prompts state the rule in (plan_schema), and belongs to its step, as (step, reason), or to the plan as a
+    whole, as (None, reason)."""
     problems, profile_read = [], False
+    if plan.candidates:
+        problems.append((None, f"leave candidates out of a plan made before the profile is read, and list them {plan_schema.NEXT_REQUEST}"))
+    later = f"leave this step out and plan it {plan_schema.NEXT_REQUEST}"
     for i, step in enumerate(plan.steps, 1):
         name = f"step {i} ({step.kind})"
         if step.kind not in (*plan_schema.OPENING_KINDS, "finish"):
-            problems.append(f"{name}: the board holds no profile yet, so the plan reads the opening first: profile, then failure_modes and fix_history")
-        elif step.kind in ("time", "extent") or (step.kind == "failure_modes" and not profile_read):
-            problems.append(f"{name}: read the profile first, which names the components and the record")
+            problems.append((i, f"{name}: {later}, since {plan_schema.OPENING_RULE}"))
+        elif step.kind in ("time", "extent"):
+            problems.append((i, f"{name}: {later}, since the profile says whether this row needs it"))
+        elif step.kind == "failure_modes" and not profile_read:
+            problems.append((i, f"{name}: put the profile step before this step, since the profile names the components"))
         profile_read = profile_read or step.kind == "profile"
     return problems
 
@@ -50,19 +79,32 @@ def _verification_problem(name, board, tail, repaired, verified_by, fits):
 
 
 def check_plan(plan, board):
-    """The reasons the controller refuses a plan, or an empty list. The check keeps the rules that do not come
+    """The reasons the controller refuses a plan, or an empty list (step_problems)."""
+    return [reason for _step, reason in step_problems(plan, board)]
+
+
+def step_problems(plan, board):
+    """The reasons the controller refuses a plan, each as (step, reason): the step that the reason belongs to, or None for a
+    reason on the plan as a whole, its candidates, its branch and its mode and the fit to the budget, the horizon and the step
+    cap, so that a plan runs up to its first refused step (controller._model_plan). The check keeps the rules that do not come
     from the diagnostics server: the plan schema and what the environment would refuse, the fit to the budget, the horizon and
     the step cap, the declaration that cites a reading and the read that verifies a repair before finish.
-    The plan is walked on a copy of the clock. Before the profile is read it reads the opening. A reading waits
+    The plan is walked on a copy of the clock. Before the profile is read it holds only the reads of the opening, the profile
+    before the failure modes and no time or extent step, and at most a finish after them, and lists no candidates. A reading waits
     for the reads its surface needs first, a diagnosis names a candidate of the ranking or, without the server, of the model's
     own list, whose components and levels the profile holds, a diagnosis or a declaration precedes every order and a second one
     is refused, an order names a known component without an open order, finish comes after the close of every order and,
     wherever a cycle runs after a close and a read fits, after a read at or after the last close, and the prices, the cycles and
-    the tool calls fit the budget, the horizon and the step cap. Downtime is not simulated, since it depends on the hidden
-    state; the environment refuses an action the budget cannot pay."""
+    the tool calls fit the budget, the horizon and the step cap, a reason of those limits naming the first step after which the
+    walk passes it. Downtime is not simulated, since it depends on the hidden state; the environment refuses an action the budget
+    cannot pay."""
     if board.profile is None:
         return _opening_problems(plan)
-    problems = []
+    problems, owners = [], []  # the reasons in their order and the step each belongs to, None for the plan as a whole
+
+    def own(step):
+        """The reasons given since the last call belong to step."""
+        owners.extend([step] * (len(problems) - len(owners)))
     server = board.server
     profile = board.profile
     components = profile["components"]
@@ -92,23 +134,36 @@ def check_plan(plan, board):
     # component -> the cycle its open or planned order closes at (None where the board knows no close), for a second order on it
     open_until = {o["component"]: o.get("expected_close_t") for o in board.open_orders()}
     planned = []
+    totals = []  # the prices, the cycle and the tool calls of the walk before each step, then after the last
     if plan.branch is not None and candidates and plan.branch > len(candidates):
         problems.append(f"branch {plan.branch} is not among the {len(candidates)} {of}")
     if plan.mode in board.unserved:
-        problems.append(f"mode {plan.mode}: this row serves no {UNSERVED_NOUNS[plan.mode]}")
+        served = [mode for mode in plan_schema.MODES if mode not in board.unserved]
+        problems.append(f"mode {plan.mode}: {UNSERVED_MODE.format(modes=_joined_names(served), step_name=plan.mode)}")
+    own(None)
+    # what the walk has done before each step, so that a step stands in the walk exactly when it will stand when it is reached
+    walked = Walked(candidates=candidates)
     for i, step in enumerate(plan.steps, 1):
+        own(i - 1)  # a step may end early (continue), so its reasons are claimed when the next one begins
+        totals.append((money, time, calls))
         name = f"step {i} ({step.kind})"
+        given = len(problems)  # a step with a reason on its own form never stands
         joined, run = run, None  # every step but an order ends the run of orders
         if step.kind in board.unserved:
-            problems.append(f"{name}: this row serves no {UNSERVED_NOUNS[step.kind]}")
+            problems.append(f"{name}: {UNSERVED_STEP.format(step_name=step.kind)}")
         elif step.kind in plan_schema.OPENING_KINDS:
-            if step.kind in ("time", "extent") and step.kind not in board.required_opening:
-                problems.append(f"{name}: this row needs no {step.kind} step, its readings take their window without it")
+            if step.kind in plan_schema.SURFACE_KINDS and step.kind not in board.required_opening:
+                problems.append(f"{name}: {UNNEEDED_STEP.format(step_name=step.kind)}")
             component = step.args.get("component")
             if component and component not in components:
                 problems.append(f"{name}: unknown component {component!r}, and the components are {', '.join(components)}")
             opened.add(step.kind)
-            calls += len(components) if step.kind == "failure_modes" and not component else 1
+            requests = requests_of(step, board)
+            if len(problems) > given or standing(step, board, walked=walked) is None:
+                # a read whose answer holds for the episode calls only for the requests that nothing answered yet
+                fresh = [r for r in requests if not (board.holds_answer(step.kind, r) or [step.kind, r] in walked.answered)]
+                calls += len(fresh) if step.kind in plan_schema.EPISODE_KINDS else len(requests)
+            walked.answered += [[step.kind, r] for r in requests]
         elif step.kind == "read":
             group, cycles = step.args["sensor_group"], step.args["cycles"]
             if group not in groups:
@@ -117,19 +172,23 @@ def check_plan(plan, board):
             missing = [kind for kind in board.required_opening if kind not in opened]
             if missing:
                 problems.append(f"{name}: a reading on this row needs the steps {' and '.join(missing)} first, which give its window of the record")
+            rank = step.expect.get("top_rank")
+            if server and rank is not None and candidates and rank > len(candidates):
+                problems.append(f"{name}: expect.top_rank {rank} is not among the {len(candidates)} {of}")
             verifying = board.verifies(group, board.repaired(planned))
             # where no wait is served, a verifying read while a planned or open order has not closed in the record reads forward
             forward = bool(board.forward_read and verifying and (planned or board.open_orders() or any(c > time - 1 for c in closes() + unverified)))
             price, duration = walk.take(group, cycles, forward)
-            if verifying:  # a forward read verifies at its end, where its window has played the cycles to the close
-                verified_by = time + duration if board.forward_read else time
+            walked.new, walked.time = walk.new, time
+            stands = None if len(problems) > given else standing(step, board, walked=walked)
+            walked.new = walked.time = None
+            if stands is None:  # a standing read is no call, verifies no repair and gives a declaration nothing to cite
+                if verifying:  # a forward read verifies at its end, where its window has played the cycles to the close
+                    verified_by = time + duration if board.forward_read else time
+                calls += 1
+                read_before = True
             money += price
             time += duration
-            calls += 1
-            read_before = True
-            rank = step.expect.get("top_rank")
-            if server and rank is not None and candidates and rank > len(candidates):
-                problems.append(f"{name}: expect.top_rank {rank} is not among the {len(candidates)} {of}")
         elif step.kind == "diagnose":
             rank = step.args["rank"]
             if not candidates and server:
@@ -138,31 +197,31 @@ def check_plan(plan, board):
                 problems.append(f"{name}: no candidate exists yet, so list your candidates under candidates before the diagnosis")
             elif rank > len(candidates):
                 problems.append(f"{name}: rank {rank} is not among the {len(candidates)} {of}")
-            if committed:
-                problems.append(f"{name}: a diagnosis or a declaration was already made; the environment refuses a second one")
-            committed = True
-            calls += 1
+            if len(problems) > given or standing(step, board, walked=walked) is None:
+                _commit(step, board, walked, committed, planned_candidate(step, candidates), problems, name)
+                committed = True
+                calls += 1
         elif step.kind == "declare":
             group = step.args["sensor_group"]
             if group not in groups:
                 problems.append(f"{name}: unknown sensor group {group!r}; the groups are {', '.join(groups)}")
-            if not read_before:
-                problems.append(f"{name}: a declaration counts only when it cites a reading, and none exists yet; read first")
-            if committed:
-                problems.append(f"{name}: a diagnosis or a declaration was already made; the environment refuses a second one")
-            committed = True
-            calls += 1
+            if len(problems) > given or standing(step, board, walked=walked) is None:
+                if not read_before:
+                    problems.append(f"{name}: a declaration counts only when it cites a reading, and none exists yet; read first")
+                _commit(step, board, walked, committed, None, problems, name)
+                committed = True
+                calls += 1
         elif step.kind == "order":
             component = step.args["component"]
             if component not in components:
-                problems.append(f"{name}: unknown component {component!r}")
+                problems.append(f"{name}: unknown component {component!r}, and the components are {', '.join(components)}")
                 continue
             if not committed:
                 problems.append(f"{name}: a diagnosis or a declaration must precede every work order; none exists and no earlier step makes one")
             close = open_until.get(component, -1)
             if close is None or close > time:
-                problems.append(f"{name}: a work order on the {component} is still open at this step; the environment refuses an order on a "
-                                "component with an open order")
+                until = "" if close is None else core_texts.OPEN_REPAIR_UNTIL.format(**KIND_WORDS, close=close)
+                problems.append(f"{name}: {core_texts.OPEN_REPAIR.format(**KIND_WORDS, name=component)}{until}")
             planned.append(component)
             money += board.order_price(component)  # the reading that verifies the repair is a read step of its own
             if joined is None:
@@ -174,7 +233,7 @@ def check_plan(plan, board):
             calls += 1
         elif step.kind == "wait":
             if not board.clock_runs:
-                problems.append(f"{name}: no clock runs on this row, so no wait is possible")
+                problems.append(f"{name}: {NO_TIME_PASSES.format(**KIND_WORDS)}")
                 continue
             start = time
             time += board.wait_cycles(step.args["cycles"])
@@ -182,10 +241,14 @@ def check_plan(plan, board):
         elif step.kind == "recall":  # free: no call, no price, no cycle
             group, (first, last) = step.args["sensor_group"], step.args["observations"]
             if not board.recall_offered:
-                problems.append(f"{name}: this run offers no recall step")
+                problems.append(f"{name}: {NOT_OFFERED.format(step_name=step.kind)}")
             elif not board.recallable(group, first, last):
-                problems.append(f"{name}: no row of {group!r} in observations {first} to {last} was collapsed, so nothing comes back; "
-                                "the collapsed rows stand as summary rows under the evidence")
+                problems.append(f"{name}: {NOT_COLLAPSED.format(**KIND_WORDS, name=group, first=first, last=last)}")
+        elif step.kind in board.state_writes:  # a write of a public state, which no surface of this agent declares (standing)
+            if len(problems) > given or standing(step, board, walked=walked) is None:
+                calls += 1
+                state, value = board.state_writes[step.kind]
+                walked.states[state] = value
         elif step.kind == "finish":
             known = closes()
             late = [c for c in known if c > time]
@@ -203,11 +266,44 @@ def check_plan(plan, board):
                 if problem:
                     problems.append(problem)
             calls += 1
+    own(len(plan.steps))
+    totals.append((money, time, calls))
+    return list(zip(owners, problems)) + [(None, reason) for reason in _limit_problems(plan, board, totals)]
+
+
+def _commit(step, board, walked, committed, want, problems, name):
+    """A commit step of the walk that does not stand: where a commitment stands it differs, so it is refused as the environment would
+    refuse it, else it is the plan's commitment, which a later commit step of the plan is held against."""
+    if committed:
+        stands = standing_commitment(board, walked)
+        if stands is not None:  # an earlier commit step whose rank names no candidate states no commitment, and it cuts the plan already
+            problems.append(f"{name}: {second_commitment(stands)}")
+    else:
+        walked.commitment = commitment_of(step, board, want)
+
+
+def _limit_problems(plan, board, totals):
+    """The reasons of the budget left, the horizon and the steps left, which the plan as a whole passes or not: the walk only
+    grows, so it passes a limit exactly when it has passed it after its last step, and the reason names the first step after which
+    it has, totals[i] holding the prices, the cycle and the tool calls after step i. A plan without a step passes no limit by a step
+    of its own, so it gets no such reason, even on a board that has reached a limit."""
+    if not plan.steps:
+        return []
+
+    def first_past(index, passes):
+        """The name of the first step after which the walk's total at index, the prices, the cycle or the tool calls, passes a limit."""
+        at = next(i for i in range(1, len(totals)) if passes(totals[i][index]))
+        return f"step {at} ({plan.steps[at - 1].kind})"
+    money, time, calls = totals[-1]
+    problems, horizon = [], board.horizon
     if money > board.budget_left:
-        problems.append(f"the plan's prices ({money:g}) exceed the budget left ({board.budget_left:g})")
-    horizon = board.horizon
+        problems.append(f"{first_past(0, lambda spent: spent > board.budget_left)}: end the plan before this step or make the steps up to it "
+                        f"cheaper, since the plan's prices ({money:g}) exceed the budget left ({board.budget_left:g}) and pass it at this step")
     if time >= horizon:
-        problems.append(f"the plan reaches cycle {time} but the episode ends at the horizon of {horizon} cycles before finish can run")
+        problems.append(f"{first_past(1, lambda cycle: cycle >= horizon)}: end the plan before this step or shorten the waits and reads up to it, "
+                        f"since the plan reaches cycle {time} but the episode ends at the horizon of {horizon} cycles before finish can run, and "
+                        "this step reaches it")
     if calls > board.steps_left:
-        problems.append(f"the plan needs {calls} tool calls on the action server but {board.steps_left} steps are left")
+        problems.append(f"{first_past(2, lambda used: used > board.steps_left)}: end the plan before this step, since the plan needs {calls} tool "
+                        f"calls on the action server but {board.steps_left} steps are left, and this step passes them")
     return problems

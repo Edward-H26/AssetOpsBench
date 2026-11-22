@@ -9,7 +9,7 @@ usage, from the fork root with the fork's virtual environment first on PATH (the
       [--judge-base-url URL] [--judge-protocol single|paper] [--ranking-model joint_block|joint|discriminant_urn]
       [--abstention-rule decision|fixed_cut] [--abstention-cut P] [--no-grade] [--out CausalDiagnosis/results/runs]
       [--causal-no-branches] [--causal-single-hypothesis] [--causal-plan-length N] [--causal-no-expectations]
-      [--causal-expectation-tolerance T] [--causal-e10-reads] [--causal-no-backtrack] [--causal-sequential]
+      [--causal-expectation-tolerance T] [--causal-e10-reads] [--causal-no-backtrack] [--causal-sequential] [--causal-no-structured-output]
       [--training-variant as_released|gepa|gepa_score_only|ft|ft_gepa|ft_unfiltered] [--training-fold H] [--starts training --training-sample K]
       [--start-state LEVELS@OFFSET] [--scenario-ids ID/ID]
 
