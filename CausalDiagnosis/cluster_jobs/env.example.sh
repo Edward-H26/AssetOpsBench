@@ -55,6 +55,10 @@ EXCLUDE_NODES=${EXCLUDE_NODES:-}                      # the nodes no job may tak
 NODES_OF_RECORD=${NODES_OF_RECORD:-}                  # optional: the nodes whose digest check passed (check_nodes.sh); once set, a job of record takes only these
 GPU_OF_RECORD=${GPU_OF_RECORD:-}                      # optional: the card that every job with a card checks once set, its name exactly as nvidia-smi prints it
 GPU_MIB_OF_RECORD=${GPU_MIB_OF_RECORD:-}              # the memory.total of that card in MiB, as nvidia-smi prints it without the unit
+WANDB_BASE_URL=${WANDB_BASE_URL:-}                    # optional: the address of the API of Weights and Biases on which your account lives; empty: 4_after_run/tracking_export.sh sends nothing
+WANDB_ENTITY=${WANDB_ENTITY:-}                        # optional: your team or user on Weights and Biases, to which 4_after_run/tracking_export.sh sends; empty: it sends nothing
+WANDB_PROJECT=${WANDB_PROJECT:-causal-diagnosis}      # the project of the runs of record there, the only one that is ever opened
+WANDB_PROJECT_DEVELOPMENT=${WANDB_PROJECT_DEVELOPMENT:-causal-diagnosis-dev} # the project of the development runs, never opened; empty: they are kept back
 TABLES=${TABLES:-"CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/models.json CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/grades.json CausalDiagnosis/datasets/hyd_1/data/labels.json"}   # the generated tables, as paths of the tree
 # The judge must be another model than the agent, since the fork's evaluator refuses self judging. JUDGE_MODEL names the
 # judge by its Hugging Face id or its folder, served by a job of its own (run_judge.sh after the grid, the reflection model of

@@ -21,6 +21,7 @@ LEFT_OUT = {
     "mcp_servers/Causal_Diagnosis_MCP/launcher.py": "the launcher of the server of an episode, started as a copy beside its released evidence, while the drivers write launchers of their own",
     "mcp_servers/Environment_Actions_MCP/launcher.py": "the launcher of the server of an episode, started as a copy beside its state file, while the drivers write launchers of their own",
     "experiments/cluster_runs/engine_record.py": "the record of the serving engine, started by the function engine_record of cluster_jobs/2_serve_model/serve_model.sbatch",
+    "performance/tracking_client.py": "the client of the tracking export, started through uv by performance/tracking_export.py in an environment of its own",
 }
 FRAMEWORKS = "frameworks"  # a framework's programs reach the table through its declaration
 

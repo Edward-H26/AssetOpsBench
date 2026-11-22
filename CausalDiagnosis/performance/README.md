@@ -124,6 +124,82 @@ The profile reads the files that the driver and the servers already write, with 
 
 Every figure names the card, `gpu_name` and `gpu_mib` of the endpoint file that `run.json` records under `serving`; the dtype and the engine, the line `ENGINE_PRECISION` of the job's log and `engine_version`, `dtype`, `quantization` and `kv_cache_dtype` of the endpoint file; the launch flags, `SGLANG_EXTRA` of the job and `launch_args_sha256`; the runs in flight N of the client, `runs_in_flight`, and the context of the endpoint, `context_length`; the warm-up rule, which plays no warm-up episode, so that the start of the engine, with any warm-up of its own, and the opening call stand before the first line; the repetitions, the episodes and the runs of the cell; and the baseline it is compared with. The figures of the jobs below are figures of development runs, which describe the speed of the serving and of the harness on the named card and never stand for a result of the tables.
 
+## The tracking export to Weights and Biases
+
+The command `python -m CausalDiagnosis performance tracking-export <folder>` sends finished folders to Weights and Biases, one tracked run per folder, as one export after the runs and never as logging while a job plays: no job of the tree reaches the service while it plays, the key stays where the person logs in and never reaches a compute node, and an upload that fails changes no folder. A folder of the command is a run folder whose `ledger.json` records the status finished, the grid folder `grid_<job id>` of a cluster job, which stands for every run folder in it, or the folder of the checkpoints of one training, checkpoints/<adapter> in the training folder. A run that its ledger does not record finished may still play, and the command refuses it by name, also when it stands in a grid folder, so that the finished run folders of that grid folder are named one by one. The command writes into none of these folders.
+
+The dry run is the first thing to run. It prints the whole payload, the one record of what leaves the machine, every value as the JSON it is sent as, with the address of the service, the team or user and the project of every tracked run, and sends nothing, so that the payload is read before the first upload. A shell that leaves `WANDB_BASE_URL` empty, the address of the service's API on which the account lives, or `WANDB_ENTITY`, the team or user on the service, or whose two project variables name one project, prints the same payload and sends nothing, and the dry run names each such refusal. So does a shell in which the client finds no key. The export sends to no address that the person did not declare, the one that the pinned client would take by itself among them.
+
+```bash
+python -m CausalDiagnosis performance tracking-export --dry-run <run folder>
+python -m CausalDiagnosis performance tracking-export <run folder>
+```
+
+Each tracked run goes to the project of its own kind and to no other. `WANDB_PROJECT` names the project of the runs of record, `causal-diagnosis` in `env.example.sh`, and it is the only project that is ever opened, since an opened project shows every run in it. `WANDB_PROJECT_DEVELOPMENT` names the project of every other run, `causal-diagnosis-dev` in `env.example.sh`, which is never opened. Two names that differ in case alone name one project, which stops the export. The kind of a run comes from its own `ledger.json`: a run whose ledger records its start check without a reason is of record, and any other is a development run, whatever the shell says. A run whose project is not named is printed and kept back, so that a development run never reaches the project of record and a run of record never the project of the development runs. The address and the team or user are each person's own and stand nowhere in the tree.
+
+On the cluster the export runs in the login shell after `job_record.sh` of the job, through `$H/4_after_run/tracking_export.sh`, which reads the address, the team or user and the two projects from `env.sh`, the private settings of each person, runs the command with the Python of the lock of the tree and starts the client through the uv of `UV_BIN`. `--login` runs the login of the pinned client once for the declared address, which asks for the key and keeps it under the host of that address in the file .netrc of the home folder, or in the file that `NETRC` names, and `WANDB_API_KEY` in the environment serves as well. The login creates that file readable by its owner alone but keeps the mode of a file that exists, so the login and the export stop while the key file is open to group or others, until `chmod 600` closes it. The tree holds no key, no address and no name of a team, and the two project names of `env.example.sh` are defaults that each person's `env.sh` may change.
+
+```bash
+bash $H/4_after_run/job_record.sh <grid folder>
+bash $H/4_after_run/tracking_export.sh --login
+bash $H/4_after_run/tracking_export.sh --dry-run <grid folder>
+bash $H/4_after_run/tracking_export.sh <grid folder>
+```
+
+On a laptop the command runs from the fork root on the synced copy of the runs, with the four names in the environment and uv on PATH.
+
+```bash
+export PATH=$PWD/.venv/bin:$PATH PYTHONPATH=$PWD:$PWD/src
+export WANDB_BASE_URL=<address of the API> WANDB_ENTITY=<team or user>
+export WANDB_PROJECT=causal-diagnosis WANDB_PROJECT_DEVELOPMENT=causal-diagnosis-dev
+python -m CausalDiagnosis performance tracking-export --dry-run <run folder>
+```
+
+The client is no package of the tree. `CausalDiagnosis/performance/tracking_client.py` pins its one version in the inline header of the script, and uv builds an environment of its own for it from that header, beside the locked environments of the tree, whose lock files stay as they are, since the client asks for other versions of packages that the locks pin. The command hands the client the payload alone, and the client reads no folder. The command starts the client and its login with the variables that `client_environment` of `CausalDiagnosis/performance/tracking_export.py` lists and no other, so that no variable of the client that a shell holds, a sweep, a project, an id of a run, notes or tags among them, turns where or what it sends. It turns off the recorder of the client's own errors and metrics, WANDB_ERROR_REPORTING, which would send the paths of the client's files and the version of Python, and it puts the folders of the client's settings, cache and data into the temporary folder of the start, so that nothing of the client stays in the home folder and no record names a folder there. Once the client has opened a tracked run, it checks that the run stands under the id, in the project and with the team or user of its entry, the names compared without case, and stops the export otherwise before the configuration, the summary, the table or the history is sent. Its settings turn off what it would send by itself, and a test fails when one of them is dropped. What no setting stops, and what the client still sends with each tracked run, is its own version, the version of Python and the name of the platform.
+
+| Setting | What it keeps from the service |
+| --- | --- |
+| `base_url` | set to the declared address, so that the client never takes an address of its own |
+| `x_disable_meta` | the record of the machine: its host, the user, the working folder, the command line and the program |
+| `x_disable_machine_info` | the machine information, which also reads the repository and builds a job of the program |
+| `x_disable_stats` | the metrics of the machine while a tracked run is open |
+| `host` | set empty, so that the record of a tracked run names no host |
+| `disable_git` | the repository: its remote, its commit and its changes |
+| `disable_code`, `save_code` | the code of the program |
+| `x_save_requirements` | the list of the installed packages |
+| `console` | set off, the output of the process |
+| `disable_job_creation` | the job of the program, which records the program and its packages |
+
+`build_payload` of `CausalDiagnosis/performance/tracking_export.py` builds the payload, the one place that decides what leaves the machine, and every name it sends stands in the allow-list of that file, each by itself, so that a column or a figure that a writer adds leaves only once its name is written there. A run folder gives a configuration, a summary and one table, and a training folder a configuration, a summary and a history.
+
+| Part | What it holds |
+| --- | --- |
+| configuration of a run | the asset, the agent and its label, the preset, the clock mode, the model and the served name, the dtype, the engine and its version, the hash of the launch flags, the card and its memory, the runs in flight, the commit or the hash of the manifest of an upload, the kind of node where the ledger records its processor, the kind of the run, and the digest of the asset and the cell |
+| summary of a run | five sections: the profile of the run's own episodes (the episodes, those kept and left out, the failing and the checked episodes of every check, the sum, share and median of every stage, the GPU figures, the pass rate and the card-seconds held), the same over its cell with the rates of the jobs that played the cell alone, the card-seconds and both rates of its own job, the mean of every named outcome column of `scores.csv` whose cells are flags or numbers, and the sums of `wall_s`, `input_tokens`, `output_tokens` and `cached_tokens`, each over the episodes whose cell holds a number |
+| table of a run | one row per episode: its identity, every named quantity of the profile as a number, and every named outcome column of `scores.csv` that holds no JSON object or list |
+| configuration of a training | the batch size, the number of epochs, the step limit and the steps between two log lines, two checkpoints and two evaluations, from `trainer_state.json` of its latest checkpoint |
+| summary and history of a training | the global step and the epoch, and one row per logged step with its loss and epoch |
+
+The outcome columns that the export sends are the agent's own scores, named one by one in `CausalDiagnosis/performance/tracking_export.py`. The columns that give away a fact of the hidden state of an episode, of its scenario or of the oracle, alone or with a column that is sent, stay back, since a project on the service may be opened.
+
+| Column of `scores.csv` | Why it stays back |
+| --- | --- |
+| `n_faulty`, `graded_top1_n`, `graded_pass_n` | the counts of the faulty components of the episode |
+| `separable` | whether the faults of the scenario can be told apart, a fact of the scenario |
+| `cost_oracle` | the cost of the oracle's answer |
+| `cost_normalized` | `cost` over `cost_oracle`, which gives the oracle's cost back with `cost` |
+| `reward` | `cost_normalized` follows from it with the registered weights |
+| `commitment_on_inseparable`, `abstention_correct` | each is true on an inseparable start alone, so either gives the separability back |
+| `success` | `pass` or `abstention_correct`, so it gives the separability back with `pass` |
+| `failure_class` | two of its classes name an abstention on a separable start |
+| `graded_top1`, `graded_pass` | shares over the faulty components whose fractions give their counts back |
+
+A column or a figure that a later writer adds joins the payload by one name in the list of its kind in `CausalDiagnosis/performance/tracking_export.py`: a column of `scores.csv` in TABLE_SCORES for the table and in MEAN_SCORES for the means of a run, a column of the stage profile in TABLE_PROFILE, and a figure of the summary of a cell in RUN_PARTS, which the section of the cell holds as well. The test of the allow-list writes the lists again, so that a name added to the module alone fails it.
+
+Nothing else of a folder is read into the payload. Neither the hidden folder of an episode, with the hidden state, the oracle, the score and the verdict, nor any prompt or reply, text file of an episode or tool reply of `trajectory.json` reaches it, and neither `launch_private.json` nor `job.json`, the key file or the endpoint file of a serving job, a path, a host, a user name or a job id: the name of the grid folder, the notes of a job and the error cell of `scores.csv` stay back, and so do the cells of the start state and every cell that holds a JSON object or list. A test plants a marked string in each such file and in every field of a real `run.json` and ledger that no name of the allow-list reads, and a marked number in each column that stays back, and fails when the payload, the dry run or any value that a stand-in of the client is handed holds one.
+
+The id of the tracked run of a run folder is the SHA-256 of `run`, `label` and `started` of its `ledger.json`, which a job that takes the run up again keeps, and that of a training the SHA-256 of its folder name and of its `SOURCE.json`. The client takes up the tracked run of that id when it exists, so a folder exported again, from the cluster or from its synced copy, updates the same tracked run, and a history row of a step that the tracked run already holds is not sent again. A run is of record when its `ledger.json` records its start check without a reason, and a training when the manifest of its adapter, `training_manifest.json`, records no stamp, no smoke run and the registered split of the folds, each of the three present. Every other one is a development run. Every key of a summary, a table and a history stands under the kind, as in development/run/seconds/model_s/share, so that no chart of a result holds a value of a development run. The group of a tracked run is its kind with the digest of its asset and cell, and its tags name the kind, the asset, the card, the commit or the upload, the preset and the agent.
+
 ## The measurement jobs
 
 Every job below runs inside a serving job of the agent model with `RUN_AFTER_SERVE=$H/3_run/run_lines.sh`, plays a grid file of its own in `grids`, a file `grids/local_<name>.txt` that git ignores and that holds the lines shown, and is a development job. Each submit line starts with `RUN_KIND=development`, which the job reads, and which `submit.sh` reads as well, so that a job with a card is not held to `NODES_OF_RECORD`. A variable set before the command reaches the job, which is how `SGLANG_EXTRA`, with its spaces, reaches the launch of the model.

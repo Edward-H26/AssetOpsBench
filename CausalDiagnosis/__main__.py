@@ -93,6 +93,8 @@ COMMANDS = {
     },
     "performance": {
         "profile-table": ("performance.profile_table", "the stage profile of the episodes of run folders, per episode, cell and job"),
+        "tracking-export": ("performance.tracking_export",
+                            "send finished run folders and training folders to Weights and Biases, after a dry run that prints it all"),
     },
 }
 TABLES = P + "evaluation.result_tables.tables_from_runs"

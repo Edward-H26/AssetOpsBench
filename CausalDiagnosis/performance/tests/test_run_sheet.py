@@ -18,10 +18,12 @@ from CausalDiagnosis.experiments.episode_runners.run_episodes import command_lin
 from CausalDiagnosis.experiments.episode_runners.run_episodes.command_line import build_parser
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import STATE_FILE
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger
+from CausalDiagnosis.experiments.episode_runners.episode_launchers import LAUNCH_PRIVATE
 from CausalDiagnosis.experiments.run_verification.check_grid_complete import GRID, IN_FLIGHT, LLM_CALLS, SAMPLER
+from CausalDiagnosis.experiments.run_verification.public_record import PRIVATE_FILE
 from CausalDiagnosis.experiments.table_definitions import experiment_tables
 from CausalDiagnosis.mcp_servers.utils import transcript
-from CausalDiagnosis.performance import engine_export, jobs, profile_table, run_files, stage_profile
+from CausalDiagnosis.performance import engine_export, jobs, profile_table, run_files, stage_profile, tracking_export
 from CausalDiagnosis.utils.paths import CLUSTER_JOBS, PACKAGE, ROOT, preset_files
 
 SHEET = (PACKAGE / "performance" / "README.md").read_text(encoding="utf-8")
@@ -31,9 +33,10 @@ ENGINE_FLAGS = ("--enable-metrics", "--enable-request-time-stats-logging", "--ex
 # the options of sbatch on a submit line, which submit.sh passes on and the cluster scripts or their page name
 SLURM_OPTIONS = ("--gres", "--export")
 END_OF_OPTIONS = "--"  # the end of the options of submit.sh, after which the command of a CPU job follows
-# the files that a run, a grid job or the profile writes, by the constants of their writers
+# the files that a run, a grid job, the profile or a training writes, by the constants of their writers
 WRITTEN = {STATE_FILE, "scores.csv", run_files.RUN_FILE, ledger.LEDGER, LLM_CALLS, run_files.TRAJECTORY_FILE, transcript.NAME,
-           JOB_RECORD, IN_FLIGHT, profile_table.EPISODES_FILE, profile_table.CALLS_FILE, profile_table.CELLS_FILE}
+           JOB_RECORD, IN_FLIGHT, profile_table.EPISODES_FILE, profile_table.CALLS_FILE, profile_table.CELLS_FILE, LAUNCH_PRIVATE, PRIVATE_FILE,
+           tracking_export.TRAINER_STATE, tracking_export.SOURCE, tracking_export.ADAPTER_MANIFEST}
 SUFFIXES = (".sh", ".sbatch", ".py", ".json", ".jsonl", ".txt", ".csv", ".tsv", ".md")
 SETTINGS = ("env.sh", "env.example.sh")  # the settings file of a clone, which each person makes from its tracked template
 PLACEHOLDER = re.compile(r"<[^>]*>")
@@ -97,7 +100,7 @@ def defined_names(text):
 
 def unknown_names(text):
     """The names of a page that neither the tree, the flags of the engine, the files of its export nor the words of sbatch hold."""
-    options = set(build_parser()._option_string_actions) | set(profile_table.parser()._option_string_actions)
+    options = set().union(*(parser()._option_string_actions for parser in (build_parser, profile_table.parser, tracking_export.parser)))
     presets, unknown = set(preset_files()), []
     defined = defined_names(text)
     for piece in code_and_spans(text):

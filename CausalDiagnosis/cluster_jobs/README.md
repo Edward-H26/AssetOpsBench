@@ -290,7 +290,8 @@ git -C $H rev-parse HEAD
 | `3_run/train_lora.sbatch` | the LoRA fine tuning of one agent and fold on the filtered or the unfiltered examples, on one card |
 | `4_after_run/job_record.sh` | the accounting record of a finished job beside its runs |
 | `4_after_run/sync_runs.sh` | the copy of the run folders to a laptop, with hashes on both sides |
-| `grids/grid_agents.txt` | the 100 run lines of the main table, the healthy control, the companion row, the environment ladder and the ablations, then the rows of the full environment and of the ladder under the clock mode `generated_tokens`, the ablation L1, the misdiagnosis price at the budget, and last the three rows with the CausalDiagnosis MCP on the full environment, written by `grid_job_lists.py` |
+| `4_after_run/tracking_export.sh` | the export of finished runs to Weights and Biases in the login shell, its dry run first, with the address, the team or user and the two projects of `env.sh` |
+| `grids/grid_agents.txt` | the 107 run lines of the main table, the healthy control, the companion row, the environment ladder and the ablations, then the rows of the full environment and of the ladder under the clock mode `generated_tokens`, the ablation L1, the misdiagnosis price at the budget, the three rows with the CausalDiagnosis MCP on the full environment, and last the MCP follower on every rung of the environment ladder, written by `grid_job_lists.py` |
 | `grids/grid_pilot.txt` | the 3 run lines of the optional pilot of the thinking rate, written by `grid_job_lists.py` |
 | `grids/grid_gate.txt` | the 2 run lines of the optional development gate, written by `grid_job_lists.py` |
 | `grids/grid_training_sampling.txt` | the 102 run lines of the sampling of the training table, written by `grid_job_lists.py` |
