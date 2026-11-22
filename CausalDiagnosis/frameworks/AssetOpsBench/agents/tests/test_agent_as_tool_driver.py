@@ -96,7 +96,10 @@ def test_the_port_plays_the_base_row_and_is_recorded_with_the_columns_the_tables
     assert example["seed"] == 0 and example["n_faulty"] == sum(level != ok for level, ok in zip(example["levels"].values(), (100, 100, 0, 130)))
     shown = ", ".join(f"{c}={v}" for c, v in example["levels"].items())
     assert f"Action Input 1: {shown}, evidence_ids=" in ep.completions()[2]["prompt"]
-    assert block["decoding"] == {"temperature": 0.0, "max_tokens": 500, "min_tokens": 1, "no_stop_trim": True}
+    assert block["decoding"] == {"temperature": 0.0, "max_tokens": REPLY_ROOM, "min_tokens": 1, "no_stop_trim": True}
+    # the row lists the CausalDiagnosis MCP, so every request asks for the room its prompt leaves in the served context, recorded
+    assert meta["served"] == {"context_length": 131072, "cache_report": None} and meta["decoding"]["max_tokens"] == REPLY_ROOM
+    assert [b["max_tokens"] for b in ep.completions()] == [131072 - len(b["prompt"].split()) - 2 for b in ep.completions()]
     assert "react_steps" in COLUMNS and len(rows) == 1 and rows[0]["error"] == "", rows[0]
     row = rows[0]
     assert row["agent"] == f"agent_as_tool_{MODEL}" and row["end_reason"] == "finish" and row["react_steps"] == "4"
@@ -117,6 +120,10 @@ def test_without_the_diagnostics_server_the_supervisor_has_no_causal_diagnosis_s
               *step("I need to end the task.", END_TASK, "summary=nothing found")]
     _, rows, meta, ep = _play(tmp_path, monkeypatch, script, ["--config", "base", "--no-diagnostics"])
     assert meta["agent_as_tool"]["sub_agents"] == ["IoTAgent", "TaskAgent", "FMSRAgent", "WOAgent"]
+    # the paper's form: its step limits and 500 tokens on every request, and the served context recorded as on every run
+    block = meta["agent_as_tool"]
+    assert (block["form"], block["supervisor_max_steps"], block["decoding"]["max_tokens"]) == ("paper_era", 10, 500) and "no_call_steps" not in block
+    assert all(b["max_tokens"] == 500 for b in ep.completions()) and meta["served"] == {"context_length": 131072, "cache_report": None}
     prompt = ep.completions()[0]["prompt"]
     # the 23 examples, the line of the format that names the question, and the task's own question
     assert "CausalDiagnosisAgent" not in prompt and sum(1 for line in prompt.splitlines() if line.startswith("Question")) == 23 + 2
@@ -174,3 +181,41 @@ def test_agent_as_tool_without_an_api_key_is_refused(tmp_path, monkeypatch):
     with pytest.raises(SystemExit):
         run_episodes.main(["--config", "base", "--agent", "agent_as_tool", "--model", "m", "--base-url", "http://127.0.0.1:9/v1", "--seeds", "1",
                            "--out", str(tmp_path / "nokey")])
+
+
+
+@pytest.mark.parametrize("context_length, diagnostics, refused", [(32768, True, True), (49152, True, False), (32768, False, False)],
+                         ids=["with the MCP below 48k", "control: with the MCP at 48k", "control: without the MCP below 48k"])
+def test_a_row_with_the_mcp_refuses_a_served_context_below_48k_before_its_run_folder(tmp_path, monkeypatch, context_length, diagnostics, refused):
+    script = [*step("I should end the task.", "TaskAgent", "request=end the task with the summary nothing found"),
+              *step("I need to end the task.", END_TASK, "summary=nothing found")]
+    args = ["--config", "base", *([] if diagnostics else ["--no-diagnostics"])]
+    if refused:
+        with pytest.raises(SystemExit, match=f"needs a served context of at least {sub_agent_registry.SERVED_CONTEXT_MIN} tokens, and the "
+                                             f"endpoint serves a context of {context_length} tokens"):
+            _play(tmp_path, monkeypatch, script, args, context_length=context_length)
+        assert not (tmp_path / "out").exists() or not any((tmp_path / "out").iterdir())
+        return
+    _, rows, meta, _ = _play(tmp_path, monkeypatch, script, args, context_length=context_length)
+    assert rows[0]["end_reason"] == "finish" and meta["served"] == {"context_length": context_length, "cache_report": None}
+
+
+def test_the_served_record_and_the_refusal_read_the_context_that_the_endpoint_names():
+    """served_facts reads max_model_len of the model's card in the endpoint's listing, and None where the card names none or no
+    endpoint answers. A row with the CausalDiagnosis MCP refuses an unnamed context as it refuses one below 49152 tokens, and a row
+    without it is never refused, the control."""
+    from CausalDiagnosis.experiments.episode_runners.run_episodes import runner_setup
+    from CausalDiagnosis.utils import frameworks
+
+    with ScriptedEndpoint([], model=MODEL, cards=[{"id": MODEL, "object": "model"}]) as ep:
+        assert runner_setup.served_facts(ep.base_url, MODEL) == {"context_length": None, "cache_report": None}
+    with ScriptedEndpoint([], model=MODEL, context_length=sub_agent_registry.SERVED_CONTEXT_MIN) as ep:
+        assert runner_setup.served_facts(ep.base_url, MODEL) == {"context_length": sub_agent_registry.SERVED_CONTEXT_MIN, "cache_report": None}
+    assert runner_setup.served_facts("http://127.0.0.1:9/v1", MODEL) == runner_setup.served_facts(None, MODEL) == {"context_length": None, "cache_report": None}
+    with_mcp, without = ("iot", "fmsr", "wo", "task", "causal_diagnosis"), ("iot", "fmsr", "wo", "task")
+    for agent in ("agent_as_tool", "plan_execute"):
+        paper = frameworks.code("AGENTS", agent)
+        assert paper.served_refusal(with_mcp, {"context_length": None}).endswith("the endpoint names no context length")
+        assert paper.served_refusal(with_mcp, {"context_length": 49151}).endswith("the endpoint serves a context of 49151 tokens")
+        assert paper.served_refusal(with_mcp, {"context_length": 49152}) is None
+        assert all(paper.served_refusal(without, served) is None for served in ({"context_length": None}, {"context_length": 1024}, None))

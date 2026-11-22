@@ -22,6 +22,7 @@ from CausalDiagnosis.experiments.episode_runners.run_folder_layout import COLUMN
 from CausalDiagnosis.utils.csv_rows import as_bool
 from CausalDiagnosis.experiments.episode_runners.run_configuration import load_config
 from CausalDiagnosis.utils.json_files import read_json
+from CausalDiagnosis.utils import episode_trace
 from CausalDiagnosis.datasets.dataset_loader import recordings as records
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment import start_state_seeds as start_states
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, HEALTHY, build_blocks, default_facts_path, load_cycles
@@ -66,6 +67,31 @@ def test_the_recording_backend_keeps_the_wall_time_span_of_every_call_and_of_a_f
     assert [c["prompt"] for c in backend.calls] == ["first", "second"] and backend.calls[1]["error"] == "RuntimeError: down"
     assert all(before <= c["started_at"] <= c["ended_at"] <= after for c in backend.calls)
     assert backend.calls[0]["ended_at"] <= backend.calls[1]["started_at"]
+
+
+def test_the_recording_backend_keeps_the_cached_prompt_tokens_of_every_call_and_none_where_no_count_came_back():
+    """Every record of llm_calls.json holds cached_tokens: the count that the result of the inner backend carries, a zero
+    included. The controls: a result without one (the released LLMResult, a ChatResult whose reply reported none) and a call
+    that raised hold None, so a missing count is never written as a zero."""
+    from llm.base import LLMResult
+    from CausalDiagnosis.utils.llm_backends import ChatResult
+
+    results = [ChatResult(text="a", cached_tokens=9), ChatResult(text="b", cached_tokens=0), ChatResult(text="c"), LLMResult(text="d"),
+               RuntimeError("down")]
+
+    class Inner:
+        def generate_with_usage(self, prompt, temperature=0.0):
+            result = results.pop(0)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+    backend = run_episodes.RecordingBackend(Inner())
+    for prompt in "abcd":
+        backend.generate(prompt)
+    with pytest.raises(RuntimeError):
+        backend.generate("e")
+    assert [c["cached_tokens"] for c in backend.calls] == [9, 0, None, None, None] and backend.calls[-1]["error"] == "RuntimeError: down"
 
 
 def test_the_recording_backend_shows_the_context_readers_of_its_inner_backend_and_only_those_it_has():
@@ -540,10 +566,12 @@ def test_the_driver_refuses_models_fitted_on_another_data_file_than_the_run_read
     assert REFIT in str(refused.value) and records.file_sha256(changed) in str(refused.value) and not out.exists()
 
 
-def _stand_in_endpoint(fixed_reply=None):
+def _stand_in_endpoint(fixed_reply=None, cached=None, server_info=None):
     """A local OpenAI compatible endpoint that answers every chat completion with the next reply of the scripted plan
     (or with one fixed reply), so the model agents run through the real client, request and response path without a
-    model, and lists one model without a context length, as a router does, for the judge that reads its served context."""
+    model, and lists one model without a context length, as a router does, for the judge that reads its served context.
+    With cached, the usage of every answer reports that many cached prompt tokens, as SGLang does under --enable-cache-report, and
+    with server_info, GET /server_info at the root answers it."""
     script = scripted_wiring_check.ScriptedBackend()
     script.start_episode()
     requests = []
@@ -562,7 +590,8 @@ def _stand_in_endpoint(fixed_reply=None):
             requests.append((self.path, body))
             reply = {"id": f"stand-in-{len(requests)}", "object": "chat.completion", "created": int(time.time()), "model": body["model"],
                      "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": next_reply()}}],
-                     "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}}
+                     "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18,
+                               **({} if cached is None else {"prompt_tokens_details": {"cached_tokens": cached}})}}
             data = json.dumps(reply).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -572,8 +601,10 @@ def _stand_in_endpoint(fixed_reply=None):
 
         def do_GET(self):  # noqa: N802 - the http.server hook name
             listed = self.path.rstrip("/").endswith("/models")
-            data = json.dumps({"object": "list", "data": [{"id": "stand-in", "object": "model"}]} if listed else {}).encode()
-            self.send_response(200 if listed else 404)
+            informed = self.path == "/server_info" and server_info is not None
+            body = {"object": "list", "data": [{"id": "stand-in", "object": "model"}]} if listed else server_info if informed else {}
+            data = json.dumps(body).encode()
+            self.send_response(200 if listed or informed else 404)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
@@ -689,6 +720,29 @@ def test_the_static_request_names_the_probe_of_the_model_endpoint_so_a_dead_endp
     monkeypatch.setattr(run_episodes.model_backends, "router_backend", lambda model, base_url: live)
     _run_dir, rows, _meta = _run(args, tmp_path / "live")
     assert len(rows) == 1 and rows[0]["error"] == "" and rows[0]["llm_calls"] == "1" and live.sent == 2, rows
+
+
+def test_the_static_agent_records_the_cached_prompt_tokens_that_its_endpoint_reports_and_none_without_a_count(tmp_path, monkeypatch):
+    """Through the driver and the chat client, llm_calls.json holds the cached prompt tokens of the reply, 6 here, and the cell
+    cached_tokens of scores.csv their sum. The controls: the same run against an endpoint whose usage holds no details, as SGLang
+    answers a request that reused nothing, records None, never 0, and leaves the cell empty, while a server whose /server_info
+    states enable_cache_report, SGLang's rule of omitting a zero count, makes run.json served.cache_report true and the cell 0, and
+    run.json keeps no other value of that answer."""
+    monkeypatch.setenv("API_KEY", "stand-in-key")
+    monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
+    sglang = {"enable_cache_report": True, "api_key": "server-secret", "model_path": "/weights/stand-in"}  # pragma: allowlist secret
+    for cached, info, folder, cell, report in ((6, None, "reported", "6", None), (None, None, "unreported", "", None), (None, sglang, "omits_zero", "0", True)):
+        server, _requests = _stand_in_endpoint(fixed_reply=STATIC_REPLY, cached=cached, server_info=info)
+        try:
+            run_dir, rows, meta = _run(["--config", "static", "--agent", "static", "--model", "vendor/stand-in-1.0", "--base-url",
+                                        f"http://127.0.0.1:{server.server_address[1]}/v1/", "--seeds", "1", "--no-grade"], tmp_path / folder)
+        finally:
+            server.shutdown()
+        calls = read_json(run_dir / f"seed{int(rows[0]['seed']):06d}" / "llm_calls.json")
+        assert rows[0]["error"] == "" and [c["cached_tokens"] for c in calls] == [cached], (folder, calls)
+        assert episode_trace.records(run_dir / f"seed{int(rows[0]['seed']):06d}") == {"model_call": calls}  # the one call, also in the trace
+        assert rows[0]["cached_tokens"] == cell and meta["served"]["cache_report"] is report, (folder, rows[0]["cached_tokens"], meta["served"])
+        assert "server-secret" not in (run_dir / "run.json").read_text(encoding="utf-8") and "/weights/" not in (run_dir / "run.json").read_text(encoding="utf-8")
 
 
 def test_static_agent_answers_without_the_gym_and_is_judged_and_parsed(tmp_path, monkeypatch):

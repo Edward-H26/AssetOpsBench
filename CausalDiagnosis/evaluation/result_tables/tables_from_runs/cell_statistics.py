@@ -7,7 +7,7 @@ from CausalDiagnosis.experiments.episode_runners import run_configuration  # noq
 from CausalDiagnosis.experiments.table_definitions import training_variants as training  # noqa: E402  the folds of a split (fold_ids)
 from CausalDiagnosis.experiments.table_definitions import registered_analysis as registered  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions.training_variants import REGISTERED  # noqa: E402
-from CausalDiagnosis.evaluation.metrics.table_statistics import cluster_proportion, paired_cluster_bootstrap, sign_flip_p  # noqa: E402
+from CausalDiagnosis.evaluation.metrics.table_statistics import cluster_bootstrap, cluster_proportion, paired_cluster_bootstrap, ratio, sign_flip_p  # noqa: E402
 from CausalDiagnosis.evaluation.metrics.table_statistics import rounded as _r  # noqa: E402  the one rounding rule of a table cell, which mcp_metrics shares
 
 
@@ -258,6 +258,17 @@ def interval_cells(name, boot, ctx, estimate="estimate"):
     the estimate, its interval and its standard error, the last three empty below the registered smallest number of clusters."""
     cells = {name: _r(boot[estimate]), f"{name}_low": _r(boot["low"]), f"{name}_high": _r(boot["high"]), f"{name}_se": _r(boot.get("se"))}
     return blank_spread(cells, (f"{name}_low", f"{name}_high", f"{name}_se"), boot["clusters"], ctx)
+
+
+def ratio_of_sums(episodes, numerator, denominator, name, ctx):
+    """The sum of one metric over the sum of another across the episodes that hold both, as the cells of name with the interval
+    and the standard error of the bootstrap that resamples clusters (cluster_bootstrap of ratio), and name_n, the number of those
+    episodes: a total per counted episode when the denominator is a flag, a share when it is a total. Empty where the denominator
+    sums to zero."""
+    kept = [e for e in episodes if value(e, numerator) is not None and value(e, denominator) is not None]
+    boot = cluster_bootstrap([[value(e, numerator), value(e, denominator)] for e in kept], [cluster_of(e) for e in kept], ratio,
+                             ctx["resamples"], ctx["seed"])
+    return {**interval_cells(name, boot, ctx), f"{name}_n": len(kept)}
 
 
 def spread(episodes, metric):

@@ -119,6 +119,17 @@ def cut_replies(calls):
     return sum(1 for c in calls if c.get("finish_reason") == "length")
 
 
+def cached_tokens(calls, missing_is_zero):
+    """The cached prompt tokens of an episode's answered model calls, from the count that each record of llm_calls.json holds, or ""
+    when an answered call holds none and missing_is_zero is false. missing_is_zero is the server's cache report of the run (run.json
+    served.cache_report): SGLang under --enable-cache-report leaves the count out of a reply that reused no cached token, so there a
+    missing count is zero, and anywhere else it is unknown. A call without a reply adds nothing."""
+    answered = [c for c in calls if "reply" in c]
+    if not missing_is_zero and any(c.get("cached_tokens") is None for c in answered):
+        return ""
+    return sum(c.get("cached_tokens") or 0 for c in answered)
+
+
 def failed_calls(calls, tools):
     """The model calls that ended in an error after the retries of their client, the failed token counts of a port among them,
     and the tool calls that got no answer."""

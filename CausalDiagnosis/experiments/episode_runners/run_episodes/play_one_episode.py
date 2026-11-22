@@ -25,6 +25,7 @@ from CausalDiagnosis.utils.atomic_writes_and_locks import locked  # noqa: E402
 from CausalDiagnosis.utils.public_rules.visits import is_no_call  # noqa: E402
 from CausalDiagnosis.agents.utils import idle_hook as idle  # noqa: E402
 from CausalDiagnosis.utils import model_request_retry as retry  # noqa: E402
+from CausalDiagnosis.utils import episode_trace  # noqa: E402
 from CausalDiagnosis.mcp_servers.Environment_Actions_MCP import episode_state as episode  # noqa: E402
 from CausalDiagnosis.utils import frameworks  # noqa: E402
 from . import agent_kinds, reference_policy_episodes, episode_scoring, static_agent
@@ -171,7 +172,7 @@ class EpisodeRunner:
             write_server_baseline(ep_dir, launchers, self.server_threads)
             episode.hand_over(ep_dir / STATE_FILE)  # H, the origin of the thinking clock and of the wall limit, under the state lock
             wall = WallLimit(ep_dir / STATE_FILE)
-            with token_clock.episode(ep_dir), retry.episode_deadline(wall.deadline), idle.bound(self.no_call_entry(ep_dir)):
+            with token_clock.episode(ep_dir), retry.episode_deadline(wall.deadline), idle.bound(self.no_call_entry(ep_dir)), episode_trace.bound(ep_dir):
                 result, error, extra, calls, tools = self.run_agent(launchers, with_task_block(question, self.task_block), name, ep_dir, seed,
                                                                     episode_config)
             ended = time.time()
@@ -179,6 +180,8 @@ class EpisodeRunner:
             record.update(result=result, error=error, extra=extra, calls=calls, tools=tools, ended_wall=ended)
             if record["cache_flush"] is not None:
                 record["cache_flush"]["first_request_cached_tokens"] = retry.first_cached_tokens()
+                # a missing count reads as 0, which shows a clean cache only on a server that leaves a zero count out (run.json served)
+                record["cache_flush"]["cache_report"] = (self.served or {}).get("cache_report")
             update_state(ep_dir / STATE_FILE, episode_ended_at=ended,
                          **({} if record["cache_flush"] is None else {"cache_flush": record["cache_flush"]}))
         record["cut"] = failures.error_type(record["error"] or "") == harness_rule.WALL_LIMIT
@@ -361,7 +364,7 @@ class EpisodeRunner:
         row.update({k: v for k, v in standing["extra"].items() if k in BOOKKEEPING_COLUMNS})
         row.update({"finish_by": standing["finish_by"], "runner_end": standing["runner_end"], "wall_limit": int(standing["cut"]),
                     "error_class": error_class, "replays": len(attempts) - 1, "failed_calls": harness_rule.failed_calls(standing["calls"], standing["tools"]),
-                    "cut_replies": harness_rule.cut_replies(standing["calls"])})
+                    "cut_replies": harness_rule.cut_replies(standing["calls"]), "cached_tokens": harness_rule.cached_tokens(standing["calls"], (self.served or {}).get("cache_report"))})
         row.update(clock_cells(ep_dir / STATE_FILE, standing))
         if standing.get("cache_flush") is not None:
             row["server_cache_flushed"] = int(standing["cache_flush"].get("status") == 200)
@@ -388,7 +391,8 @@ class EpisodeRunner:
         row.update(episode_scoring.tool_counts(episode.load_state(ep_dir / STATE_FILE)))
         row.update({k: v for k, v in extra.items() if k in BOOKKEEPING_COLUMNS})
         row.update({"finish_by": "", "runner_end": "", "wall_limit": 0, "error_class": failures.AGENT if error else "", "replays": 0,
-                    "failed_calls": harness_rule.failed_calls(self.backend.calls, []), "cut_replies": harness_rule.cut_replies(self.backend.calls)})
+                    "failed_calls": harness_rule.failed_calls(self.backend.calls, []), "cut_replies": harness_rule.cut_replies(self.backend.calls),
+                    "cached_tokens": harness_rule.cached_tokens(self.backend.calls, (self.served or {}).get("cache_report"))})
         (ep_dir / "report.md").write_text(episode_report(ep_dir, meta), encoding="utf-8")
         return {k: flat(v) for k, v in row.items()}
 
@@ -404,7 +408,8 @@ class EpisodeRunner:
         self.backend.calls = []
         error, answer = None, ""
         try:
-            answer = self.backend.generate(prompt) or ""
+            with episode_trace.bound(ep_dir):  # the static agent plays no episode, so the trace is bound around its one call alone
+                answer = self.backend.generate(prompt) or ""
         except Exception as exc:  # noqa: BLE001 - a failed call is a result of the benchmark
             error = f"{type(exc).__name__}: {exc}"
         (ep_dir / "answer.txt").write_text(answer, encoding="utf-8")

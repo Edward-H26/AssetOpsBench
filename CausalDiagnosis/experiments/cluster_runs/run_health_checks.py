@@ -175,13 +175,16 @@ def episode_interval(ep_dir):
 
 def flush_problem(ep_dir):
     """Why the cache of the model server was not shown clean before one episode, None when it was: the record of the flush
-    (episode.json cache_flush, cache_flush.flush_before_episode) is missing, the flush did not answer 200, or the first model
-    request of the episode reused cached tokens (first_request_cached_tokens not 0, or not recorded)."""
+    (episode.json cache_flush, cache_flush.flush_before_episode) is missing, the flush did not answer 200, the server does not
+    report its cached tokens by SGLang's rule (cache_report not true), so that a reply without a count shows nothing, or the first
+    model request of the episode reused cached tokens (first_request_cached_tokens not 0, or not recorded)."""
     flush = (read_json(Path(ep_dir) / "episode.json", {}) or {}).get("cache_flush")
     if not flush:
         return "no record of the flush of the model server's cache before it"
     if flush.get("status") != 200:
         return f"the flush of the model server's cache answered {flush.get('status')}, not 200"
+    if flush.get("cache_report") is not True:
+        return f"the model server does not report its cached tokens (cache_report {flush.get('cache_report')}), so no reply shows the cache clean"
     if flush.get("first_request_cached_tokens") != 0:
         return f"its first model request reused {flush.get('first_request_cached_tokens')} cached tokens, not 0"
     return None

@@ -299,6 +299,8 @@ def test_an_agent_as_tool_episode_on_the_wall_clock_records_the_cached_tokens_of
 
         def do_GET(self):  # noqa: N802 - the http.server hook name
             seen.append(f"GET {self.path}")
+            if self.path == "/server_info":  # SGLang's server arguments, the cache report among them
+                return self._answer({"enable_cache_report": True, "api_key": "server-secret"})  # pragma: allowlist secret
             self._answer({"object": "list", "data": [{"id": model, "max_model_len": 100000}]})
 
         def do_POST(self):  # noqa: N802
@@ -336,3 +338,11 @@ def test_an_agent_as_tool_episode_on_the_wall_clock_records_the_cached_tokens_of
     first = next(i for i, request in enumerate(seen) if request.endswith("completions"))
     assert {"GET /v1/models", "POST /v1/tokenize"} <= set(seen[:first]) and len(seen) > first + 1, seen
     assert flush["first_request_cached_tokens"] == 0, (flush, seen[:first + 2])
+    # the flush record carries the server's cache report from run.json served, so the overlap check reads the first 0 as a clean
+    # cache; the control of a server without the report stands in test_run_checks_overlap.py
+    from CausalDiagnosis.experiments.cluster_runs import run_health_checks
+
+    assert flush["cache_report"] is True and run_health_checks.flush_problem(next(Path(run_dir).glob("seed*"))) is None, flush
+    # llm_calls.json holds the count of every completion as the endpoint sent it, the first completion's 0 and 5 after it
+    calls = json.loads(next(Path(run_dir).glob("seed*/llm_calls.json")).read_text(encoding="utf-8"))
+    assert len(calls) > 1 and [call["cached_tokens"] for call in calls] == [0] + [5] * (len(calls) - 1), calls

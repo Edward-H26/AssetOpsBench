@@ -49,6 +49,7 @@ from CausalDiagnosis.datasets.splits.development_split import development_starts
 from CausalDiagnosis.environment.reference_policies import diagnosability_label as separability  # noqa: E402
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import DEFAULT_ASSET  # noqa: E402
 from CausalDiagnosis.utils import model_failures
+from CausalDiagnosis.utils import episode_trace
 from CausalDiagnosis.mcp_servers.utils import transcript  # noqa: E402
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit, diagnosability_grade as grade  # noqa: E402
 from CausalDiagnosis.utils.public_rules.visits import is_no_call  # noqa: E402
@@ -64,6 +65,7 @@ from CausalDiagnosis.frameworks.AssetOpsBench.LLM_Judges.tests.test_episode_judg
 DEMO, BENCH = "demo_1", "bench_1"
 OUR_PORTS = Path(__file__).resolve().parent / "ports"  # bench_1, beside this file
 MODEL = "granite-stand-in"
+CACHED = 4  # the cached prompt tokens that the stand-in endpoints report on every model reply of the six rows
 END_TASK = react_tool_adapter.agent_name("finish")  # the name under which the agents see the task tool finish
 FINISH = {"kind": "finish", "args": {}, "expect": {}, "evidence": []}
 
@@ -163,8 +165,9 @@ def causal_reply(asset_id):
     return reply
 
 
-def chat_endpoint(reply):
-    """A local OpenAI compatible chat endpoint that answers the last message of every request with reply(text)."""
+def chat_endpoint(reply, cached=None):
+    """A local OpenAI compatible chat endpoint that answers the last message of every request with reply(text), with cached
+    prompt tokens in its usage when cached is given."""
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tests.test_causal_diagnosis_agent import answer_context_route
 
     class Handler(BaseHTTPRequestHandler):
@@ -178,7 +181,8 @@ def chat_endpoint(reply):
                 return
             answer = {"id": "planner", "object": "chat.completion", "created": int(time.time()), "model": body["model"],
                       "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": reply(body["messages"][-1]["content"])}}],
-                      "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18}}
+                      "usage": {"prompt_tokens": 11, "completion_tokens": 7, "total_tokens": 18,
+                                **({} if cached is None else {"prompt_tokens_details": {"cached_tokens": cached}})}}
             data = json.dumps(answer).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -194,18 +198,19 @@ def chat_endpoint(reply):
     return server
 
 
-def play(agent, args, monkeypatch, asset_id, mcp):
-    """run_episodes.main on args with the stand-in of the model of the agent, the run folder it returns."""
+def play(agent, args, monkeypatch, asset_id, mcp, cached=None):
+    """run_episodes.main on args with the stand-in of the model of the agent, which reports cached prompt tokens when cached is
+    given, the run folder it returns."""
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
     if agent == design.OURS:
-        server = chat_endpoint(causal_reply(asset_id))
+        server = chat_endpoint(causal_reply(asset_id), cached)
         try:
             return run_episodes.main([*args, "--model", "vendor/stand-in-1.0", "--base-url", f"http://127.0.0.1:{server.server_address[1]}/v1/"])
         finally:
             server.shutdown()
     script = (plan_execute_script if agent == design.PLAN_EXECUTE else agent_as_tool_script)(asset_id, mcp)
-    with ScriptedEndpoint(script, model=MODEL) as endpoint:
+    with ScriptedEndpoint(script, model=MODEL, cached=cached) as endpoint:
         return run_episodes.main([*args, "--model", MODEL, "--base-url", endpoint.base_url])
 
 
@@ -246,7 +251,9 @@ def test_the_six_rows_play_the_made_up_ports_or_stop_by_reason(mounted, tmp_path
     """Each of the six rows, the three agents without and with the CausalDiagnosis MCP, through run_episodes.main with --asset
     and one start. A row that cannot play the asset stops before any run folder exists, by its reason. A row that plays finishes
     its episode without an error, run.json and its data record name the asset and its records, every launcher finds the mounted
-    port, and every server of the run answers at least once with a name of the port and never with a name of hyd_1."""
+    port, every server of the run answers at least once with a name of the port and never with a name of hyd_1, every model
+    call of the row records the cached prompt tokens that its endpoint reports, and the trace of the episode holds its model calls
+    and plans as llm_calls.json and plans.json do."""
     agent, mcp, _label = row
     out = tmp_path / "runs"
     args = ["--config", "base", "--asset", asset_id, "--agent", agent, "--seeds", "1", "--store", "memory", "--out", str(out),
@@ -257,7 +264,7 @@ def test_the_six_rows_play_the_made_up_ports_or_stop_by_reason(mounted, tmp_path
             play(agent, args, monkeypatch, asset_id, mcp)
         assert not out.exists() or not any(out.iterdir())
         return
-    run_dir = play(agent, args, monkeypatch, asset_id, mcp)
+    run_dir = play(agent, args, monkeypatch, asset_id, mcp, cached=CACHED)
     rows, meta = read_rows(run_dir), read_json(run_dir / "run.json")
     assert len(rows) == 1 and rows[0]["error"] == "", rows[0]
     assert meta["asset_id"] == meta["config"]["asset_id"] == asset_id
@@ -265,6 +272,12 @@ def test_the_six_rows_play_the_made_up_ports_or_stop_by_reason(mounted, tmp_path
     assert meta["data"]["facts"] == ledger.sha256_of(facts)
     assert not {"labels", "grades"} & set(meta["data"]), meta["data"]  # the tables of hyd_1 belong to no run of another asset
     ep_dir = run_dir / "seed000000"
+    calls = read_json(ep_dir / "llm_calls.json")
+    assert calls and [call["cached_tokens"] for call in calls] == [CACHED] * len(calls), calls[:2]
+    assert rows[0]["cached_tokens"] == str(CACHED * sum(1 for call in calls if "reply" in call)), rows[0]["cached_tokens"]
+    # the trace of the episode, written while it played, holds every model call and every plan as the end files hold them
+    traced = episode_trace.records(ep_dir)
+    assert traced.get("model_call") == calls and traced.get("plan", []) == (read_json(ep_dir / "plans.json") or {}).get("plans", [])
     assert str(mounted) in json.loads((ep_dir / episode_launchers.LAUNCH_PRIVATE).read_text(encoding="utf-8"))["asset_folders"]
     for launcher in ep_dir.glob("*_server.py"):
         assert str(mounted) not in launcher.read_text(encoding="utf-8"), launcher.name  # the launcher names no path of the machine

@@ -151,10 +151,25 @@ def open_at(instant):
         return {"model_request_open": was_open("request"), "failed_span_open": was_open("wait")}
 
 
+def reported_cached_tokens(usage):
+    """The cached prompt tokens that the usage block of a reply reports in prompt_tokens_details.cached_tokens (an SDK object or
+    the JSON of the reply), and None when it reports no count: no usage, no details or no cached_tokens. None is no zero, since
+    SGLang leaves the details out of a reply that reused no cached token under --enable-cache-report and out of every reply
+    without that flag, and vLLM out of every reply without --enable-prompt-tokens-details. llm_calls.json records it for every
+    model call."""
+    if usage is None:
+        return None
+    details = usage.get("prompt_tokens_details") if isinstance(usage, dict) else getattr(usage, "prompt_tokens_details", None)
+    if details is None:
+        return None
+    cached = details.get("cached_tokens") if isinstance(details, dict) else getattr(details, "cached_tokens", None)
+    return None if cached is None else int(cached)
+
+
 def reply_cached_tokens(outcome):
-    """The cached prompt tokens an answered request reports in usage.prompt_tokens_details.cached_tokens (an SDK object or the
-    JSON of an httpx response): 0 when the usage holds no details, as SGLang with --enable-cache-report answers a request that
-    reused nothing, None when the reply holds no usage."""
+    """The cached prompt tokens an answered request reports (reported_cached_tokens of an SDK object or of the JSON of an httpx
+    response): 0 when the usage holds no count, as SGLang with --enable-cache-report answers a request that reused nothing,
+    None when the reply holds no usage."""
     if hasattr(outcome, "usage"):
         usage = outcome.usage
     else:
@@ -164,11 +179,8 @@ def reply_cached_tokens(outcome):
             usage = None
     if usage is None:
         return None
-    details = usage.get("prompt_tokens_details") if isinstance(usage, dict) else getattr(usage, "prompt_tokens_details", None)
-    if details is None:
-        return 0
-    cached = details.get("cached_tokens") if isinstance(details, dict) else getattr(details, "cached_tokens", None)
-    return int(cached or 0)
+    cached = reported_cached_tokens(usage)
+    return 0 if cached is None else cached
 
 
 def _note_reply(outcome):

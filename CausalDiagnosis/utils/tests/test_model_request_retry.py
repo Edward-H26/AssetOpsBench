@@ -287,3 +287,22 @@ def test_inside_an_episode_without_a_wall_limit_an_attempt_has_no_read_timeout(t
         with pytest.raises(httpx.ReadTimeout):
             retry.post_with_retries(sender([httpx.ReadTimeout("slow", request=REQUEST), Reply(200)]), delay_s=0.0)
     assert retry.attempt_timeout() == retry.READ_TIMEOUT_S
+
+
+
+def test_the_reported_cached_tokens_are_the_count_a_reply_carries_and_none_without_one():
+    """reported_cached_tokens reads usage.prompt_tokens_details.cached_tokens of an SDK object and of the JSON of a reply alike, a
+    count of zero included, and gives None where the reply carries no count, since SGLang omits the details of a reply that
+    reused nothing and every server without its flag omits them always. The control: reply_cached_tokens, the reader of the
+    cache flush check, reads the same replies without a count as 0, so only the strict reader tells no count from a zero."""
+    def sdk(details):
+        return types.SimpleNamespace(prompt_tokens=9, prompt_tokens_details=details)
+
+    for usage, count in ((sdk(types.SimpleNamespace(cached_tokens=12)), 12), (sdk(types.SimpleNamespace(cached_tokens=0)), 0),
+                         (sdk(types.SimpleNamespace(cached_tokens=None)), None), (sdk(None), None), (types.SimpleNamespace(prompt_tokens=9), None),
+                         ({"prompt_tokens": 9, "prompt_tokens_details": {"cached_tokens": 12}}, 12),
+                         ({"prompt_tokens": 9, "prompt_tokens_details": {"cached_tokens": 0}}, 0), ({"prompt_tokens": 9, "prompt_tokens_details": {}}, None),
+                         ({"prompt_tokens": 9, "prompt_tokens_details": None}, None), ({"prompt_tokens": 9}, None), ({}, None), (None, None)):
+        assert retry.reported_cached_tokens(usage) == count, usage
+    for usage in (sdk(None), {"prompt_tokens": 9}, {"prompt_tokens": 9, "prompt_tokens_details": {}}):
+        assert retry.reported_cached_tokens(usage) is None and retry.reply_cached_tokens(types.SimpleNamespace(usage=usage)) == 0, usage

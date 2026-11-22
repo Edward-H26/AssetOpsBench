@@ -1444,6 +1444,33 @@ def test_a_column_of_a_runner_s_own_counter_in_scores_csv_changes_no_table(tmp_p
     assert all(plain[table] == counted[table] for table in plain if table != "RUNS")
 
 
+def test_the_efficiency_divides_the_tokens_and_seconds_of_every_episode_by_the_solved_ones_and_shares_the_counted_cached_tokens(tmp_path):
+    """EFFICIENCY's ratios by hand: the tokens and the seconds of all four episodes of a row, the failed one and the unscored one
+    included, over its two passed episodes, and the cached share over the three episodes whose cached_tokens cell holds a count. The
+    controls: the mean over the passed episodes alone (165 tokens, 75 seconds) and a share that read the empty cell as zero (0.14)
+    differ from the cells, and a row without a passed episode leaves both cells per solved episode empty."""
+    cells = ((True, 100, 10, 50, 40), (False, 300, 30, 150, 0), (True, 200, 20, 100, ""), ("", 400, 40, 200, 100))
+    solved = [_base_row(s, agent="agent_as_tool_m", tool_calls=3, causal_calls=1, n_faulty=1, **{"pass": passed, "input_tokens": i, "output_tokens": o,
+                                                                                                  "wall_s": w, "cached_tokens": c})
+              for s, (passed, i, o, w, c) in enumerate(cells)]
+    unsolved = [_base_row(s, agent="plan_execute_m", tool_calls=3, causal_calls=1, n_faulty=1, input_tokens=100, output_tokens=10, wall_s=50,
+                          cached_tokens=20, **{"pass": False}) for s in range(2)]
+    runs = tmp_path / "runs"
+    for name, rows in (("aat_mcp", solved), ("pe_mcp", unsolved)):
+        _run(runs, name, rows, BASE_META)
+    tables = {t.id: rows for t, rows in aggregate.aggregate(runs, tmp_path / "out", resamples=50, fraction="1")}
+    rows = {(r["agent"], r["faults"]): r for r in tables["EFFICIENCY"]}
+    row = rows[("agent_as_tool_m", "single")]
+    assert (row["tokens_per_solved"], row["seconds_per_solved"], row["cached_share"]) == ((110 + 330 + 220 + 440) / 2, (50 + 150 + 100 + 200) / 2, 140 / 800)
+    assert (row["tokens_per_solved_n"], row["seconds_per_solved_n"], row["cached_share_n"]) == (4, 4, 3)
+    assert row["tokens_per_solved"] != (110 + 220) / 2 and row["seconds_per_solved"] != (50 + 100) / 2 and row["cached_share"] != 140 / 1000
+    for name in aggregate.agent_descriptive_tables.EFFICIENCY_RATIOS:
+        assert row[f"{name}_low"] == "" or row[f"{name}_low"] <= row[name] <= row[f"{name}_high"], name
+    none = rows[("plan_execute_m", "single")]
+    assert (none["tokens_per_solved"], none["seconds_per_solved"], none["cached_share"], none["tokens_per_solved_n"]) == ("", "", 20 / 100, 2)
+    assert rows[("agent_as_tool_m", "two")]["tokens_per_solved_n"] == 0 and rows[("agent_as_tool_m", "two")]["tokens_per_solved"] == ""
+
+
 def test_the_judge_kappa_reads_the_judged_episodes_and_the_unmatched_share_is_the_complement_of_provenance():
     """Cohen's kappa of the judge's majority pass under the five call protocol against the verified pass, over the episodes that carry
     both, and empty when either rule puts every episode on one side; an episode cites unmatched evidence when its provenance check failed."""

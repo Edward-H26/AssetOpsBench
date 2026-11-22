@@ -1,14 +1,15 @@
 """A model service on a loopback port for the tests of the cut probe and the cache flush: /models always answers, and the
-chat route, /flush_cache and /metrics answer as the test sets them. No model runs."""
+chat route, /flush_cache, /metrics and /server_info answer as the test sets them. No model runs."""
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class FakeService:
-    def __init__(self, generates=True, flush_status=200, metrics="sglang:num_running_reqs 0.0\nsglang:num_queue_reqs 0.0\n"):
-        self.generates, self.flush_status, self.metrics = generates, flush_status, metrics
+    def __init__(self, generates=True, flush_status=200, metrics="sglang:num_running_reqs 0.0\nsglang:num_queue_reqs 0.0\n", server_info=None):
+        self.generates, self.flush_status, self.metrics, self.server_info = generates, flush_status, metrics, server_info
         self.paths = []
+        self.authorization = None  # the Authorization header of the last request
         service = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -25,10 +26,13 @@ class FakeService:
 
             def do_GET(self):
                 service.paths.append(("GET", self.path))
+                service.authorization = self.headers.get("Authorization")
                 if self.path.endswith("/models"):
                     self._send(200, {"data": [{"id": "stand-in"}]})
                 elif self.path == "/metrics":
                     self._send(200, service.metrics, "text/plain")
+                elif self.path == "/server_info" and service.server_info is not None:
+                    self._send(200, service.server_info)
                 else:
                     self._send(404, {})
 

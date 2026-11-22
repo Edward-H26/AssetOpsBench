@@ -29,3 +29,17 @@ def test_no_answer_refuses_the_episode():
 def test_a_server_without_metrics_leaves_the_counts_empty():
     with FakeService(metrics="other_metric 1\n") as service:
         assert cache_flush.engine_load(service.base_url) == {"running": None, "queued": None}
+
+
+
+def test_the_cache_report_is_the_one_flag_of_the_server_info_and_none_where_the_route_states_none():
+    """cache_report reads enable_cache_report of SGLang's GET /server_info at the root beside /v1, with the key of the run, and keeps
+    that value alone. The controls: an answer without the flag, as no SGLang gives, and a flag that is no boolean give None, never
+    False, and so do a server without the route, as vLLM's and a router are, and no server at all."""
+    secret = {"api_key": "server-secret", "model_path": "/weights/stand-in"}  # pragma: allowlist secret
+    for info, want in (({**secret, "enable_cache_report": True}, True), ({**secret, "enable_cache_report": False}, False), (secret, None),
+                       ({**secret, "enable_cache_report": "yes"}, None), (None, None)):
+        with FakeService(server_info=info) as service:
+            assert cache_flush.cache_report(service.base_url, "run-key") is want, info
+        assert ("GET", "/server_info") in service.paths and service.authorization == "Bearer run-key", service.paths
+    assert cache_flush.cache_report("http://127.0.0.1:9/v1", "", timeout_s=1) is None

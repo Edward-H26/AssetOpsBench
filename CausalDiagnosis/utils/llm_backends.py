@@ -11,8 +11,8 @@ of a reply. EndpointChatBackend keeps that request shape and adds what a run of 
 - the engine's refusal of a prompt past the context raised as ContextEnd, the end of the context and never a failed attempt;
 - a client that sends every request once, while the benchmark's one retry policy (CausalDiagnosis.utils.model_request_retry) attempts a failed request
   again with no count of attempts, the registered wait, the row's deadline inside an episode and the read timeout outside;
-- the reasoning text as the reply when a server with a reasoning parser returns no content, and the server's reason for the
-  end of a reply;
+- the reasoning text as the reply when a server with a reasoning parser returns no content, the server's reason for the
+  end of a reply, and the cached prompt tokens the reply reports;
 - the settings of the route for the record of a run.
 The file sits beside the drivers, so that episode_judge.py reads it without importing the agent package.
 """
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from llm import LLMBackend  # noqa: F401  re-exported: the core reaches upstream's base class only through this module
 from llm.base import LLMResult
 from llm.openai_compat import OpenAICompatBackend
-from CausalDiagnosis.utils.model_request_retry import READ_TIMEOUT_S, RETRY_DELAY_S, STATUSES, current_deadline, post_with_retries
+from CausalDiagnosis.utils.model_request_retry import READ_TIMEOUT_S, RETRY_DELAY_S, STATUSES, current_deadline, post_with_retries, reported_cached_tokens
 from CausalDiagnosis.utils.model_reply_room import ContextEnd, NoReplyRoom, ReplyRoom, endpoint_room, is_context_refusal
 from llm.routers import resolve_router_creds
 
@@ -48,11 +48,13 @@ _RENDERING_FIELDS = ("chat_template_kwargs", "tools")
 
 @dataclass(frozen=True)
 class ChatResult(LLMResult):
-    """LLMResult with the server's reason for stopping, when it reports one ("stop", "length"), and the thinking that a server
-    with a reasoning parser moved out of the text, when it reports some."""
+    """LLMResult with the server's reason for stopping, when it reports one ("stop", "length"), the thinking that a server
+    with a reasoning parser moved out of the text, when it reports some, and the cached prompt tokens of the reply, None when it
+    reports no count (CausalDiagnosis.utils.model_request_retry.reported_cached_tokens)."""
 
     finish_reason: str | None = None
     reasoning: str | None = None
+    cached_tokens: int | None = None
 
 
 class EndpointChatBackend(OpenAICompatBackend):
@@ -128,6 +130,7 @@ class EndpointChatBackend(OpenAICompatBackend):
             output_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
             finish_reason=getattr(choice, "finish_reason", None),
             reasoning=getattr(message, "reasoning_content", None) or getattr(message, "reasoning", None),
+            cached_tokens=reported_cached_tokens(usage),
         )
         # The longest reply counts only replies that ended on their own (finish_reason stop). A reply that ends by length was cut at
         # its room (the context less the prompt); it is a turn without a usable plan and adds nothing to the term.

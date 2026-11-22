@@ -13,6 +13,7 @@ from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import earlier_turns_
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.tool_surfaces import CAUSAL_SERVER, RigSurface, not_json
 from CausalDiagnosis.agents.utils.idle_hook import aiteration_end
 from CausalDiagnosis.agents.utils.tool_answers import json_object
+from CausalDiagnosis.utils import episode_trace
 from . import agent_options, episode_result
 
 
@@ -122,7 +123,13 @@ class CausalLoopRunner:
                     self.board.drop_unfit_recall(self._request_fits)  # after the orientation and the fresh ranking
                     record = self._plan()
                     self.board.recalled = []  # shown on this turn's request only
-                    await self._execute(record)
+                    # the trace of the episode keeps the decision of the plan before its steps run, and the plan as it ran after them
+                    place = len(self.plans) - 1  # _plan appended the record last
+                    episode_trace.started(episode_trace.PLAN, place, asdict(record))
+                    try:
+                        await self._execute(record)
+                    finally:
+                        episode_trace.ended(episode_trace.PLAN, place, asdict(record))
                 end = "finish" if self.board.end_reason == "finish" else "episode_over"
                 if not self.answer:
                     self.answer = self._summarize(f"The episode ended by {self.board.end_reason or 'the environment'} before the controller could finish.")

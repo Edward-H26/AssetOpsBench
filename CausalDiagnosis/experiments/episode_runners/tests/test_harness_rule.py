@@ -460,3 +460,18 @@ def test_the_episode_report_and_the_run_summary_state_what_the_harness_did(tmp_p
     assert f"set aside in {run_episodes.ATTEMPT_FOLDER}/ was of the class {failures.INFRASTRUCTURE}" in report
     assert ("Harness: episode folders holding harness.json 1, rows finished by the harness 1, rows with a replay 1, "
             "rows of the class harness_error 0, cut replies 0, failed calls 0.") in summary
+
+
+
+def test_the_cached_tokens_of_an_episode_sum_the_counts_of_its_answered_calls_and_a_missing_count_is_zero_only_under_the_cache_report():
+    """The cell cached_tokens sums the counts that the records of the answered calls hold, and a call without a reply adds nothing.
+    An answered call without a count makes the cell empty, unless the run's server reports its cached tokens with SGLang's rule,
+    under which a reply that reused nothing carries no count, so it reads as zero there. The control: the same calls with the
+    count present give the sum either way."""
+    from CausalDiagnosis.experiments.episode_runners.run_episodes import harness_rule
+
+    counted = [{"reply": "a", "cached_tokens": 40}, {"reply": "b", "cached_tokens": 0}, {"error": "RuntimeError: down", "cached_tokens": None}]
+    missing = [*counted, {"reply": "c", "cached_tokens": None}]
+    assert [harness_rule.cached_tokens(counted, flag) for flag in (None, False, True)] == [40, 40, 40]
+    assert [harness_rule.cached_tokens(missing, flag) for flag in (None, False, True)] == ["", "", 40]
+    assert harness_rule.cached_tokens([], None) == 0

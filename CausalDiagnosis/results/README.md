@@ -220,9 +220,9 @@ Hypothesis: none, since the paper reports the steps and the runtime as what a ro
 
 Reading rule: Read the steps and the runtime of a row on single-fault against two-fault starts, as Table 3 of AssetOpsBench reads single-agent against multi-agent tasks.
 
-| agent | model | config | clock_mode | surface | diagnostics_server | guidance_level | verifier_scope | prices | ranking_model | abstention_rule | training_variant | lora_adapters | abstention_cut | prices_sha256 | fraction | faults | n | tool_invocations | tool_invocations_low | tool_invocations_high | tool_invocations_se | tool_invocations_n | tool_invocations_std | wall_s | wall_s_low | wall_s_high | wall_s_se | wall_s_n | wall_s_std |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| agent | model | config | clock_mode | surface | diagnostics_server | guidance_level | verifier_scope | prices | ranking_model | abstention_rule | training_variant | lora_adapters | abstention_cut | prices_sha256 | fraction | faults | n | tool_invocations | tool_invocations_low | tool_invocations_high | tool_invocations_se | tool_invocations_n | tool_invocations_std | wall_s | wall_s_low | wall_s_high | wall_s_se | wall_s_n | wall_s_std | tokens_per_solved | tokens_per_solved_low | tokens_per_solved_high | tokens_per_solved_se | tokens_per_solved_n | seconds_per_solved | seconds_per_solved_low | seconds_per_solved_high | seconds_per_solved_se | seconds_per_solved_n | cached_share | cached_share_low | cached_share_high | cached_share_se | cached_share_n |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 ## PLANS: the row of AGENTS that makes a plan, Plan-and-Execute and the CausalDiagnosis agent, each clock mode, tool surface and training variant of a preset a row of its own, with the metrics of Table 12 of AssetOpsBench
 

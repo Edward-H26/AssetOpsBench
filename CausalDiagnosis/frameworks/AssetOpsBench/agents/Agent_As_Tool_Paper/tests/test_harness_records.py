@@ -299,3 +299,50 @@ def test_the_request_settings_of_the_completion_route_are_what_it_sends(monkeypa
     assert transport["sessions"] == mcp_sessions.SESSIONS and transport["tool_timeout_s"] is None
     for runner_class in (MetaAgentRunner, PlanExecutePaperRunner):
         assert "tool_timeout_s" not in inspect.signature(runner_class.__init__).parameters
+
+
+
+def test_every_record_of_the_route_holds_the_cached_prompt_tokens_the_server_reports_and_none_without_a_count():
+    """A generation records usage.prompt_tokens_details.cached_tokens of the answer, a zero included. The controls: an answer whose
+    usage holds no details, as SGLang answers a request that reused nothing, an answer without usage, a failed generation and a
+    failed token count record None, so every record of llm_calls.json holds the key and none holds a zero the server did not send."""
+    stop = next(list(strings) for strings, kind in completion.KINDS.items() if kind == "thought")
+    for body, cached in (({"usage": {"prompt_tokens": 9, "completion_tokens": 1, "prompt_tokens_details": {"cached_tokens": 30}}}, 30),
+                         ({"usage": {"prompt_tokens": 9, "completion_tokens": 1, "prompt_tokens_details": {"cached_tokens": 0}}}, 0),
+                         ({"usage": {"prompt_tokens": 9, "completion_tokens": 1, "prompt_tokens_details": None}}, None),
+                         ({"usage": {"prompt_tokens": 9, "completion_tokens": 1}}, None), ({}, None)):
+        route = route_on(lambda request, body=body: httpx.Response(200, json={"choices": [{"text": " ok", "finish_reason": "stop", "matched_stop": None}], **body}))
+        route.generate("Thought 1:", stop=stop)
+        assert [record["cached_tokens"] for record in route.calls] == [cached], body
+    failed = route_on(lambda request: httpx.Response(500))
+    with pytest.raises(httpx.HTTPStatusError):
+        failed.generate("Thought 1:", stop=stop)
+    counted = route_on(lambda request: httpx.Response(500, json={"error": "the tokenizer is down"}))
+    with pytest.raises(httpx.HTTPStatusError):
+        counted.count_tokens("one two three")
+    assert [(record["kind"], record["cached_tokens"]) for record in (*failed.calls, *counted.calls)] == [("thought", None), ("tokenize", None)]
+    assert failed.calls[0]["error"].startswith("HTTPStatusError")
+
+
+def test_every_record_of_the_route_enters_the_trace_of_the_episode_while_the_call_runs(tmp_path):
+    """A generation, a failed generation and a failed token count each reach the trace of the bound episode
+    (CausalDiagnosis.utils.episode_trace), and the merge of its lines is the list of records that llm_calls.json is written from.
+    The control: a route outside an episode writes no trace."""
+    from CausalDiagnosis.utils import episode_trace
+
+    stop = next(list(strings) for strings, kind in completion.KINDS.items() if kind == "thought")
+    answers = iter([httpx.Response(200, json={"choices": [{"text": " ok", "finish_reason": "stop", "matched_stop": None}],
+                                              "usage": {"prompt_tokens": 9, "completion_tokens": 1}}),
+                    httpx.Response(500), httpx.Response(500, json={"error": "the tokenizer is down"})])
+    route = route_on(lambda request: next(answers))
+    with episode_trace.bound(tmp_path / "episode"):
+        route.generate("Thought 1:", stop=stop)
+        with pytest.raises(httpx.HTTPStatusError):
+            route.generate("Thought 2:", stop=stop)
+        with pytest.raises(httpx.HTTPStatusError):
+            route.count_tokens("one two three")
+    assert [record["kind"] for record in route.calls] == ["thought", "thought", "tokenize"]
+    assert episode_trace.records(tmp_path / "episode") == {"model_call": route.calls}
+    outside = route_on(lambda request: httpx.Response(200, json={"choices": [{"text": " ok", "finish_reason": "stop"}], "usage": {}}))
+    outside.generate("Thought 1:", stop=stop)
+    assert len(outside.calls) == 1 and sorted(p.name for p in tmp_path.rglob("*")) == ["episode", episode_trace.NAME, episode_trace.NAME + ".lock"]

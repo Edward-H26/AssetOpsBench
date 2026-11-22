@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import CAUSAL_SERVER, registered_servers, tool_surface  # noqa: E402
 from CausalDiagnosis.experiments.episode_runners.run_configuration import ROW_PRESETS  # noqa: E402
+from CausalDiagnosis.experiments.episode_runners import cache_flush  # noqa: E402
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions.training_variants import adapter_of, block_of, is_marker, numbers  # noqa: E402
 from CausalDiagnosis.utils import frameworks  # noqa: E402
@@ -29,9 +30,11 @@ def require_context_count(backend):
 def served_facts(base_url, model):
     """run.json served for a run of a model agent, read once before the run folder: context_length, the context the endpoint
     serves the model with, max_model_len of its card in the endpoint's model listing as the completion route reads it
-    (card_context_length), None when the endpoint names none or does not answer."""
+    (card_context_length), None when the endpoint names none or does not answer; cache_report, the server's rule for the cached
+    prompt tokens of a reply (cache_flush.cache_report), None where the endpoint does not state it."""
     cards = ledger.endpoint_models(base_url) if base_url else None
-    return {"context_length": card_context_length(cards, model) if cards else None}
+    return {"context_length": card_context_length(cards, model) if cards else None,
+            "cache_report": cache_flush.cache_report(base_url, os.environ.get("API_KEY")) if base_url else None}
 
 
 def store_settings(a):

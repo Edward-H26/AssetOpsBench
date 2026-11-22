@@ -23,9 +23,10 @@ def words(prompt):
     return len(prompt.split())
 
 
-def _install_fake_openai(monkeypatch, captured: dict, message=None, finish_reason="stop", usage=(3, 2), errors=()):
+def _install_fake_openai(monkeypatch, captured: dict, message=None, finish_reason="stop", usage=(3, 2), errors=(), details=None):
     """Install a stub ``openai`` module that records the call kwargs and the arguments the client was built with. Each call
-    first raises the next of errors, then answers; captured["calls"] counts the calls."""
+    first raises the next of errors, then answers, with details as the prompt_tokens_details of its usage; captured["calls"]
+    counts the calls."""
     pending = list(errors)
 
     def create(**kwargs):
@@ -34,7 +35,8 @@ def _install_fake_openai(monkeypatch, captured: dict, message=None, finish_reaso
         if pending:
             raise pending.pop(0)
         choice = types.SimpleNamespace(message=message or types.SimpleNamespace(content="hi"), finish_reason=finish_reason)
-        return types.SimpleNamespace(choices=[choice], usage=types.SimpleNamespace(prompt_tokens=usage[0], completion_tokens=usage[1]))
+        return types.SimpleNamespace(choices=[choice], usage=types.SimpleNamespace(prompt_tokens=usage[0], completion_tokens=usage[1],
+                                                                                  prompt_tokens_details=details))
 
     class OpenAI:
         def __init__(self, base_url=None, api_key=None, **client):
@@ -70,6 +72,16 @@ def test_the_thinking_that_a_reasoning_parser_moved_out_of_the_text_is_kept_in_t
         _install_fake_openai(monkeypatch, {}, message)
         result = EndpointChatBackend("tokenrouter/granite", **BOUND).generate_with_usage("review")
         assert result.text == "yes" and result.reasoning == reasoning, (message, result)
+
+
+def test_the_result_keeps_the_cached_prompt_tokens_that_the_reply_reports_and_none_without_a_count(monkeypatch):
+    """The chat route passes the cached prompt tokens of usage.prompt_tokens_details on in its result, a zero included, for
+    llm_calls.json. The control: a reply without details, as SGLang answers a request that reused nothing and every server
+    without the cache report answers every request, keeps None and never a zero."""
+    for details, cached in ((types.SimpleNamespace(cached_tokens=12), 12), (types.SimpleNamespace(cached_tokens=0), 0), (None, None)):
+        _install_fake_openai(monkeypatch, {}, details=details)
+        result = EndpointChatBackend("tokenrouter/granite", **BOUND).generate_with_usage("plan")
+        assert result.cached_tokens == cached and (result.input_tokens, result.output_tokens) == (3, 2), (details, result)
 
 
 def test_an_endpoint_bound_to_the_backend_wins_over_the_environment(monkeypatch):

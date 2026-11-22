@@ -2,6 +2,7 @@
 
 atomic_writes_and_locks
 download_retry
+episode_trace
 frameworks
 json_digest
 llm_backends

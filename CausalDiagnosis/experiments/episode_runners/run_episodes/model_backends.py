@@ -4,6 +4,7 @@ from datetime import datetime
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.clock import token_clock  # noqa: E402
 from CausalDiagnosis.utils.llm_backends import LLMBackend  # noqa: E402
 from CausalDiagnosis.utils.llm_backends import EndpointChatBackend  # noqa: E402
+from CausalDiagnosis.utils import episode_trace  # noqa: E402
 from . import agent_kinds
 
 
@@ -11,8 +12,9 @@ CONTEXT_READERS = ("request_fits", "request_under_trigger", "longest_reply", "ro
 
 
 class RecordingBackend(LLMBackend):
-    """Keeps every prompt and reply of an episode with its token counts and duration. With a temperature, the one of a sampling
-    run, every call is made at it in place of the temperature the agent asks for, so that no agent changes for the sampling."""
+    """Keeps every prompt and reply of an episode with its token counts, its cached prompt tokens and its duration, each call also
+    in the trace of the episode as it happens (CausalDiagnosis.utils.episode_trace). With a temperature, the one of a sampling run,
+    every call is made at it in place of the temperature the agent asks for, so that no agent changes for the sampling."""
 
     def __init__(self, inner, temperature=None):
         self.inner = inner
@@ -25,19 +27,23 @@ class RecordingBackend(LLMBackend):
     def generate_with_usage(self, prompt, temperature=0.0, response_format=None):
         # the day of the call, which the served model's chat template prints into its system message, for rejection_sampling_examples.py
         # started_at and ended_at in wall time place the call between the tool calls of the episode
-        call = {"prompt": prompt, "date": datetime.now().date().isoformat(), "started_at": time.time()}
-        self.calls.append(call)
-        started = time.perf_counter()
-        try:
-            result = self.inner.generate_with_usage(prompt, temperature if self.temperature is None else self.temperature)
-        except Exception as exc:
-            call["error"] = f"{type(exc).__name__}: {exc}"
-            raise
-        finally:
-            call["seconds"] = round(time.perf_counter() - started, 2)
-            call["ended_at"] = time.time()
-        call.update(reply=result.text, input_tokens=result.input_tokens, output_tokens=result.output_tokens,
-                    finish_reason=getattr(result, "finish_reason", None))  # a backend with the released LLMResult reports none
+        # cached_tokens stays None on a failed call and on a reply that reports no count, never a zero the server did not send
+        call = {"prompt": prompt, "date": datetime.now().date().isoformat(), "started_at": time.time(), "cached_tokens": None}
+        # the trace of the episode keeps the call from its request on, so that a run killed during the call keeps its prompt
+        with episode_trace.recorded(episode_trace.MODEL_CALL, self.calls, call):
+            started = time.perf_counter()
+            try:
+                bound = {} if response_format is None else {"response_format": response_format}
+                result = self.inner.generate_with_usage(prompt, temperature if self.temperature is None else self.temperature, **bound)
+            except Exception as exc:
+                call["error"] = f"{type(exc).__name__}: {exc}"
+                raise
+            finally:
+                call["seconds"] = round(time.perf_counter() - started, 2)
+                call["ended_at"] = time.time()
+            call.update(reply=result.text, input_tokens=result.input_tokens, output_tokens=result.output_tokens,
+                        finish_reason=getattr(result, "finish_reason", None),  # a backend with the released LLMResult reports none
+                        cached_tokens=getattr(result, "cached_tokens", None))
         token_clock.add_generated(result.output_tokens)
         return result
 

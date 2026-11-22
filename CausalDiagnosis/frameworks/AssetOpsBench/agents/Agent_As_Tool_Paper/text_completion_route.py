@@ -8,10 +8,15 @@ outputs ending in "\\nAction" and "\\nObservation"). A route sends the same requ
 no_stop_trim, so the reply keeps the matched stop string too, and keeps one record per call for llm_calls.json: the
 exact prompt and reply, the token counts, the finish reason, the stop list, the agent whose call it was and the kind of
 call, read from the stop list ReActXen passes. count_tokens and context_length use SGLang's /v1/tokenize and /v1/models.
-Every request carries the paper's max_tokens of 500. The route has no time limit and no count of retries of its own
-(CausalDiagnosis.utils.model_request_retry): each attempt gets the time left before the row's deadline. A prompt that, with its 500 tokens, does not fit
-the served context is refused by SGLang with 400 BadRequest; that refusal is not retried and ends the run with the end
-"context".
+A record also keeps the cached prompt tokens that the server reports, None when it reports no count, and enters the trace of the
+episode as it happens (CausalDiagnosis.utils.episode_trace).
+Every request carries the paper's max_tokens of 500, except on a run with the CausalDiagnosis MCP (reply_room), where every request
+carries the room the served context leaves its prompt, so that no reply is capped, as no reply of the CausalDiagnosis agent is
+(CausalDiagnosis.utils.model_reply_room). The route has no time limit and no count of retries of its own
+(CausalDiagnosis.utils.model_request_retry): each attempt gets the time left before the row's deadline. A prompt that, with the
+max_tokens of its request, does not fit the served context is refused by SGLang with 400 BadRequest; that refusal is not retried
+and ends the run with the end "context". On a run with the CausalDiagnosis MCP a prompt that leaves no room ends the run with that
+end before any request (room_of).
 
 The vendored agents reach the route of the running episode through active_route(), since ReActXen binds watsonx_llm as
 the default argument of every agent class at import.
@@ -24,8 +29,9 @@ from contextlib import contextmanager
 
 import httpx
 
-from CausalDiagnosis.utils.model_request_retry import RETRY_DELAY_S, STATUSES, current_deadline, post_with_retries
+from CausalDiagnosis.utils.model_request_retry import RETRY_DELAY_S, STATUSES, current_deadline, post_with_retries, reported_cached_tokens
 from CausalDiagnosis.utils.model_reply_room import ENGINE_MARGIN, ContextEnd, ReplyRoom, card_context_length
+from CausalDiagnosis.utils import episode_trace
 
 PAPER_DECODING = {"temperature": 0.0, "max_tokens": 500, "min_tokens": 1, "no_stop_trim": True}
 # the max_tokens of a route with reply_room as run.json records it, a value computed for each request
@@ -132,24 +138,24 @@ class CompletionRoute:
         if seed is not None:
             body["seed"] = seed
         record = {"agent": self._agents[-1], "kind": KINDS.get(tuple(stop), "other"), "prompt": prompt, "stop": stop,
-                  "max_tokens": max_tokens, "temperature": temperature, "model": self.model, "started_at": time.time()}
-        self.calls.append(record)
-        started = time.perf_counter()
-        try:
-            answer = self._post("completions", body)
-        except Exception as exc:
-            record["error"] = f"{type(exc).__name__}: {exc}"
-            if context_refusal(exc):
-                # the end of the served context ends the run, as RunStopped so that no handler of ReActXen holds it back
-                self.stop(CONTEXT_END)
-                raise RunStopped(CONTEXT_END) from exc
-            raise
-        finally:
-            record["seconds"] = round(time.perf_counter() - started, 2)
-            record["ended_at"] = time.time()  # the call's span in wall time, for the drivers' split of the thinking time
-        choice, usage = answer["choices"][0], answer.get("usage") or {}
-        record.update(reply=choice["text"], input_tokens=usage.get("prompt_tokens"), output_tokens=usage.get("completion_tokens"),
-                      finish_reason=choice.get("finish_reason"), matched_stop=choice.get("matched_stop"))
+                  "max_tokens": max_tokens, "temperature": temperature, "model": self.model, "started_at": time.time(), "cached_tokens": None}
+        with episode_trace.recorded(episode_trace.MODEL_CALL, self.calls, record):
+            started = time.perf_counter()
+            try:
+                answer = self._post("completions", body)
+            except Exception as exc:
+                record["error"] = f"{type(exc).__name__}: {exc}"
+                if context_refusal(exc):
+                    # the end of the served context ends the run, as RunStopped so that no handler of ReActXen holds it back
+                    self.stop(CONTEXT_END)
+                    raise RunStopped(CONTEXT_END) from exc
+                raise
+            finally:
+                record["seconds"] = round(time.perf_counter() - started, 2)
+                record["ended_at"] = time.time()  # the call's span in wall time, for the drivers' split of the thinking time
+            choice, usage = answer["choices"][0], answer.get("usage") or {}
+            record.update(reply=choice["text"], input_tokens=usage.get("prompt_tokens"), output_tokens=usage.get("completion_tokens"),
+                          cached_tokens=reported_cached_tokens(usage), finish_reason=choice.get("finish_reason"), matched_stop=choice.get("matched_stop"))
         from CausalDiagnosis.environment.Causal_Diagnosis_Environment.clock import token_clock  # at the call, so that importing the port loads no file of the servers
 
         token_clock.add_generated(record["output_tokens"])
@@ -181,8 +187,9 @@ class CompletionRoute:
             return self._post("tokenize", {"model": self.model, "prompt": text}, model_reply=False)["count"]
         except Exception as exc:
             # a count that failed after its retries leaves a record, as a failed generation does, so that it reaches the row
-            self.calls.append({"agent": self._agents[-1], "kind": "tokenize", "prompt": text, "model": self.model, "started_at": started_at,
+            self.calls.append({"agent": self._agents[-1], "kind": "tokenize", "prompt": text, "model": self.model, "started_at": started_at, "cached_tokens": None,
                                "error": f"{type(exc).__name__}: {exc}", "seconds": round(time.perf_counter() - started, 2), "ended_at": time.time()})
+            episode_trace.ended(episode_trace.MODEL_CALL, len(self.calls) - 1, self.calls[-1])
             raise
 
     def context_length(self):

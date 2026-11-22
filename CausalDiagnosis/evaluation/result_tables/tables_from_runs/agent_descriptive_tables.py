@@ -13,6 +13,10 @@ from . import episode_files, cell_statistics, family_correction, episode_selecti
 # ones, and the starts both mark inseparable, where a declaration earns its credit
 STRATA = ("deterioration", "separable", "inseparable", "separable_e18", "inseparable_e18", "inseparable_both", "test_unaffordable")
 EFFICIENCY_METRICS = ("tool_invocations", "wall_s")
+# the ratios of sums of EFFICIENCY as (numerator, denominator): the tokens and the runtime of every episode of a row, the failed ones
+# included, per episode that passes, and the share of the input tokens that the server reported as cached
+EFFICIENCY_RATIOS = {"tokens_per_solved": ("tokens", "pass"), "seconds_per_solved": ("wall_s", "pass"),
+                     "cached_share": ("cached_tokens", "input_tokens")}
 FAILURE_END = "failure"  # the end reason of an episode that a failure of the failure card ended
 # the steps of FUNNEL, each the share of the episodes of a row that reached it, and the counters of the harness from the columns it writes
 FUNNEL_STEPS = ("diagnosis_accepted", "faulty_set_right", "diagnosis_all_correct", "orders_on_every_faulty", "no_order_on_healthy", "finished")
@@ -293,8 +297,9 @@ def table_efficiency(episodes, ctx):
     """One row per CONDITION of the six rows and fault count of the start, the metrics of Table 3 of AssetOpsBench with the
     single-fault and two-fault starts in the place of its single-agent and multi-agent tasks: the steps (tool_invocations) and
     the runtime per episode (wall_s, the wall clock around the agent, which stops before the verifier and the judge), each
-    with a bootstrap interval clustered by block and the standard deviation over episodes. A count without episodes keeps its
-    row with empty cells, as a stratum does."""
+    with a bootstrap interval clustered by block and the standard deviation over episodes, and the ratios of EFFICIENCY_RATIOS,
+    each with such an interval and its number of episodes. A count without episodes keeps its row with empty cells, as a
+    stratum does."""
     rows = []
     for condition, eps in cell_statistics.groups(episode_selection.agent_episodes(episodes, every_clock_mode=True), *episode_selection.CONDITION).items():
         for faults, count in episode_selection.FAULT_COUNTS.items():
@@ -302,6 +307,8 @@ def table_efficiency(episodes, ctx):
             row = {**dict(zip(episode_selection.CONDITION, condition)), "faults": faults, "n": len(inside)}
             for m in EFFICIENCY_METRICS:
                 row.update({**cell_statistics.summary(inside, m, ctx), **cell_statistics.spread(inside, m)})
+            for name, (numerator, denominator) in EFFICIENCY_RATIOS.items():
+                row.update(cell_statistics.ratio_of_sums(inside, numerator, denominator, name, ctx))
             rows.append(cell_statistics.trace(ctx, row, inside))
     return rows
 

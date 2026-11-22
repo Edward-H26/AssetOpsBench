@@ -7,6 +7,9 @@ the earliest stop string of the request, keeping that string when the request se
 continuation without a stop string ends as if the model wrote its end token. Token counts are whitespace words, so a test
 can predict them. Every request body but that of the flush is kept in ``requests`` as (path, body).
 
+With cached, the usage of every completion reports that many cached prompt tokens, as SGLang does under
+--enable-cache-report.
+
 With fail_first the first attempt of every distinct POST (path and body) is answered 503 and takes no continuation, so the
 retry of the client sends it again. ``stats`` counts the requests open at once (open, most_open, counted from the arrival of
 the headers to the start of the answer), the POSTs in arrival order (arrivals, one key per path and body) and the attempts
@@ -30,8 +33,9 @@ def cut(text, stop, keep):
 
 
 class ScriptedEndpoint:
-    def __init__(self, script, model="granite-stand-in", context_length=131072, cards=None, tokenizer_max_len=None, fail_first=False):
-        self.script, self.model, self.context_length, self.fail_first = list(script), model, context_length, fail_first
+    def __init__(self, script, model="granite-stand-in", context_length=131072, cards=None, tokenizer_max_len=None, fail_first=False,
+                 cached=None):
+        self.script, self.model, self.context_length, self.fail_first, self.cached = list(script), model, context_length, fail_first, cached
         # SGLang lists a card per adapter beside the base model's, and /v1/tokenize reports the tokenizer's own maximum
         self.cards = cards if cards is not None else [{"id": model, "object": "model", "max_model_len": context_length}]
         self.tokenizer_max_len = context_length if tokenizer_max_len is None else tokenizer_max_len
@@ -101,7 +105,8 @@ class ScriptedEndpoint:
                 self._send(200, {"id": "cmpl-scripted", "object": "text_completion", "model": body.get("model"),
                                  "choices": [{"index": 0, "text": reply, "finish_reason": reason, "matched_stop": matched}],
                                  "usage": {"prompt_tokens": len(body.get("prompt", "").split()), "completion_tokens": len(reply.split()),
-                                           "total_tokens": len(body.get("prompt", "").split()) + len(reply.split())}})
+                                           "total_tokens": len(body.get("prompt", "").split()) + len(reply.split()),
+                                           **({} if endpoint.cached is None else {"prompt_tokens_details": {"cached_tokens": endpoint.cached}})}})
 
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)

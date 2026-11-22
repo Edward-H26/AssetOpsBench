@@ -67,7 +67,9 @@ def test_the_port_plays_the_base_row_and_records_what_the_tables_the_training_an
     assert meta["agent"] == "plan_execute" and meta["agent_label"] == f"plan_execute_{MODEL}" and meta["servers"][-1] == "causal_diagnosis"
     assert meta["model_id"] == MODEL and meta["agent_as_tool"] is None
     block = meta["plan_execute"]
-    assert block["form"] == "paper_era" and block["plans"] == 5 and block["step_agent_max_steps"] == 6 and block["reflections"] == 1
+    assert block["form"] == sub_agent_registry.MCP_FORM and block["plans"] == 5 and block["step_agent_max_steps"] is None and block["reflections"] == 1
+    assert meta["served"] == {"context_length": 131072, "cache_report": None}
+    assert [b["max_tokens"] for b in ep.completions()] == [131072 - len(b["prompt"].split()) - 2 for b in ep.completions()]
     assert block["agents"] == ["IoT Data Download", "TaskAgent", "Failure Mode and Sensor Relevancy Expert for Industrial Asset",
                                "Work Order Management", "CausalDiagnosisAgent"]
     # the example start of the run, and the planner lists the question of the diagnosis example written for it

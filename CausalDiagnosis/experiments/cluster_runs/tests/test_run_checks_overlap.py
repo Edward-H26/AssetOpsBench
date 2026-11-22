@@ -18,7 +18,7 @@ from CausalDiagnosis.experiments.cluster_runs import cluster_run_checks as run_c
 from CausalDiagnosis.experiments.episode_runners import run_episodes
 from CausalDiagnosis.mcp_servers.Environment_Actions_MCP import episode_state as episode
 
-CLEAN = {"flush_seconds": 0.2, "status": 200, "running": 0.0, "queued": 0.0, "first_request_cached_tokens": 0}
+CLEAN = {"flush_seconds": 0.2, "status": 200, "running": 0.0, "queued": 0.0, "first_request_cached_tokens": 0, "cache_report": True}
 ENDPOINT = "http://node7:30123/v1"  # the model endpoint of a model agent, which the public run.json writes as null
 MODEL = "granite"
 CLEAN_SUMMARY = "OVERLAP_EPISODES 0 overlaps, 0 episodes without a recorded interval, 0 episodes without a clean flush"
@@ -92,7 +92,10 @@ def test_a_run_alive_during_a_wall_clock_episode_or_an_unclean_flush_is_named_an
     for record, reason in (({"cache_flush": None}, "no record of the flush of the model server's cache before it"),
                            ({"status": 400}, "the flush of the model server's cache answered 400, not 200"),
                            ({"first_request_cached_tokens": 12}, "its first model request reused 12 cached tokens, not 0"),
-                           ({"first_request_cached_tokens": None}, "its first model request reused None cached tokens, not 0")):
+                           ({"first_request_cached_tokens": None}, "its first model request reused None cached tokens, not 0"),
+                           # a 0 from a server that reports no count, or whose rule is not known, shows no clean cache
+                           ({"cache_report": False}, "the model server does not report its cached tokens (cache_report False), so no reply shows the cache clean"),
+                           ({"cache_report": None}, "the model server does not report its cached tokens (cache_report None), so no reply shows the cache clean")):
         _flush(grid, **record)
         assert run_checks.main(["overlap", str(grid)]) == 1
         assert f"OVERLAP_FLUSH wall/seed000000: {reason}" in capsys.readouterr().out, record
