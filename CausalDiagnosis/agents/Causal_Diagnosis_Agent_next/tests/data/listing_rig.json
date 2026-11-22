@@ -1,0 +1,307 @@
+{
+ "hydraulic_rig": [
+  {
+   "name": "get_asset_profile",
+   "description": "The asset profile: the asset with its type, description and site, components with their condition levels and healthy level, sensor groups with their channels and the served statistics, prices, durations, downtime rates, budget, horizon, step cap, the parameters of the schedule, hazard, emergency, dependency, priority, fix history and failure rules, the clock mode with the seconds per cycle, the seconds of thinking per cycle and the clock rules, the tool table and the normal ranges of the channel means. Free, takes no time.",
+   "inputSchema": {
+    "properties": {},
+    "title": "get_asset_profileArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "read_sensors",
+   "description": "Run the rig for the given number of cycles and return the recorded mean and std of every channel of the sensor group for each cycle, each with its observation number and cycle time. Costs the group's price per cycle that returns a reading and takes the cycles read.",
+   "inputSchema": {
+    "properties": {
+     "sensor_group": {
+      "title": "Sensor Group",
+      "type": "string"
+     },
+     "cycles": {
+      "title": "Cycles",
+      "type": "integer"
+     }
+    },
+    "title": "read_sensorsArguments",
+    "type": "object",
+    "required": [
+     "sensor_group",
+     "cycles"
+    ]
+   }
+  },
+  {
+   "name": "get_current_time",
+   "description": "Get the current time without moving the clock: the cycle, the horizon, the budget left, the seconds of wall clock time that one cycle stands for and the seconds of thinking that make one cycle. In the generation_time clock mode the seconds between your calls, and in the generated_tokens clock mode the seconds_per_token of every token you generate between them, add up, and every full think_seconds_per_cycle of them moves the clock one cycle before your next call runs. Free, takes no time. Like every answer of this server, it also lists the notifications since the previous call.",
+   "inputSchema": {
+    "properties": {},
+    "title": "get_current_timeArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "wait_for_notification",
+   "description": "Wait for a specified number of cycles or until the next notification is received, whichever comes first, and return what ended the wait. The rig runs while it waits, so downtime accrues. Use it only when there are no other tasks to perform, for example while work orders are open. timeout is the largest number of cycles to wait, the cycles left before the horizon when it is left empty.",
+   "inputSchema": {
+    "properties": {
+     "timeout": {
+      "title": "Timeout",
+      "type": "integer"
+     }
+    },
+    "title": "wait_for_notificationArguments",
+    "type": "object",
+    "required": [
+     "timeout"
+    ]
+   }
+  },
+  {
+   "name": "summarize_changes_since",
+   "description": "The changes since a past cycle: the cycles elapsed, the channel means of the sensor groups already read in this episode that left their normal range, with the first such cycle, and the work orders closed since then. Free, takes no time.",
+   "inputSchema": {
+    "properties": {
+     "cycle": {
+      "title": "Cycle",
+      "type": "integer"
+     }
+    },
+    "title": "summarize_changes_sinceArguments",
+    "type": "object",
+    "required": [
+     "cycle"
+    ]
+   }
+  },
+  {
+   "name": "get_failure_modes",
+   "description": "The failure mode codes of one component (cooler, valve, pump or accumulator), or of all components for an empty string, each with its severity, recommended action, indicating channels and evidence identifier. Free, takes no time.",
+   "inputSchema": {
+    "properties": {
+     "component": {
+      "title": "Component",
+      "type": "string"
+     }
+    },
+    "title": "get_failure_modesArguments",
+    "type": "object",
+    "required": [
+     "component"
+    ]
+   }
+  },
+  {
+   "name": "get_fix_history",
+   "description": "The work orders on this rig before the episode started, oldest first, each with its evidence identifier hist/<n>, the component, the closing cycle (negative, before the start), the mode and the outcome. Free, takes no time.",
+   "inputSchema": {
+    "properties": {},
+    "title": "get_fix_historyArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "lookup_fix",
+   "description": "The repair manual of one component (cooler, valve, pump or accumulator): its standard fix with the part, repair and visit charges, the lead time and the repair downtime, its priority within a visit, the components that must be at their healthy level for the fix to take, the channels that indicate it, the expected effect, and the emergency option with its surcharge, lead time and hold. Free, takes no time.",
+   "inputSchema": {
+    "properties": {
+     "component": {
+      "title": "Component",
+      "type": "string"
+     }
+    },
+    "title": "lookup_fixArguments",
+    "type": "object",
+    "required": [
+     "component"
+    ]
+   }
+  },
+  {
+   "name": "submit_diagnosis",
+   "description": "Submit the diagnosis: one condition level for each of the four components, with the comma separated evidence identifiers behind it (possibly empty). Accepted once per episode and never after a declaration of insufficient evidence. Free.",
+   "inputSchema": {
+    "properties": {
+     "cooler": {
+      "title": "Cooler",
+      "type": "integer"
+     },
+     "valve": {
+      "title": "Valve",
+      "type": "integer"
+     },
+     "pump": {
+      "title": "Pump",
+      "type": "integer"
+     },
+     "accumulator": {
+      "title": "Accumulator",
+      "type": "integer"
+     },
+     "evidence_ids": {
+      "title": "Evidence Ids",
+      "type": "string"
+     }
+    },
+    "title": "submit_diagnosisArguments",
+    "type": "object",
+    "required": [
+     "cooler",
+     "valve",
+     "pump",
+     "accumulator",
+     "evidence_ids"
+    ]
+   }
+  },
+  {
+   "name": "declare_insufficient_evidence",
+   "description": "Declare that the evidence cannot separate the remaining candidates and name the reading that would (a sensor group and a number of cycles), with the comma separated evidence identifiers behind it. It must cite at least one reading already read, and a declaration that cites none is scored as a failure. Accepted once per episode and never after a diagnosis; work orders stay allowed afterward. Free.",
+   "inputSchema": {
+    "properties": {
+     "sensor_group": {
+      "title": "Sensor Group",
+      "type": "string"
+     },
+     "cycles": {
+      "title": "Cycles",
+      "type": "integer"
+     },
+     "evidence_ids": {
+      "title": "Evidence Ids",
+      "type": "string"
+     }
+    },
+    "title": "declare_insufficient_evidenceArguments",
+    "type": "object",
+    "required": [
+     "sensor_group",
+     "cycles",
+     "evidence_ids"
+    ]
+   }
+  },
+  {
+   "name": "create_work_order",
+   "description": "Ask a technician to restore one component (cooler, valve, pump or accumulator) to its healthy level, citing a prediction identifier of the diagnostics server (or an empty string) and the comma separated evidence identifiers behind the order, in the mode standard (the default) or emergency. The standard orders created one after another with no other call between them form one visit with one visit charge, repaired back to back in priority order, and a repair takes only when the components it depends on are at their healthy level at its close. An emergency order is its own visit, comes sooner at a surcharge and restores only for a limited hold. Refused before a diagnosis or a declaration and while an order on the component is open. Costs the part plus the repair charge, and the visit charge for the order that opens a visit, at creation.",
+   "inputSchema": {
+    "properties": {
+     "component": {
+      "title": "Component",
+      "type": "string"
+     },
+     "prediction_id": {
+      "title": "Prediction Id",
+      "type": "string"
+     },
+     "evidence_ids": {
+      "title": "Evidence Ids",
+      "type": "string"
+     },
+     "mode": {
+      "title": "Mode",
+      "type": "string"
+     }
+    },
+    "title": "create_work_orderArguments",
+    "type": "object",
+    "required": [
+     "component",
+     "prediction_id",
+     "evidence_ids",
+     "mode"
+    ]
+   }
+  },
+  {
+   "name": "finish",
+   "description": "End the episode with a summary of what was found and done. On a row with a clock the rig then runs until the open work orders close, and the episode is scored after the last close. Free. A component that an emergency order still holds when the episode ends is scored at the level it had before that order.",
+   "inputSchema": {
+    "properties": {
+     "summary": {
+      "title": "Summary",
+      "type": "string"
+     }
+    },
+    "title": "finishArguments",
+    "type": "object",
+    "required": [
+     "summary"
+    ]
+   }
+  }
+ ],
+ "causal_diagnosis": [
+  {
+   "name": "get_episode_evidence",
+   "description": "The sensor readings released so far as evidence items, each with an evidence ID, the cycle it was read at, the value, its unit, the public normal range of the channel mean and an anomaly score against the healthy recordings. sensor_group is all, tier1, tier2, tier3, a channel such as CE or its field name such as CE_CoolingEfficiency_percent_1Hz. Reads released values only; it never reads the rig.",
+   "inputSchema": {
+    "properties": {
+     "sensor_group": {
+      "title": "Sensor Group",
+      "type": "string"
+     }
+    },
+    "required": [
+     "sensor_group"
+    ],
+    "title": "get_episode_evidenceArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "rank_root_causes",
+   "description": "Rank every level combination of the asset as the state of the rig now, by a belief that replays the released evidence from the start: a uniform prior times the released fix history, the public rule cards applied for every cycle that passed (closed work orders take only when the components they depend on are healthy), and every reading weighed by the interventional effect model. Returns the mass of the top combinations, the fault probability of every component now, the effective number of hypotheses and the cycle of the belief, and the decision whether to read first, read_first: true exactly when the rule of the server names one read of the recorded cycles before a diagnosis, through the sensor group that can still show the most summaries and, where readings have prices, that the budget pays beside the repair of every component, with that read as the separating test and the expected saving of the best single reading beside it. elimination gives, for every sensor group, the information gain of one cycle of it, the expected drop of the log of the effective number of hypotheses, and that gain per unit cost, which ranks the reads, with the expected number of hypotheses the cycle eliminates, its one step edge cutting score over repair plan classes (ec2, after the EC2 objective of Golovin, Krause and Ray, not their algorithm) and both per unit cost reported beside them, the cost being the test cost where reads, parts, repairs or visits cost money, else one call, and read_batch holds the reads of the rule in order, that one read where the sensor groups are nested, with left_to_read, the recorded cycles the row can still serve each group. The result also carries advice, the step that the scoring of the episode favors before a diagnosis: that read, else the diagnosis of the first candidate with one work order per faulty component. The details summary and full add e10_rule, the earlier rule with the margin, the cap, none unless the launch names one, and the reserve the server was launched with: read_first when the best single reading lowers the expected cost below acting now by more than the margin times its cost, that reading as its separating test, and its read_batch, the reads best first by gain per unit cost whose choice no outcome of the reads before them could change. top_k is the number of combinations to return, 5 unless the caller names more, with no maximum: the first top_k with positive probability by probability, ties by the combination in component order, and more_candidates gives how many combinations with positive probability the reply leaves out and their summed probability; set_masses gives, per faulty set with positive probability, the probability summed over every combination of that set, returned or not. Each distinct faulty set among the returned combinations also comes with a troubleshooting plan, one per set: the sensor group that would confirm or refute the set and by how much, the repair plan of the set as one technician visit with one visit charge, its lead time, the repairs in priority order, their dependencies, the cycles to a restored rig and the prediction ID every work order of the plan cites, the predicted recovery probability after that plan, and the predicted expected loss and cost to a restored state of acting on it now against testing it first. branch_detail is compact (the default: the plans of summary, without e10_rule, the attribution, the level probabilities, the stability, the Monte Carlo settings and the edge cutting scores, and with one assumption text), summary (adds e10_rule, the channels each component explains, the stability of the top component under resampling, the edge cutting scores and every assumption text) or full (summary with the predicted summaries after each plan and the separation of every sensor group).",
+   "inputSchema": {
+    "properties": {
+     "top_k": {
+      "default": 5,
+      "title": "Top K",
+      "type": "integer"
+     },
+     "branch_detail": {
+      "default": "compact",
+      "title": "Branch Detail",
+      "type": "string"
+     }
+    },
+    "title": "rank_root_causesArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "estimate_intervention_effect",
+   "description": "Predict what an action would do before it is taken: the probability that it addresses a fault, the probability that the rig is restored at the first reading after it, with the lead time, the repair downtime, the dependencies of the component and the rule cards acting meanwhile, its price with one visit charge, its duration, and the predicted summaries of that reading, those of the predicted combination, the most probable after the action, which the message names with its mass, with the intervals of the leave one block out conformal calibration at the declared error level. action is replace:<component> such as replace:cooler, a standard order, or monitor for one more cycle without a repair. Returns a prediction ID to cite in the work order and to pass to verify_outcome.",
+   "inputSchema": {
+    "properties": {
+     "action": {
+      "title": "Action",
+      "type": "string"
+     }
+    },
+    "required": [
+     "action"
+    ],
+    "title": "estimate_intervention_effectArguments",
+    "type": "object"
+   }
+  },
+  {
+   "name": "verify_outcome",
+   "description": "Compare a stored prediction with the first reading after the work order closed: the largest standardized deviation over the channels read against the predicted combination, the most probable after the action, which the result names with its mass, its conformal p value and the verdict at the declared error level, which over a calibration block drawn at random and a cycle drawn in it finds a reading inconsistent at a rate of at most that level and promises no rate for one named combination, and the mass of the healthy combination in the belief now against the predicted recovery. prediction_id is the ID that estimate_intervention_effect returned, such as pred/1.",
+   "inputSchema": {
+    "properties": {
+     "prediction_id": {
+      "title": "Prediction Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "prediction_id"
+    ],
+    "title": "verify_outcomeArguments",
+    "type": "object"
+   }
+  }
+ ]
+}

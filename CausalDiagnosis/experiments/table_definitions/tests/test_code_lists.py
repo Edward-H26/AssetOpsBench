@@ -107,6 +107,36 @@ def test_a_made_up_asset_adds_its_files_by_rules_and_no_rule_names_an_asset():
     assert run_identity_file_lists.lists_of("CausalDiagnosis/datasets/tiny/asset.json") == ("episode",) and run_identity_file_lists.lists_of("CausalDiagnosis/datasets/tiny/records.py") == ("episode",)
 
 
+def test_each_agent_package_has_its_own_list_and_the_shared_files_of_the_agents_lie_in_harness():
+    """The list of the present agent holds its package alone and the package of the general agent has a list of its own, so a file
+    added under one package never joins the identity of the runs of the other; the shared files of the declaration and of the
+    answers lie in harness, the rules of a kind in episode."""
+    files = ledger.code_identity.tree_files()
+    present = "CausalDiagnosis/agents/Causal_Diagnosis_Agent/"
+    assert files["agent:causal"] and all(path.startswith(present) for path in files["agent:causal"])
+    assert sorted(path for path in files["agent:causal_next"]) == sorted(
+        path for name, listed in files.items() for path in listed if path.startswith("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/")
+        and name != "checks")
+    for path, listed in (("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/planted.py", ("agent:causal_next",)),
+                         ("CausalDiagnosis/agents/Causal_Diagnosis_Agent/planted.py", ("agent:causal",)),
+                         ("CausalDiagnosis/agents/utils/declaration.py", ("harness",)), ("CausalDiagnosis/agents/utils/answer.py", ("harness",)),
+                         ("CausalDiagnosis/agents/utils/answer_forms.py", ("harness",)),
+                         ("CausalDiagnosis/utils/public_rules/plan_rules.py", ("episode",))):
+        assert run_identity_file_lists.lists_of(path) == listed, path
+
+
+def test_a_file_of_the_general_agent_moves_the_identity_of_its_runs_and_not_that_of_the_present_agent(tmp_path):
+    root = _small_tree(tmp_path)
+    planted = root / "CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/controller.py"
+    planted.parent.mkdir(parents=True)
+    planted.write_text("general\n", encoding="utf-8")
+    agents = ("causal", "causal_next", "agent_as_tool")
+    before = {agent: ledger.identity_of(ledger.code_identity.tree_files(root), agent) for agent in agents}
+    planted.write_text("general, changed\n", encoding="utf-8")
+    after = {agent: ledger.identity_of(ledger.code_identity.tree_files(root), agent) for agent in agents}
+    assert after["causal_next"] != before["causal_next"] and after["causal"] == before["causal"] and after["agent_as_tool"] == before["agent_as_tool"]
+
+
 def test_every_list_has_one_role_and_an_agent_list_is_identity_for_its_own_run_alone():
     assert set(run_identity_file_lists.LIST_ROLES) == {*run_identity_file_lists.CODE_LISTS, "upstream", run_identity_file_lists.FRAMEWORK_LIST} and set(run_identity_file_lists.LIST_ROLES.values()) <= {"identity", "bound", "free"}
     for agent in run_identity_file_lists.AGENT_LISTS:

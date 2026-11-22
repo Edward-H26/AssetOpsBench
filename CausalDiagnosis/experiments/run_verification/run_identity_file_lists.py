@@ -89,7 +89,8 @@ CODE_LISTS = {
                "CausalDiagnosis/experiments/episode_runners/run_reference_policies.py",
                "CausalDiagnosis/datasets/*/build_features_and_blocks.py", "CausalDiagnosis/datasets/*/download_and_build.py",
                "CausalDiagnosis/utils/llm_backends.py", "src/llm/", "src/observability/", *_SHARED_AGENT,
-               "CausalDiagnosis/agents/utils/model_adapters.py", "uv.lock", "CausalDiagnosis/__init__.py",
+               "CausalDiagnosis/agents/utils/model_adapters.py", "CausalDiagnosis/agents/utils/declaration.py",
+               "CausalDiagnosis/agents/utils/answer.py", "CausalDiagnosis/agents/utils/answer_forms.py", "CausalDiagnosis/agents/utils/core_texts.py", "uv.lock", "CausalDiagnosis/__init__.py",
                "CausalDiagnosis/agents/__init__.py", "CausalDiagnosis/agents/utils/__init__.py",
                "CausalDiagnosis/cluster_jobs/__init__.py", "CausalDiagnosis/datasets/dataset_loader/__init__.py",
                "CausalDiagnosis/datasets/splits/__init__.py",
@@ -116,8 +117,11 @@ CODE_LISTS = {
 }
 UPSTREAM = ("src/",)  # every other file under src: the agents and tools of AssetOpsBench that no run loads
 # the files of each agent of --agent beyond the shared ones, by what its runner loads alone; static and the reference policies run
-# no agent code. The agents of a framework and their files come from its declaration (_declared_lists)
-AGENT_LISTS = {"causal": ("CausalDiagnosis/agents/",)}
+# no agent code. causal_next is the package of the general agent (CausalDiagnosis/docs/general-agent-plan.md), which the driver
+# plays once its entry lands, so a file of it never enters the identity of a run of the present agent. The agents of a framework
+# and their files come from its declaration (_declared_lists)
+AGENT_LISTS = {"causal": ("CausalDiagnosis/agents/Causal_Diagnosis_Agent/",),
+               "causal_next": ("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/",)}
 # identity: a change can change an episode or its score, so the list enters code.identity and the start check. bound: no run loads
 # the file, yet a registered number or record depends on it, so the start check compares it. free: recorded and never compared
 LIST_ROLES = {"checks": "free", "documents": "free", "scoring": "identity", "analysis": "bound", "rendering": "free", "training": "free",

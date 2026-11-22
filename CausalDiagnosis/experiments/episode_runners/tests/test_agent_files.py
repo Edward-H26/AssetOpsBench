@@ -47,6 +47,26 @@ def test_the_modules_an_agent_loads_lie_in_its_declared_list_or_in_the_harness_l
     assert agent_code and {path: run_identity_file_lists.lists_of(path) for path in agent_code if not set(run_identity_file_lists.lists_of(path)) & allowed} == {}
 
 
+# the modules of the AssetOpsBench rows through which the driver reaches the present agent on that surface, beside its entry modules
+AOB_SURFACE = "CausalDiagnosis.frameworks.AssetOpsBench.agents.causal_diagnosis_agent_surface"
+
+
+@pytest.mark.parametrize("surface", ((), (AOB_SURFACE,)))
+def test_the_present_agent_loads_files_of_its_list_harness_or_episode_alone_on_every_surface(surface):
+    """On the rig's own action server and on the rows of AssetOpsBench's servers the present agent loads, of the folder of the
+    agents, files of its own list and of harness alone, and of other agent folders files of harness and episode alone (the surface
+    of the AssetOpsBench rows lies in episode by the declaration of its framework), and no file of the general agent, whatever its
+    switches, which change no import."""
+    loaded = _loaded_by([*run_episodes.AGENT_ENTRY_MODULES["causal"], *surface])
+    agent_code = [path for path in loaded if path.startswith(AGENT_FOLDERS)]
+    assert any(path.startswith("CausalDiagnosis/agents/Causal_Diagnosis_Agent/") for path in agent_code)
+    assert (AOB_SURFACE.replace(".", "/") + ".py" in loaded) == bool(surface)
+    own = {f"{run_identity_file_lists.AGENT_LIST}causal", "harness"}
+    allowed = {path: own if path.startswith("CausalDiagnosis/agents/") else {"harness", "episode"} for path in agent_code}
+    assert {path: run_identity_file_lists.lists_of(path) for path in agent_code if not set(run_identity_file_lists.lists_of(path)) & allowed[path]} == {}
+    assert not [path for path in loaded if path.startswith("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/")]
+
+
 def test_the_driver_alone_loads_no_file_of_an_agent_list():
     """What the driver imports for every run, the whole code of a run of a reference policy or of static, holds no file of an
     agent list."""
