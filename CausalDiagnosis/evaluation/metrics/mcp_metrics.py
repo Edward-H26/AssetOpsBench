@@ -154,6 +154,33 @@ def plan_components(branch):
     return frozenset(step["component"] for step in (branch.get("repair_plan") or {}).get("steps") or [])
 
 
+def plan_followed(components, answer):
+    """Whether a visit with these components follows the first plan of a ranking answer, None when the answer holds no plan."""
+    branches = (answer or {}).get("branches") or []
+    if not branches:
+        return None
+    return frozenset(components) == plan_components(branches[0])
+
+
+def read_followed(sensor_group, answer):
+    """Whether a read of this sensor group is the read that a ranking answer advised, the separating test or the head of its
+    read batch, None when the answer does not tell the agent to read first."""
+    answer = answer or {}
+    if not read_first(answer):
+        return None
+    advised = {(answer.get("separating_test") or {}).get("sensor_group")} | {((answer.get("read_batch") or [{}])[0] or {}).get("sensor_group")}
+    return sensor_group in advised - {None}
+
+
+def diagnosis_followed(levels, answer, to_levels):
+    """Whether a diagnosis with these levels is the first candidate of a ranking answer, read through to_levels, None when the
+    answer holds no candidate."""
+    candidates = (answer or {}).get("candidates") or []
+    if not candidates:
+        return None
+    return levels == to_levels(candidates[0]["combination"])
+
+
 def advice_measures(visit_list, log, asset):
     """The uptake of the advice over the visits of an episode and its harm: a visit follows the first plan when its components
     equal the repair plan of the first branch of the last answer before it, and any plan when they equal the repair plan of
@@ -168,7 +195,7 @@ def advice_measures(visit_list, log, asset):
             continue
         out["advised"] += 1
         needed = frozenset(asset.faulty(combination_after(log[:v.first], hidden, asset)))
-        first = v.components == plan_components(branches[0])
+        first = plan_followed(v.components, v.answer)
         out["follow_first"] += first
         out["follow_any"] += any(v.components == plan_components(b) for b in branches)
         out["harm"] += first and v.components != needed
@@ -191,9 +218,8 @@ def read_uptake(reads, log, unit):
         answer, entry = d.answer or {}, log[d.index]
         if not read_first(answer) or not is_paid(entry, unit):
             continue
-        advised = {(answer.get("separating_test") or {}).get("sensor_group")} | {((answer.get("read_batch") or [{}])[0] or {}).get("sensor_group")}
         flagged += 1
-        taken += entry.get("sensor_group") in advised - {None}
+        taken += bool(read_followed(entry.get("sensor_group"), answer))
     return {"reads_read_first": flagged, "reads_advised": taken}
 
 
@@ -206,7 +232,7 @@ def diagnosis_uptake(writes, log, asset):
     entry = log[d.index]
     if not candidates or entry.get("diagnosis") is None:
         return None
-    return asset.levels(entry["diagnosis"]) == asset.levels(candidates[0]["combination"])
+    return diagnosis_followed(asset.levels(entry["diagnosis"]), d.answer, asset.levels)
 
 
 def combination_at(log, t, asset):

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Episode explorer</title>
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div>
+      <div class="brand-name">Episode explorer</div>
+      <div class="brand-note">This page shows the ground truth, so it is for people and never for the agent under test.</div>
+    </div>
+  </div>
+  <nav class="crumbs" id="crumbs" aria-label="Location"></nav>
+  <div class="top-actions">
+    <div class="seg" id="raw-seg" role="group" aria-label="What the cards show" title="Show every card as the raw text of the files the run wrote">
+      <button type="button" data-v="summary" aria-pressed="true">Plain view</button><button type="button" data-v="source" aria-pressed="false">Raw files</button>
+    </div>
+    <button type="button" class="hidden-toggle" id="hidden-toggle" aria-pressed="false">
+      <span class="ht-icon" aria-hidden="true"></span><span class="ht-text">Ground truth hidden</span>
+    </button>
+    <button type="button" class="help-btn" id="help-btn" aria-label="Keys and words" aria-expanded="false" aria-controls="help-pop">?</button>
+    <div class="help-pop" id="help-pop" role="dialog" aria-label="Keys and words" hidden>
+      <h3>Keys</h3>
+      <dl><dt>&larr; &rarr;</dt><dd>previous or next step</dd><dt>1 to 4</dt><dd>the four tabs of a step</dd><dt>R</dt><dd>plain view or raw files</dd><dt>H</dt><dd>show or hide the ground truth, when the viewer was started with the hidden option</dd></dl>
+      <h3>Words on this page and in the paper</h3>
+      <dl class="gloss"><dt>possible cause</dt><dd>a candidate root cause, one set of faulty parts</dd><dt>part</dt><dd>a component of the machine</dd><dt>machine</dt><dd>the asset under repair</dd><dt>cycle</dt><dd>one time step of the machine</dd><dt>step</dt><dd>one tool call of the agent</dd><dt>normal range</dt><dd>the range of a sensor on a healthy machine</dd><dt>ground truth</dt><dd>the hidden state, the real fault and the score, which the agent never sees</dd><dt>CausalDiagnosis MCP</dt><dd>the diagnosis tool of this project, which the agent can ask</dd></dl>
+    </div>
+  </div>
+</header>
+<main id="app" tabindex="-1"><p class="loading">Loading the run folders.</p></main>
+<footer class="foot" id="foot"></footer>
+</body>
+</html>

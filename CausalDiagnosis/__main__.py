@@ -84,6 +84,8 @@ COMMANDS = {
         "walkthrough": ("episode_viewer.walkthrough", "the illustrated walkthrough of one episode"),
         "step-through-page": ("episode_viewer.step_through_page", "the step-through page of one episode, one slide per tool call"),
         "run-review-pack": ("episode_viewer.run_review_pack", "the review pack of a run folder and the fixed starts of the walkthroughs"),
+        "explorer": ("episode_viewer.explorer", "the episode explorer on 127.0.0.1, or the page of one episode as one file (serve, export)"),
+        "explorer-shots": ("episode_viewer.explorer.shots", "the screenshots of the episode explorer for its docs page, with playwright"),
     },
     "examples": {
         "run-one-episode": ("examples.run_one_episode", "play one episode of the oracle and of the do-nothing policy, no model needed"),

@@ -9,6 +9,7 @@ Pages that show one episode or one run to a person who was not there.
 | walkthrough | how one episode started, what the agent did step by step, and how the verifier scored it |
 | step-through page | one slide per tool call of an episode, for diagnosing what happened |
 | run review pack | for one run folder: where it came from, its ledger, its replay check and the walkthrough pages; also the fixed starts that the walkthroughs use (`fixed_starts.json`) |
+| explorer | every run folder under a folder as pages served on 127.0.0.1: the run list, the episode page on one axis of cycles, what the agent knew and did at every step, the graph, the sensor readings and the files; or the page of one episode as one file |
 
 ## How to use it
 
@@ -16,9 +17,10 @@ Pages that show one episode or one run to a person who was not there.
 python -m CausalDiagnosis episode_viewer walkthrough --help
 python -m CausalDiagnosis episode_viewer step-through-page --help
 python -m CausalDiagnosis episode_viewer run-review-pack --help
+python -m CausalDiagnosis episode_viewer explorer serve --runs CausalDiagnosis/results/runs
 ```
 
-The pages quote sensor readings of single cycles, so they stay out of the repository: `CausalDiagnosis/docs/walkthroughs/` is ignored by git. The section The step-through viewer of `CausalDiagnosis/docs/experiments.md` describes the page of one episode.
+The pages quote sensor readings of single cycles, so they stay out of the repository: `CausalDiagnosis/docs/walkthroughs/` is ignored by git. The section The step-through viewer of `CausalDiagnosis/docs/experiments.md` describes the page of one episode, and `CausalDiagnosis/docs/episode-explorer.md` describes the explorer.
 
 ## How to add to it
 

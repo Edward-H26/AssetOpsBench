@@ -53,7 +53,7 @@ CODE_LISTS = {
                 "CausalDiagnosis/experiments/table_definitions/registered_analysis.py",
                 "CausalDiagnosis/experiments/run_verification/replay_check/",
                 "CausalDiagnosis/experiments/table_definitions/serving_of_record.json"),
-    "rendering": ("CausalDiagnosis/episode_viewer/walkthrough/", "CausalDiagnosis/evaluation/result_tables/paper_tables/",
+    "rendering": ("CausalDiagnosis/episode_viewer/walkthrough/", "CausalDiagnosis/episode_viewer/explorer/", "CausalDiagnosis/evaluation/result_tables/paper_tables/",
                  "CausalDiagnosis/evaluation/result_tables/leaderboard.py",
                  "CausalDiagnosis/episode_viewer/run_review_pack.py",
                  "CausalDiagnosis/evaluation/result_tables/publish_runs.py",

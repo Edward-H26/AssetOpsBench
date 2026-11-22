@@ -120,6 +120,8 @@ The table only starts the program, so `python -m CausalDiagnosis.<folder>.<modul
 | episode_viewer | `walkthrough` | the illustrated walkthrough of one episode |
 | episode_viewer | `step-through-page` | the step-through page of one episode, one slide per tool call |
 | episode_viewer | `run-review-pack` | the review pack of a run folder and the fixed starts of the walkthroughs |
+| episode_viewer | `explorer` | the episode explorer on 127.0.0.1, or the page of one episode as one file (serve, export) |
+| episode_viewer | `explorer-shots` | the screenshots of the episode explorer for its docs page, with playwright |
 | examples | `run-one-episode` | play one episode of the oracle and of the do-nothing policy, no model needed |
 | utils | `paths` | print a location of the repository by its name |
 | performance | `profile-table` | the stage profile of the episodes of run folders, per episode, cell and job |

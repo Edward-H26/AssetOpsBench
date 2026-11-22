@@ -145,6 +145,24 @@ def prompt_kind(prompt):
     return None
 
 
+def planning_requests(ep):
+    """{plan index: the indices of its requests in llm_calls.json, the first and every retry or repair after it} of the plans that
+    the model wrote, in plan order, or None when the planning requests do not pair with those plans."""
+    groups = []
+    for i, c in enumerate(ep.llm_calls):
+        kind = prompt_kind(c.get("prompt") or "")
+        if kind == "plan":
+            groups.append([i])
+        elif kind == "retry" and groups:
+            groups[-1].append(i)
+        elif kind not in ("orientation", "summary"):
+            return None
+    modelled = [p for p in ep.plans.get("plans") or [] if p.get("source") not in NO_MODEL_SOURCES]
+    if len(groups) != len(modelled):
+        return None
+    return {p["index"]: group for p, group in zip(modelled, groups)}
+
+
 def causal_counts(ep):
     """The orientation falls after the plan that read the profile, before the first call of the next turn, every plan's calls (a retry
     or a repair among them) before the plan's first step call, which follows the fresh ranking of its turn, or before the first call
@@ -153,16 +171,8 @@ def causal_counts(ep):
     plans = ep.plans.get("plans") or []
     labels, _ = ep.walk
     kinds = [prompt_kind(c.get("prompt") or "") for c in ep.llm_calls]
-    groups = []
-    for kind in kinds:
-        if kind == "plan":
-            groups.append(1)
-        elif kind == "retry" and groups:
-            groups[-1] += 1
-        elif kind not in ("orientation", "summary"):
-            return unplaced
-    modelled = [p for p in plans if p.get("source") not in NO_MODEL_SOURCES]
-    if len(groups) != len(modelled):
+    requests = planning_requests(ep)
+    if requests is None:
         return unplaced
     n = len(ep.calls)
     profiled = next((p["index"] for p in plans if any(s.get("kind") == "profile" and s.get("status") == "done" for s in p.get("steps") or [])), None)
@@ -171,7 +181,7 @@ def causal_counts(ep):
     finishes = [i for i, c in enumerate(ep.calls) if c.tool == "finish"]
     summaries = kinds.count("summary")
     placed = ([oriented] * kinds.count("orientation")
-              + [starts[p["index"]] for p, size in zip(modelled, groups) for _ in range(size)]
+              + [starts[index] for index, group in requests.items() for _ in group]
               + (finishes[:summaries] + [n] * max(0, summaries - len(finishes))))
     return [sum(1 for at in placed if at <= i) for i in range(n)], None
 
