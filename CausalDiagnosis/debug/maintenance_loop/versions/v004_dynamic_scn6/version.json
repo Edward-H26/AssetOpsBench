@@ -1,0 +1,17 @@
+{
+  "design": "保持v004 agent字节不变，改测已有Scenario6：实时时钟与cycle3冷却器定时劣化，初始阀/泵轻度故障，无失效截止；先只测MCP一回合，验证agent思考期间的状态变化。",
+  "version": "v004_dynamic_scn6",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "sha256": {
+    "run.py": "deb3c693c9c7d5d582e3e7004983cbf4fc7ca729eeb3dd3f3ffa072a75e5f26f",
+    "protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "test_protocol.py": "2e17dad0ef984db9ff1f546bfc2773dcac0edb96921d74afdb5510be9169f20e",
+    "scenario.json": "32798b2260b58e54040212a5a951512e1b3a521026ff18d325d9a7220c45a72e"
+  },
+  "config_file": "scenario.json",
+  "first_seed": 1,
+  "scenario_ids": null,
+  "status": "prepared",
+  "formal_evaluation": false
+}

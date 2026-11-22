@@ -1,0 +1,29 @@
+{
+  "name": "debug_scn1",
+  "description": "The anchored scenarios, one episode per scenario of the file that CausalDiagnosis/frameworks/AssetOpsBench/scenarios/download_scenarios.py fetches into the data folder of the asset, anchored at the scenario's date under the assumption that hyd_1 is hp_1 with one recorded cycle per day from 2022-07-01, with the recorded condition of that day hidden and the scenario text as the question. The driver fills start and question per scenario from CausalDiagnosis/frameworks/AssetOpsBench/scenarios/scenario_anchors.py. The big layers are those of static.json, and the fault rule admits any number of faulty components, since an anchored day is not drawn under a rule.",
+  "layers": [
+    "priced",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "switches": {
+    "deterioration": "none",
+    "time_tools": "on",
+    "failure": {
+      "strict": false
+    }
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "fault_rule": {
+    "min_faulty": 1,
+    "max_faulty": 4
+  },
+  "anchors": {
+    "date0": "2022-07-01"
+  },
+  "start": null,
+  "question": null
+}

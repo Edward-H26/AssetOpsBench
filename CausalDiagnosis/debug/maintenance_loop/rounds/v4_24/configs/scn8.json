@@ -1,0 +1,15 @@
+{
+  "name": "debug_scn8",
+  "description": "Healthy control; reconstructed debug configuration, not an original preset.",
+  "layers": [],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 0
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null
+}

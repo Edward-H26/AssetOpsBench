@@ -1,0 +1,48 @@
+{
+  "name": "debug_scn5",
+  "description": "Worst pump, degraded accumulator, cooler changes; ambiguity to validate; reconstructed debug configuration, not an original preset.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": {
+    "combination": [
+      100,
+      100,
+      2,
+      115
+    ],
+    "entry_offset": 0
+  },
+  "question": null,
+  "allowed": [
+    [
+      100,
+      100,
+      2,
+      115
+    ]
+  ],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 4
+  },
+  "switches": {
+    "deterioration": {
+      "mode": "schedule",
+      "components": 1,
+      "first_drop": [
+        3,
+        3
+      ],
+      "interval": 10
+    }
+  }
+}

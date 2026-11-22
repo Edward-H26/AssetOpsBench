@@ -1,0 +1,14 @@
+{
+  "design": "每轮执行模型提出的第一个合法动作；公开工单进度；沿用原维修与验证标准；Scenario2007 seed0 对照 MCP 与 no-MCP",
+  "version": "v003",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "sha256": {
+    "run.py": "a789b88683335a0820e5aa852de7d0224a241ec559f4ae9d45faa270d9d87b24",
+    "protocol.py": "e7d15d9e78a174ff26769dd7ec675960df440cc930824832ab2a21906276e809",
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "test_protocol.py": "87077b2420b18497e7c17c748164b06ff493558b7d577661496aee50728e80c7",
+    "scenario1.json": "724353c750982bef6fc3eb079777ce303fa7c7ed4d207e74d44f8abeee0ecd52"
+  },
+  "status": "prepared",
+  "formal_evaluation": false
+}

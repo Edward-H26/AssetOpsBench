@@ -1,0 +1,14 @@
+{
+  "design": "修复无profile/无wait开局崩溃；保留并逐步原生检查模型未执行步骤，观测/时钟变化或surprise后重规划；短提示展示可读周期与最近返回数，拒绝已知空静态窗口。环境与verifier不变。",
+  "version": "v004",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "sha256": {
+    "run.py": "deb3c693c9c7d5d582e3e7004983cbf4fc7ca729eeb3dd3f3ffa072a75e5f26f",
+    "protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "test_protocol.py": "2e17dad0ef984db9ff1f546bfc2773dcac0edb96921d74afdb5510be9169f20e",
+    "scenario1.json": "724353c750982bef6fc3eb079777ce303fa7c7ed4d207e74d44f8abeee0ecd52"
+  },
+  "status": "prepared",
+  "formal_evaluation": false
+}

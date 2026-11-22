@@ -1,0 +1,10 @@
+{
+  "version": "v002",
+  "imported": true,
+  "design": "首次仅读取一个传感器组；提示分段计划、完工后验证；仅修改prompt",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "source_sha256": {
+    "prompts.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d"
+  },
+  "formal_evaluation": false
+}

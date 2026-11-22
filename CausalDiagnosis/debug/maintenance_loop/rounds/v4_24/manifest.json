@@ -1,0 +1,244 @@
+{
+  "round": "v4_24",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "agent_version": "v004",
+  "formal_evaluation": false,
+  "model": "granite-3.3-8b-instruct",
+  "judge": "none",
+  "backend": "memory",
+  "tasks": [
+    {
+      "id": "scn01_causal_mcp",
+      "scenario": "scn01",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn1.json",
+      "seed": 0,
+      "scenario_id": 2007
+    },
+    {
+      "id": "scn01_causal_no_mcp",
+      "scenario": "scn01",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn1.json",
+      "seed": 0,
+      "scenario_id": 2007
+    },
+    {
+      "id": "scn01_plan_execute_mcp",
+      "scenario": "scn01",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn1.json",
+      "seed": 0,
+      "scenario_id": 2007
+    },
+    {
+      "id": "scn02_causal_mcp",
+      "scenario": "scn02",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn2.json",
+      "seed": 0,
+      "scenario_id": 2004
+    },
+    {
+      "id": "scn02_causal_no_mcp",
+      "scenario": "scn02",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn2.json",
+      "seed": 0,
+      "scenario_id": 2004
+    },
+    {
+      "id": "scn02_plan_execute_mcp",
+      "scenario": "scn02",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn2.json",
+      "seed": 0,
+      "scenario_id": 2004
+    },
+    {
+      "id": "scn03_causal_mcp",
+      "scenario": "scn03",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn3.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn03_causal_no_mcp",
+      "scenario": "scn03",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn3.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn03_plan_execute_mcp",
+      "scenario": "scn03",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn3.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn04_causal_mcp",
+      "scenario": "scn04",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn4.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn04_causal_no_mcp",
+      "scenario": "scn04",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn4.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn04_plan_execute_mcp",
+      "scenario": "scn04",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn4.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn05_causal_mcp",
+      "scenario": "scn05",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn5.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn05_causal_no_mcp",
+      "scenario": "scn05",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn5.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn05_plan_execute_mcp",
+      "scenario": "scn05",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn5.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn06_causal_mcp",
+      "scenario": "scn06",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn6.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn06_causal_no_mcp",
+      "scenario": "scn06",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn6.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn06_plan_execute_mcp",
+      "scenario": "scn06",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn6.json",
+      "seed": 1,
+      "scenario_id": null
+    },
+    {
+      "id": "scn07_causal_mcp",
+      "scenario": "scn07",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn7.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn07_causal_no_mcp",
+      "scenario": "scn07",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn7.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn07_plan_execute_mcp",
+      "scenario": "scn07",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn7.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn08_causal_mcp",
+      "scenario": "scn08",
+      "mode": "causal_mcp",
+      "agent": "causal",
+      "config": "configs/scn8.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn08_causal_no_mcp",
+      "scenario": "scn08",
+      "mode": "causal_no_mcp",
+      "agent": "causal",
+      "config": "configs/scn8.json",
+      "seed": 0,
+      "scenario_id": null
+    },
+    {
+      "id": "scn08_plan_execute_mcp",
+      "scenario": "scn08",
+      "mode": "plan_execute_mcp",
+      "agent": "plan_execute",
+      "config": "configs/scn8.json",
+      "seed": 0,
+      "scenario_id": null
+    }
+  ],
+  "sha256": {
+    "source/audit.py": "3dd8bcaad4a019e9048306d869e661ce691e7220fe953bf2d48fc9f10331de01",
+    "source/prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "source/protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9",
+    "source/run.py": "deb3c693c9c7d5d582e3e7004983cbf4fc7ca729eeb3dd3f3ffa072a75e5f26f",
+    "source/run_round.py": "bef6b80e068bef80e7f283a12fce80e557ca6a5e6859872c8312fde23a243a21",
+    "source/test_protocol.py": "2e17dad0ef984db9ff1f546bfc2773dcac0edb96921d74afdb5510be9169f20e",
+    "configs/scn1.json": "724353c750982bef6fc3eb079777ce303fa7c7ed4d207e74d44f8abeee0ecd52",
+    "configs/scn2.json": "d0b958ad18227e0a0574c6110686af050964e643c8be8c10b70fe18d6758e242",
+    "configs/scn3.json": "d1c24ad2caf320515e753a46e5644831dd68f06089c45633a0d704fb9f99b523",
+    "configs/scn4.json": "7538fbafdc8b8f84499db6e6d2a6fc73f28d5d42afc6d4cbf9008d3d7b950fd5",
+    "configs/scn5.json": "97f19ec8697507366eeb027fc14b74c855d5e9bf3951bda6814095b6d35104df",
+    "configs/scn6.json": "32798b2260b58e54040212a5a951512e1b3a521026ff18d325d9a7220c45a72e",
+    "configs/scn7.json": "2eda914debaf3d8ab3f2f13c097ef95e10c0f856bbc7a399781546fed09c3ded",
+    "configs/scn8.json": "762f0e1705f3d8df712f24f35ccc12d6c20f910c1ff61783398547ecb26fe14c"
+  },
+  "shutdown_after_archive": true
+}

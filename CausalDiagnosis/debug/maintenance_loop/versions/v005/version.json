@@ -1,0 +1,21 @@
+{
+  "version": "v005",
+  "variant": "prompt-and-live-trace-over-v004",
+  "base_commit": "413ad2b103f8f6e1ad404175aa9db3f1b944484f",
+  "parent_variant": "v004",
+  "execution_kernel_unchanged": true,
+  "config_file": "scenario1.json",
+  "first_seed": 0,
+  "scenario_ids": "2007",
+  "formal_evaluation": false,
+  "offline_tests": 10,
+  "sha256": {
+    "prompts_v2.py": "2a2cf4cba012a1dcb93a37ed640945cdd7c346dd12694af2f6ecbae75c2d3f2d",
+    "protocol.py": "ac7ea7220bca9f908e6865a5e8c8ff3753d9943ffb6726878a708670203811cc",
+    "run.py": "490e3c39ed767b91aad5d603f0b0b8610bd7360205ebf50e77311338cb7b83b8",
+    "scenario1.json": "724353c750982bef6fc3eb079777ce303fa7c7ed4d207e74d44f8abeee0ecd52",
+    "test_protocol.py": "e7810042764b6877e6c319bcd688d188a2faad1de14314aa4091fbef76f6c88b",
+    "v4_protocol.py": "7d397c6b6f214dc2aeab5432d78295a1f9d91081f89f06a70d3cf8fd800febd9"
+  },
+  "model_validation_round": "v5_targeted"
+}

@@ -24,6 +24,7 @@ LEFT_OUT = {
     "performance/tracking_client.py": "the client of the tracking export, started through uv by performance/tracking_export.py in an environment of its own",
 }
 FRAMEWORKS = "frameworks"  # a framework's programs reach the table through its declaration
+DEBUG = "debug"  # the debug overlay's programs and their frozen copies are started with python, as debug/maintenance_loop/README.md says
 
 
 def _env():
@@ -74,7 +75,7 @@ def test_every_program_with_a_main_has_a_command_or_a_reason():
     loose = []
     for path in sorted(PACKAGE.rglob("*.py")):
         rel = path.relative_to(PACKAGE)
-        if "tests" in rel.parts or rel.parts[0] == FRAMEWORKS or rel.name == "__main__.py" and rel.parent == PACKAGE.relative_to(PACKAGE):
+        if "tests" in rel.parts or rel.parts[0] in (FRAMEWORKS, DEBUG) or rel.name == "__main__.py" and rel.parent == PACKAGE.relative_to(PACKAGE):
             continue
         if not _has_main_guard(path) or str(rel) in LEFT_OUT:
             continue
