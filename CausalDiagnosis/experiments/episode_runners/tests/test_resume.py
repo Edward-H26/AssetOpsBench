@@ -7,7 +7,6 @@ the fillers drop --resume and check_grid_complete.py names the run in progress o
 development starts, which needs no model, cut where a time limit or a lost node would stop the driver, and the runs of the selectors
 the oracle at one start state and doing nothing on made-up scenarios of the anchored preset."""
 import csv
-import importlib
 import importlib.util
 import json
 import re
@@ -28,6 +27,7 @@ from CausalDiagnosis.experiments.episode_runners.run_folder_layout import episod
 from CausalDiagnosis.utils.json_files import read_json
 from CausalDiagnosis.datasets.dataset_loader.recordings import public_path
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
+from CausalDiagnosis.experiments.episode_runners.tests.conftest import own_table_copies
 
 LINE = "--config base --agent oracle"
 DEVELOPMENT = ["--starts", "development", "--start-cap", "5"]  # the fewest starts that cover every faulty level of the rig
@@ -106,20 +106,12 @@ def runs(tmp_path_factory):
     if importlib.util.find_spec("mcp") is None:
         pytest.skip("needs the mcp package")
     from CausalDiagnosis.experiments.cluster_runs import precompute_grid_tables as precompute_tables
-    from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
 
     root = tmp_path_factory.mktemp("runs")
     with pytest.MonkeyPatch.context() as patch:
         # the generated tables of these runs are copies of their own for the module, since a run here may add a table that the
         # session copies lack, and a run of another module may have recorded those copies
-        for name, attribute in ports.generated_tables():
-            module = importlib.import_module(name)
-            shared = Path(getattr(module, attribute))
-            own = root / "tables" / name / shared.name
-            own.parent.mkdir(parents=True, exist_ok=True)
-            if shared.exists():
-                shutil.copyfile(shared, own)
-            patch.setattr(module, attribute, own)
+        own_table_copies(patch, root / "tables")
         precompute_tables.main(["--config", "base"])
         patch.setattr(run_episodes.run_record, "run_label", lambda config_name, agent_label: LABEL)
         progress = {where: _cut(root / f"cut_{where}", where) for where in PLACES}
@@ -140,19 +132,11 @@ def selected(tmp_path_factory):
     if importlib.util.find_spec("mcp") is None:
         pytest.skip("needs the mcp package")
     from CausalDiagnosis.experiments.cluster_runs import precompute_grid_tables as precompute_tables
-    from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
     from CausalDiagnosis.experiments.episode_runners.tests.test_run_episodes import _scenario_file
 
     root = tmp_path_factory.mktemp("selected")
     with pytest.MonkeyPatch.context() as patch:
-        for name, attribute in ports.generated_tables():
-            module = importlib.import_module(name)
-            shared = Path(getattr(module, attribute))
-            own = root / "tables" / name / shared.name
-            own.parent.mkdir(parents=True, exist_ok=True)
-            if shared.exists():
-                shutil.copyfile(shared, own)
-            patch.setattr(module, attribute, own)
+        own_table_copies(patch, root / "tables")
         precompute_tables.main(["--config", "base"])
         patch.setattr(run_episodes.run_record, "run_label", lambda config_name, agent_label: LABEL)
         ids = _scenario_file(root, patch, count=4)

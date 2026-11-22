@@ -38,10 +38,9 @@ from CausalDiagnosis.evaluation.result_tables import index_file, pooling_rules  
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import DEFAULT_RUNS
 from CausalDiagnosis.utils.json_files import read_json  # noqa: E402
 
-# the ledger records itself through its events, which a synced copy keeps partly beside it, and no ledger records the names
-# and folders that ledger.ignored() leaves out
-IGNORED_NAMES = ledger.IGNORED_NAMES | {ledger.LEDGER, ledger.LOCAL_EVENTS}
-IGNORED_DIRS = ledger.IGNORED_DIRS
+# the ledger records itself through its events, which a synced copy keeps partly beside it, and no ledger records the paths
+# that ledger.ignored() leaves out
+LEDGER_FILES = {ledger.LEDGER, ledger.LOCAL_EVENTS}
 # the states of a run that a replay does not play, with the words of the report
 NOT_REPLAYED = {"no transcript": "not replayed, no transcript", "static": "not replayed, a static run calls no server"}
 OTHER_KIND = "not a run of the rig"  # the state of the replay of a run of a declared kind, whose words its kind gives
@@ -75,7 +74,7 @@ def current_files(run_dir):
     out = {}
     for path in sorted(run_dir.rglob("*")):
         relative = path.relative_to(run_dir)
-        if path.is_file() and path.name not in IGNORED_NAMES and not IGNORED_DIRS & set(relative.parts):
+        if path.is_file() and path.name not in LEDGER_FILES and not ledger.ignored(relative):
             out[relative.as_posix()] = ledger.sha256_of(path)
     return out
 
@@ -83,7 +82,8 @@ def current_files(run_dir):
 def expected_files(record):
     """{path: SHA-256} that a ledger expects: the files of its episodes and of the run, then every event in order, which
     sets the new hash of a file it changed (None for a file it removed). Events on data files outside the run folder name
-    them by the path of the data record (public_record.public_path; an absolute path in a ledger written before) and stay out."""
+    them by the path of the data record (public_record.public_path, or an absolute path where a ledger holds one) and stay out,
+    and so do the paths that ledger.ignored() leaves out, such as a lock file that a ledger recorded."""
     files = {f"{name}/{path}": entry["sha256"] for name, episode in record["episodes"].items() for path, entry in episode["files"].items()}
     files.update({path: entry["sha256"] for path, entry in record["run_files"].items()})
     data_paths = {entry["path"] for entry in (record.get("data") or {}).values() if isinstance(entry, dict) and entry.get("path")}
@@ -95,7 +95,7 @@ def expected_files(record):
                 files.pop(path, None)
             else:
                 files[path] = change["new"]
-    return files
+    return {path: digest for path, digest in files.items() if not ledger.ignored(path)}
 
 
 # ----- the four checks -----

@@ -1,4 +1,4 @@
-"""SERVE_ADAPTERS of CausalDiagnosis/cluster_jobs/2_serve_model/serve_model.sbatch (CausalDiagnosis/cluster_jobs/README.md section 17): the agent model's launch receives every
+"""SERVE_ADAPTERS of CausalDiagnosis/cluster_jobs/2_serve_model/serve_model.sbatch (CausalDiagnosis/cluster_jobs/README.md, section 3, Runs): the agent model's launch receives every
 LoRA adapter of the training folder, so a fine tuned cell of the training table cannot play on a server without its adapter. The test runs
 the script's own lines from the adapter block to the agent model's launch in bash, with a stand-in launcher that prints the
 flags it was given. It also holds after the Agent-As-Tool port, which launches the agent model with a copy of the flags taken

@@ -23,7 +23,7 @@ from CausalDiagnosis.experiments.episode_runners.run_folder_layout import STATE_
 from CausalDiagnosis.utils.json_files import read_json
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 
-SECRET = "sk-ledger-test-0123456789abcdef"
+SECRET = "-".join(("sk", "ledger", "test", "0123456789abcdef"))
 
 
 def _sha(path):
@@ -87,8 +87,7 @@ def test_a_synthetic_run_keeps_a_running_ledger_until_finish_and_then_the_hash_o
 
 
 def test_a_run_folder_inside_the_checkout_passes_its_ledger_check_with_bytecode_and_finder_files(tmp_path):
-    """A launcher started as python -m from an episode folder inside the checkout leaves __pycache__ there, and Finder leaves
-    .DS_Store: no ledger records either, so the ledger check, which leaves both out, finds the run as it was written, and the file
+    """Python leaves __pycache__ beside a module it imports from a folder, and Finder leaves .DS_Store: no ledger records either, so the ledger check, which leaves both out, finds the run as it was written, and the file
     table of a walkthrough page, which the review pack matches with the ledger, lists neither."""
     from CausalDiagnosis.episode_viewer import walkthrough
 
@@ -245,8 +244,8 @@ def test_the_endpoint_file_of_the_serving_job_reaches_the_ledger_with_its_weight
     assert record["lines"] == ENDPOINT_FILE.splitlines() and record["base_url"] == "http://node001:40001/v1"
     assert {k: record[k] for k in ("job", "node", "model", "served_name", "started", "weights_commit", "sglang", "image_sha256")} == {
         "job": "13760001", "node": "node001", "model": "ibm-granite/granite-3.3-8b-instruct", "served_name": "granite-3.3-8b-instruct",
-        "started": "2026-11-03T14:19:14-05:00", "weights_commit": "0123456789abcdef0123456789abcdef01234567", "sglang": "0.5.19",
-        "image_sha256": "90568174c5a27b1aa5a654014ddbbb1d4ed785c43a70657dfae15ed1f3d6addf"}
+        "started": "2026-11-03T14:19:14-05:00", "weights_commit": "0123456789abcdef0123456789abcdef01234567", "sglang": "0.5.19",  # pragma: allowlist secret
+        "image_sha256": "90568174c5a27b1aa5a654014ddbbb1d4ed785c43a70657dfae15ed1f3d6addf"}  # pragma: allowlist secret
     # a file of the serving jobs before the engine lines, and a line that is not a list of pairs, which stays in lines only
     old = tmp_path / "old.txt"
     old.write_text("\n".join(ENDPOINT_FILE.splitlines()[:3] + ["sglang"]) + "\n", encoding="utf-8")
@@ -360,7 +359,7 @@ def test_the_ledger_of_an_assetopsbench_run_holds_the_serving_identity_of_the_en
     assert model["endpoint_file"]["matches_endpoint"] is True
     identity = ledger.serving_identity(model)
     assert (identity["weights_commit"], identity["engine"], identity["model"]) == (
-        "0123456789abcdef0123456789abcdef01234567", "0.5.19", "granite-3.3-8b-instruct")
+        "0123456789abcdef0123456789abcdef01234567", "0.5.19", "granite-3.3-8b-instruct")  # pragma: allowlist secret
 
 
 def test_a_finished_assetopsbench_run_without_a_ledger_gets_one_written_after_the_fact(tmp_path):
@@ -649,3 +648,29 @@ def test_finish_keeps_a_data_entry_without_a_path(tmp_path):
     path.write_text(json.dumps(record), encoding="utf-8")
     closed = ledger.finish(run_dir)
     assert closed["status"] == "finished" and closed["events"] == []
+
+
+def test_the_tables_check_of_the_record_check_runs_as_a_module_and_names_its_last_error_line(monkeypatch):
+    """Rule 5 asks the tables check in a process of its own, as a module of the package from the root of the tree with the root
+    and its src on the import path, so a shell without PYTHONPATH gets the outcome of the check and no import error: every reason
+    names a missing table, if any. A check that fails otherwise names precompute_grid_tables.py, its status and the last line of
+    its error output."""
+    monkeypatch.delenv("PYTHONPATH", raising=False)
+    reasons = ledger.code_identity.tables_reasons()
+    assert all(reason.startswith("TABLES_MISSING") for reason in reasons), reasons
+    (failed,) = ledger.code_identity.tables_reasons("no_such_asset")
+    assert failed.startswith("the tables check of precompute_grid_tables.py ended with status ") and "no_such_asset" in failed, failed
+
+
+def test_the_functions_that_read_a_tree_read_the_root_of_run_data_at_the_call(tmp_path, monkeypatch):
+    """The functions of code_identity that read a tree take run_data.ROOT as it stands at the call, as code_files does, so a caller
+    that points it at another tree, here a folder that is no repository, reads that tree through every one of them, while a root
+    given by name still wins."""
+    identity, real = ledger.code_identity, ledger.run_data.ROOT
+    monkeypatch.setattr(ledger.run_data, "ROOT", tmp_path)
+    assert identity.git_state(["CausalDiagnosis"]) == (None, None)
+    assert identity.tree_record_reasons()[0].startswith("the tree is no git repository")
+    assert identity.record_reasons(tables=False)[0].startswith("the tree is no git repository")
+    assert identity.untracked_loaded(["CausalDiagnosis/__init__.py"]) == ["CausalDiagnosis/__init__.py"]
+    assert identity.tree_files() == {} and identity.code_record("causal")["commit"] is None
+    assert identity.tree_files(real)  # the tree given by name

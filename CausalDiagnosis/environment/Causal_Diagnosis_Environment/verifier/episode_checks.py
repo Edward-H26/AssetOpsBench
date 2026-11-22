@@ -88,13 +88,28 @@ def _timing(log, orders, oracle):
     degrading = {e["component"] for e in log if e["event"] in ("scheduled_drop", "hazard_drop")}
     closes = episode_log._run_windows(log, oracle)
     window_end = {o["component"]: o.get("window_end") for o in oracle["work_orders"]}
-    rows = []
-    for order in orders:
-        if order["component"] not in degrading:
-            continue
-        close_t, end_t = closes.get(order["id"], (None, window_end.get(order["component"])))
-        rows.append({"id": order["id"], "component": order["component"], "closed_t": close_t, "window_end": end_t,
-                     "ok": close_t is not None and (end_t is None or close_t <= end_t)})
+    rows = [_timing_row(order, closes, window_end) for order in orders if order["component"] in degrading]
+    return {"ok": all(r["ok"] for r in rows), "orders": rows}
+
+
+def _timing_row(order, closes, window_end):
+    """The row of one work order: its close and the window end of the run at the worst level open at it, the oracle's window end
+    for an order that never closed, and whether it closed by then."""
+    close_t, end_t = closes.get(order["id"], (None, window_end.get(order["component"])))
+    return {"id": order["id"], "component": order["component"], "closed_t": close_t, "window_end": end_t,
+            "ok": close_t is not None and (end_t is None or close_t <= end_t)}
+
+
+def _worst_level_timing(log, orders, oracle):
+    """The row of _timing for every work order on a component that stands at its worst level, the last level of its degradation
+    order in the asset file, at the start of the episode or at an event of the log, whether or not a drop degrades it during the
+    episode, so that an order on a component at its worst level from the start meets the window end that the oracle gives it: the
+    cycle at which the failure card would fail the component, its patience after the run opens. An order needs the lead time and
+    the repair downtime that the asset declares before it closes. The rows are reported beside the checks and enter neither
+    pass, nor all_checks_ok, nor a score, since the timing check and the plans of the reference policies read _timing alone."""
+    closes, at_worst = episode_log._worst_level_runs(log, oracle)
+    window_end = {o["component"]: o.get("window_end") for o in oracle["work_orders"]}
+    rows = [_timing_row(order, closes, window_end) for order in orders if order["component"] in at_worst]
     return {"ok": all(r["ok"] for r in rows), "orders": rows}
 
 

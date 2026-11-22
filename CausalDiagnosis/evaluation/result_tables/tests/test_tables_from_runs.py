@@ -1397,6 +1397,19 @@ def test_the_sampling_runs_of_fine_tuning_enter_no_table(tmp_path):
     assert pooling_rules.refused(runs / "sampling") == pooling_rules.TRAINING_SAMPLE and pooling_rules.refused(runs / "gym") is None
 
 
+def test_a_run_of_chosen_starts_that_another_rule_keeps_out_takes_that_rule_and_gives_its_root_no_kind(tmp_path):
+    """refused() names a run of chosen starts only when no other rule keeps the run out, so a run of --start-state on the memory
+    backend stays out as a run on the memory backend does and gives its root no kind, while a run of chosen starts on CouchDB is
+    one of chosen starts and gives its root the kind of its stamp."""
+    chosen = {**BASE_META, "start_state": "1/2@0", "stamp": pooling_rules.STAMP}
+    _run(tmp_path / "memory", "chosen", [_base_row(s) for s in range(2)], {**chosen, "backend": {"kind": "memory"}})
+    _run(tmp_path / "couchdb", "chosen", [_base_row(s) for s in range(2)], chosen)
+    assert pooling_rules.refused(tmp_path / "memory" / "chosen") == pooling_rules.MEMORY_BACKEND
+    assert pooling_rules.root_kind(tmp_path / "memory") == "empty"
+    assert pooling_rules.refused(tmp_path / "couchdb" / "chosen") == pooling_rules.CHOSEN_STARTS
+    assert pooling_rules.root_kind(tmp_path / "couchdb") == "development"
+
+
 def test_the_steps_of_the_execution_efficiency_count_every_attempted_tool_call_and_no_other_counter_of_a_runner():
     """The steps of the execution efficiency are the tool_calls cell plus the causal_calls cell under one rule for every agent, every
     attempted call, so a counter of a runner's own, such as the supervisor's ReAct steps of the ported Agent-As-Tool, which only the

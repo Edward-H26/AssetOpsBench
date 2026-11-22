@@ -1255,7 +1255,7 @@ def test_the_launchers_keep_their_bytes_and_launch_options_builds_the_same_serve
     from CausalDiagnosis.mcp_servers.utils.transcript_hooks import lowlevel_of
 
     rig, aob = servers_of_a_run.registered_servers("rig", True), servers_of_a_run.registered_servers("aob", True)
-    couchdb = {"kind": "couchdb", "url": "http://couchdb:5984", "username": "admin", "password": "secret"}
+    couchdb = {"kind": "couchdb", "url": "http://couchdb:5984", "username": "admin", "password": "secret"}  # pragma: allowlist secret
     data_file = (run_configuration.get_profile(run_configuration.DEFAULT_ASSET).records["data_env"], tmp_path / "recordings.jsonl")
     cases = [(rig, {}),
              (rig, {"ranking_model": "discriminant_urn", "abstention": ("fixed_cut", 0.9), "left_out": (3, 100, 0, 130),
@@ -1316,7 +1316,7 @@ def test_a_couchdb_store_without_its_password_stops_at_launch(monkeypatch):
     with pytest.raises(SystemExit, match="COUCHDB_PASSWORD"):
         run_episodes.store_settings(a)
     monkeypatch.setenv("COUCHDB_PASSWORD", "drawn-per-job")
-    assert run_episodes.store_settings(a)["password"] == "drawn-per-job"
+    assert run_episodes.store_settings(a)["password"] == "drawn-per-job"  # pragma: allowlist secret
 
 
 def test_a_module_outside_every_list_stops_the_run_after_its_first_episode(tmp_path, monkeypatch):

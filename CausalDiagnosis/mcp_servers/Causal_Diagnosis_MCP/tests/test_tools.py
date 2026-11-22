@@ -5,8 +5,12 @@ expected elimination of every read and the read batch), the time budget of a cal
 a value computed from the rig data: each checks what must hold whatever the data, such as probabilities that sum to one,
 intervals that contain their mean, p values in (0, 1] and residual identities."""
 import builtins
+import hashlib
 import io
 import json
+import os
+import subprocess
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -442,6 +446,72 @@ def test_ensure_models_fits_a_missing_file_on_the_data_file_it_is_given(tmp_path
     assert json.loads(path.read_text(encoding="utf-8")) == {"format": fit.MODELS_FORMAT, "facts_sha256": fit.facts_sha256(given),
                                                       "code": fit.code_digest()}
     assert fit.ensure_models(path, facts_path=given) == path and asked == [given]
+
+
+
+def test_the_models_file_is_the_file_models_path_names_when_it_is_asked(tmp_path, monkeypatch):
+    """ensure_models and write_models write, and load_models, the yardstick of the realized elimination and the command lines of
+    the grade table and of the calibration report read, MODELS_PATH as fit_models holds it when they are called, not when the
+    modules are loaded, so that the tests run on a copy of the file (conftest.py of the repository) and never write the file a
+    run in the same tree reads. The writes are recorded and none is made."""
+    from CausalDiagnosis.evaluation.metrics import realized_read_elimination as read_elimination
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import calibration_report as report
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import diagnosability_grade as gr
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.tools import fitted_models
+
+    path = tmp_path / "models.json"
+    path.write_text(json.dumps({**json.loads(fit.MODELS_PATH.read_text(encoding="utf-8")), "generated": "this test"}), encoding="utf-8")
+    monkeypatch.setattr(fit, "MODELS_PATH", path)
+    written = []
+    monkeypatch.setattr(fit, "write_json_atomically", lambda target, obj, indent=None: written.append(Path(target)))
+    monkeypatch.setattr(fit, "fit", lambda facts_path, **options: {"format": fit.MODELS_FORMAT, "facts_sha256": fit.facts_sha256(facts_path)})
+    monkeypatch.setattr(fit, "code_digest", lambda: "other code")  # the file reads as fitted by other code, so it is fitted again
+    assert fit.ensure_models() == path
+    fit.write_models()
+    assert written == [path, path]
+    assert load_models().raw["generated"] == "this test"
+    assert read_elimination.yardstick(left_out=START).digest == hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+
+    class Loaded(Exception):
+        """The models that a command line loaded, raised before it computes anything."""
+
+    def loaded(models_path=None):
+        raise Loaded(load_models(models_path).raw["generated"])
+
+    monkeypatch.setattr(fitted_models, "load_models", loaded)  # the grade table imports it when its command line runs
+    monkeypatch.setattr(report, "load_models", loaded)
+    for main, argv in ((gr.main, ["--out", str(tmp_path / "grades.json")]), (report.main, ["--out", str(tmp_path)])):
+        with pytest.raises(Loaded) as stopped:
+            main(argv)
+        assert stopped.value.args == ("this test",)
+
+
+def test_a_child_fits_the_models_into_the_copy_that_its_environment_names_and_the_tables_of_the_tree_keep_their_bytes(tmp_path, monkeypatch):
+    """A process that a test starts imports fit_models afresh, without the attribute that the session set, and the variable of the
+    session's copies hands it the copy. A child with only that variable, which names copies of this test, fits the models into
+    the copy, and every table of the tree keeps its bytes. Every table resolves to its copy before the child that writes starts,
+    so a module that ignores the variable fails before any write. The child's fit is made up, so it fits at once."""
+    from CausalDiagnosis.datasets.dataset_loader.dataset_packages import TABLE_COPIES
+    from CausalDiagnosis.environment.Causal_Diagnosis_Environment.tests.test_gymnasium_wrapper import child_tables, tree_tables
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
+    from CausalDiagnosis.utils.paths import SRC
+
+    tree = tree_tables()
+    before = {table: table.read_bytes() if table.exists() else None for table in tree}
+    copies = {table: tmp_path / table.name for table in tree}
+    monkeypatch.setenv(TABLE_COPIES, json.dumps({str(table.resolve()): str(copy) for table, copy in copies.items()}))
+    assert child_tables(os.environ) == [copies[table] for table in tree]
+    code = "\n".join([
+        "from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit",
+        "fit.fit = lambda facts_path, **options: {'format': fit.MODELS_FORMAT, 'facts_sha256': fit.facts_sha256(facts_path)}",
+        "print(fit.ensure_models())",
+    ])
+    child = subprocess.run([sys.executable, "-c", code], check=True, capture_output=True, text=True, cwd=str(SRC.parent),
+                           env=dict(os.environ, PYTHONPATH=os.pathsep.join([str(SRC.parent), str(SRC)])))
+    models = copies[next(table for table in tree if table.name == "models.json")]
+    assert Path(child.stdout.strip()) == models and json.loads(models.read_text(encoding="utf-8"))["code"] == fit.code_digest()
+    assert {table: table.read_bytes() if table.exists() else None for table in tree} == before
 
 
 def test_the_default_ranking_model_is_joint_block_and_the_models_file_names_it(episode):

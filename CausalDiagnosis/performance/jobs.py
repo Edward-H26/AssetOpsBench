@@ -25,10 +25,11 @@ in which a process without a run folder was alive, or a run whose folder does no
 the notes of the job name each.
 
 The parts around the episodes read the model episodes alone, so the time of a run that plays no model episode, a run of a
-baseline policy or one whose folder records no agent, lies in the part before the first model episode, between the first and the
-last, or after the last, as its episodes do, and the notes of the job name each such run with the parts that hold its episodes.
-Its time also lies in the Elapsed that the card-seconds divide, and the notes say so; a run whose folder records no agent may be
-a model run, so then the card-seconds of the job are not divided."""
+baseline policy or one whose agent is not known here, lies in the part before the first model episode, between the first and
+the last, or after the last, as its episodes do, and the notes of the job name each such run with the parts that hold its
+episodes. Its time also lies in the Elapsed that the card-seconds divide, and the notes say so. A run whose folder records no
+agent, or records an agent of none of the kinds that the tree declares, may be a model run, so then the card-seconds of the job
+are not divided."""
 import re
 from datetime import datetime
 
@@ -205,13 +206,16 @@ def rate_windows(events, n, runs, final=True):
     """(windows, notes): the windows of n model runs alive that the rate reads, less every window in which a process that no run
     folder records, or the process of a run whose folder does not record a field of its cell, was alive, and with the window open
     at the end of the record closed at the earliest last episode end of its runs. The process of a run whose agent reaches no
-    served model counts toward no window; a process that no run folder records counts, since nothing says what it played."""
+    served model counts toward no window; a process that no run folder records, or the process of a run whose agent is not known
+    here, counts, since nothing says what it played, and the windows in which it was alive give no rate."""
     named = {process_name(run): run for run in runs if process_name(run)}
-    without_model = {name for name, run in named.items() if not run["model_agent"]}
+    without_model = {name for name, run in named.items() if not run["model_agent"] and run_files.agent_unknown(run["meta"]) is None}
     blocked = {name: "no run folder of the grid folder records that process" for name in
                {event["name"] for event in events if event["loop"] == LINES_LOOP} if name not in named}
     blocked.update({process_name(run): f"its run {run['dir'].name} records no {', '.join(run['missing'])}" for run in runs
                     if run["missing"] and process_name(run)})
+    blocked.update({process_name(run): f"its run {run['dir'].name} {run_files.agent_unknown(run['meta'])}" for run in runs
+                    if not run["missing"] and process_name(run) and run_files.agent_unknown(run["meta"])})
     windows, block_notes = unblocked(alive_windows([event for event in events if event["name"] not in without_model], n), blocked)
     last_ends = {name: max((b for _a, b in episode_spans(run["rows"])), default=None) for name, run in named.items()}
     windows, close_notes = close_open(windows, last_ends, final)
@@ -240,12 +244,12 @@ def job_rate(events, unread, n, runs, spans, left_out, final=True):
 
 
 def other_run_note(run, model_spans):
-    """The note of a run of the job that plays no model episode, a run whose agent reaches no served model or whose folder records
-    no agent: the parts around the model episodes, of model_spans, that hold the spans of its episodes, so that no part holds the
-    time of such a run unnamed."""
+    """The note of a run of the job that plays no model episode, a run whose agent reaches no served model or is not known here:
+    the parts around the model episodes, of model_spans, that hold the spans of its episodes, so that no part holds the time of such
+    a run unnamed."""
     first = min(a for a, _b in model_spans)
     last = max(b for _a, b in model_spans)
-    why = "records no agent" if "agent" in run["missing"] else "reaches no served model"
+    why = run_files.agent_unknown(run["meta"]) or "reaches no served model"
     spans = episode_spans(run["rows"])
     held = [name for name, holds in (("to_first_episode_s", lambda a, b: a < first), ("episodes_span_s", lambda a, b: a < last and b > first),
                                      ("after_last_episode_s", lambda a, b: b > last)) if any(holds(a, b) for a, b in spans)]
@@ -269,11 +273,11 @@ def job_view(grid, job, runs):
     that its folder does not record, its process in in_flight.tsv and its profile rows. The model episodes are the rows of the model
     runs, every one for the cost and those the profile kept for the spans and the rate. A job whose model runs play more than one
     cell gets no cost and no rate, since its card time is shared between the cells, and a model run whose cell is not recorded
-    whole, or a run whose folder records no agent, leaves the card time undivided. Every run that plays no model episode is named
+    whole, or a run whose agent is not known here, leaves the card time undivided. Every run that plays no model episode is named
     in the notes with the parts that hold its episodes."""
     model_runs = [run for run in runs if run["model_agent"]]
     others = [run for run in runs if not run["model_agent"]]
-    without_model = [run["dir"].name for run in others if "agent" not in run["missing"]]
+    without_model = [run["dir"].name for run in others if run_files.agent_unknown(run["meta"]) is None]
     # an episode in flight at a cut has a folder and no row of scores.csv: it is no scored episode, and its card time stays in the
     # Elapsed of the job
     rows = [row for run in model_runs for row in run["rows"] if row["left_out"] != NO_ROW]
@@ -303,7 +307,9 @@ def job_view(grid, job, runs):
                                 final)
     cost = job_cost(rows, elapsed)
     undivided = [why for why, holds in (("a model run of the job records its cell in part", len(complete) < len(model_runs)),
-                                        ("a run of the job records no agent", len(others) > len(without_model))) if holds]
+                                        ("a run of the job records no agent", any("agent" in run["missing"] for run in others))) if holds]
+    undivided += [f"{run['dir'].name} {run_files.agent_unknown(run['meta'])}" for run in others
+                  if "agent" not in run["missing"] and run_files.agent_unknown(run["meta"])]
     if undivided:
         cost = {**cost, "card_s_per_episode": None, "card_s_per_passed_episode": None}
         notes += [f"{why}, so the card-seconds of the job are not divided" for why in undivided]

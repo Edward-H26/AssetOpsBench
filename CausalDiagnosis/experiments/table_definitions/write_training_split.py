@@ -72,7 +72,7 @@ def main(argv=None):
                                                  "trial.")
     parser.add_argument("--asset", required=True, help="the asset_id of the asset file")
     parser.add_argument("--k", type=int, required=True, help="the number of folds, at least 2 and at most the single faults")
-    parser.add_argument("--seed", type=int, default=0, help="the seed of the dealing, fixed before any run")
+    parser.add_argument("--seed", type=int, default=0, help="the seed of the dealing, which the written split records")
     parser.add_argument("--profile", help="an asset file to read in place of the bundled one, such as a draft of a port")
     parser.add_argument("--facts", help="the data file, else the one the profile names")
     parser.add_argument("--starts", choices=tuple(DEALT_OVER), default="registered",

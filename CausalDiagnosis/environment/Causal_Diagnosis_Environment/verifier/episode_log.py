@@ -28,7 +28,13 @@ def released_from_env(env):
 
 
 def _run_windows(log, oracle):
-    """{order id: (close cycle, window)} for every close of a work order in the log. The window is the one of the run at the
+    """{order id: (close cycle, window)} for every close of a work order in the log (_worst_level_runs)."""
+    return _worst_level_runs(log, oracle)[0]
+
+
+def _worst_level_runs(log, oracle):
+    """(closes, at_worst): closes is {order id: (close cycle, window)} for every close of a work order in the log, and at_worst
+    the components that stand at their worst level at the start or reach it at an event of the log. The window is the one of the run at the
     worst level of the order's component that is open at the close, and the horizon when the component is not at its worst
     level then. The levels follow the log from the reset entry through the drops and the combination after every close and
     every expiry of an emergency hold. A run opens when its component reaches the last level of its degradation order, at
@@ -71,7 +77,7 @@ def _run_windows(log, oracle):
             elif current[c] == worst.get(c) and after[c] != worst.get(c):
                 window.pop(c, None)
         current = after
-    return closes
+    return closes, frozenset(started)
 
 
 def _asset_truth(log):

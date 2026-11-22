@@ -1,4 +1,4 @@
-"""The tables a grid reads, computed once before its lines start (CausalDiagnosis/cluster_jobs/README.md section 9): the models of the diagnostics
+"""The tables a grid reads, computed once before its lines start (CausalDiagnosis/cluster_jobs/README.md, section 0, Setup): the models of the diagnostics
 server, the separability label table of every rules key the lines play (CausalDiagnosis/environment/reference_policies/diagnosability_label.py) and the E18
 grade table of every rules key of their released rules (CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/diagnosability_grade.py), for the lines of the grid
 files, for the named presets and for the asset-default EpisodeConfig(), which the gym and the OpenEnv wrapper default to, so

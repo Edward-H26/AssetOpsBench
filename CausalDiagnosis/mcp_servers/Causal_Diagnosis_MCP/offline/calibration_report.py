@@ -1,4 +1,4 @@
-"""The calibration test of the component marginals (CausalDiagnosis/docs/causal-diagnosis-mcp.md, section Calibration).
+"""The calibration test of the component marginals (CausalDiagnosis/docs/causal-diagnosis-mcp.md, section The calibration report).
 
 For every combination of the start set, the development blocks of the asset by default (asset_model.development_blocks)
 or every recorded combination with --starts all, rollouts of readings drawn from its block feed each ranking model, and the fault
@@ -34,7 +34,7 @@ from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import asset_vi
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.advice.conformal_intervals import DEFAULT_ALPHA, predict_summaries
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.discriminant_urn_ranking import urn_probabilities
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.belief_filter import Reading
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import MODELS_PATH, REFIT, facts_sha256, refuse_default_files
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import REFIT, facts_sha256, refuse_default_files
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.belief_at_one_cycle import RANKING_MODELS, Posterior
 
 RESULTS_DIR = RESULTS
@@ -185,7 +185,7 @@ def report(records, coverage, models, view, blocks, readings, rollouts, seed, ra
 
 
 def run(out_dir=RESULTS_DIR, readings=READINGS, rollouts=ROLLOUTS, seed=SEED, ranking_models=RANKING_MODELS, alpha=DEFAULT_ALPHA, facts_path=None,
-        asset_id=None, models_path=MODELS_PATH, starts=START_SETS[0]):
+        asset_id=None, models_path=None, starts=START_SETS[0]):
     models = load_models(models_path)
     view = asset_view(asset_id)
     path = facts_path or default_facts_path(asset_id)
@@ -206,7 +206,7 @@ def run(out_dir=RESULTS_DIR, readings=READINGS, rollouts=ROLLOUTS, seed=SEED, ra
 def main(argv=None):
     parser = argparse.ArgumentParser(description="calibration report of the diagnostics server's ranking models on the recorded combinations")
     parser.add_argument("--asset-id", help="a registered asset profile, the default asset when omitted")
-    parser.add_argument("--models", type=Path, default=MODELS_PATH, help="the models file of the asset")
+    parser.add_argument("--models", type=Path, help="the models file of the asset, models.json of the default asset when omitted")
     parser.add_argument("--starts", choices=START_SETS, default=START_SETS[0],
                         help="the combinations scored: the development blocks, or every recorded combination")
     parser.add_argument("--readings", type=int, default=READINGS)
@@ -214,7 +214,7 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--out", type=Path, default=RESULTS_DIR)
     args = parser.parse_args(argv)
-    refuse_default_files(parser, args, models=MODELS_PATH, out=RESULTS_DIR)
+    refuse_default_files(parser, args, models=None, out=RESULTS_DIR)
     path = run(args.out, args.readings, args.rollouts, args.seed, asset_id=args.asset_id, models_path=args.models, starts=args.starts)
     print(f"wrote {path} ({args.starts} starts, {args.readings} readings, {args.rollouts} rollouts per combination, seed {args.seed}); nothing "
           f"from it enters code, tests or docs")

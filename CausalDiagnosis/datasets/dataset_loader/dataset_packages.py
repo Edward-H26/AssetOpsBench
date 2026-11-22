@@ -10,11 +10,13 @@ the package CausalDiagnosis.datasets, so a test mounts a made-up asset by adding
 library alone, so that a test repository can hold a copy of it.
 """
 import importlib
+import json
 import os
 from pathlib import Path
 
 ASSET_FILE = "asset.json"
 PACKAGE = "CausalDiagnosis.datasets"
+TABLE_COPIES = "CD_TABLE_COPIES"  # JSON {resolved default path of a generated table: its copy}, which a test session sets
 _FOUND = {}  # the folders of the search path of the package -> its asset folders, searched once per search path
 
 
@@ -87,3 +89,13 @@ def generated_tables():
             module, _, attribute = reference.partition(":")
             found.append((module, attribute))
     return found
+
+
+def table_path(default):
+    """The path of the generated table whose file is default in this process: the copy that the variable TABLE_COPIES maps
+    default to, else default. A test session sets the variable, so that a process that a test starts, which imports the
+    module of a table afresh, reads and writes the copy of the session and not the file of the tree. The module that a
+    reference under TABLES names defines its path through this function."""
+    copies = json.loads(os.environ.get(TABLE_COPIES) or "{}")
+    copy = copies.get(str(Path(default).resolve()))
+    return default if copy is None else Path(copy)

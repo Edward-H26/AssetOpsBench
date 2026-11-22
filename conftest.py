@@ -1,7 +1,9 @@
 """Session fixtures and the session guard of every test of the repository. The generated tables that the asset packages declare
-(CausalDiagnosis.datasets.dataset_loader.dataset_packages.generated_tables), for the hydraulic rig grades.json of the CausalDiagnosis MCP and labels.json of the
-environment, are read and written as copies in pytest's temporary folder, so that no test writes the files a run in the same tree
-reads, and a session that changes a default file fails at its end. No
+(CausalDiagnosis.datasets.dataset_loader.dataset_packages.generated_tables), for the hydraulic rig models.json and grades.json of the CausalDiagnosis MCP and
+labels.json of the environment, are read and written as copies in pytest's temporary folder, so that no test writes the files a run in the same tree
+reads, and a session that changes a default file fails at its end. The variable that dataset_packages.TABLE_COPIES names maps
+every default file to its copy for the processes that a test starts with the environment of the session, whose modules take
+their table paths through dataset_packages.table_path. No
 test reaches the real uv: AssetOpsBench's runners launch a server named by its entry point with `uv run <name>` from the
 repository root, which syncs the repository's .venv to uv.lock, and the MCP client hands a server only PATH and a few other
 variables, so a stub named uv first on PATH, which refuses every launch and records it, is the guard that reaches it. A session
@@ -15,6 +17,7 @@ the data file of every asset with its SHA-256."""
 import hashlib
 import importlib
 import importlib.util
+import json
 import os
 import shutil
 import subprocess
@@ -65,8 +68,9 @@ def _md5(path):
 
 
 class TableGuard:
-    """The session copies of the generated tables and, once a session fixture made a run that recorded them, their md5 at that
-    moment: a test that changes a recorded copy is named, since every run made before it would replay against another table."""
+    """The session copies of the generated tables and, once a fixture made a run kept for the session that recorded tables, the md5 of those
+    tables at that moment: a test that changes a recorded table is named, since every run made before it would replay against
+    another table."""
 
     def __init__(self):
         self.copies, self.recorded = [], {}
@@ -93,6 +97,7 @@ def table_copies(tmp_path_factory):
     before = {key: _md5(path) for key, path in defaults.items()}
     folder = tmp_path_factory.mktemp("tables")
     with pytest.MonkeyPatch.context() as patch:
+        copies = {}
         for (name, attribute), module in tables.items():
             copy = folder / name / defaults[name, attribute].name
             copy.parent.mkdir(exist_ok=True)
@@ -100,6 +105,9 @@ def table_copies(tmp_path_factory):
                 shutil.copyfile(defaults[name, attribute], copy)
             patch.setattr(module, attribute, copy)
             _GUARD.copies.append(copy)
+            copies[str(defaults[name, attribute].resolve())] = str(copy)
+        # a process that a test starts imports the modules afresh, without the attributes set above
+        patch.setenv(ports.TABLE_COPIES, json.dumps(copies))
         yield folder
     changed = [str(path) for key, path in defaults.items() if _md5(path) != before[key]]
     assert not changed, f"the session wrote the default tables in place: {changed}"
@@ -107,7 +115,8 @@ def table_copies(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def table_guard(table_copies):
-    """The guard of the session copies of the generated tables; a session fixture that makes runs calls table_guard.record()."""
+    """The guard of the generated tables; a fixture whose runs the session keeps calls table_guard.record() with the tables its runs
+    read (test_replay_check.py, scripted, records tables of its own)."""
     return _GUARD
 
 

@@ -23,13 +23,14 @@ import json
 from pathlib import Path
 
 from CausalDiagnosis.utils.atomic_writes_and_locks import files_digest, refuse_writing, write_json_atomically
+from CausalDiagnosis.datasets.dataset_loader.dataset_packages import table_path
 
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import LIVE_WINDOW, asset_folder, asset_view, default_facts_path, development_blocks, folds_of, is_default_asset, recorded_blocks, require_same_data
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import BLOCK_EFFECTS, COVARIANCE_ESTIMATORS, FOLD_SEED, FOLDS, EffectSpace, combo_key, model_forms
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.belief_at_one_cycle import DEFAULT_RANKING_MODEL, RANKING_MODELS
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import STATISTICS, file_sha256
 
-MODELS_PATH = Path(__file__).resolve().with_name("models.json")
+MODELS_PATH = table_path(Path(__file__).resolve().with_name("models.json"))
 RECORDED_LEVELS = "recorded_levels"  # the evidence kind whose stable cycles the model code fits
 MODELS_FORMAT = 8  # 8 since the second block that a fit leaves out is a combination next to the start when one is recorded
 RESAMPLES, RESAMPLE_SEED = 200, 0
@@ -122,18 +123,20 @@ def models_problems(path, asset_id=None, facts_path=None):
     return [] if stored.get("code") == code_digest() else [f"{Path(path).name} was fitted by other code"]
 
 
-def write_models(path=MODELS_PATH, asset_id=None, **options):
+def write_models(path=None, asset_id=None, **options):
     out = {**fit(default_facts_path(asset_id), asset_id=asset_id, **options), "code": code_digest()}
-    write_json_atomically(path, out)
+    write_json_atomically(MODELS_PATH if path is None else path, out)
     return out
 
 
-def ensure_models(path=MODELS_PATH, asset_id=None, facts_path=None):
+def ensure_models(path=None, asset_id=None, facts_path=None):
     """Fit the models of the asset that asset_id names, the default asset when None, when the file is missing or in another
     format or fitted by other code. A file fitted on another data file than the one in use is refused and never refitted in place, so
 that no stale
     file is served and none is replaced unseen. facts_path is the data file to fit on and to compare
-    with, the data file of that asset when None, so the file of another asset is fitted for that asset when it is named."""
+    with, the data file of that asset when None, so the file of another asset is fitted for that asset when it is named.
+    Without a path the file is MODELS_PATH as the module holds it at the call, which the tests point at a copy."""
+    path = MODELS_PATH if path is None else path
     facts_path = default_facts_path(asset_id) if facts_path is None else facts_path
     stored = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     if stored.get("format") == MODELS_FORMAT:

@@ -8,7 +8,7 @@ Adapted from the paper's. The IoT agent's eight examples are BMSFEWSHOTS of src/
 branch, and the TSFM agent's six are its demonstration in IBM's sample claude-4-sonnet/0420 of branch trajectory_refactor
 097b1d8. Their tool names and argument names follow the MCP servers the port reaches, and an example whose tool those
 servers lack is replaced one for one by an example written for this port, so the count stays the paper's. The closing answer of the TSFM
-agent's finetuning example is written here, since the sample's answer is a string of a scenario record of the dataset.
+agent's finetuning example is written here in place of the sample's.
 
 Written for this port, where the paper has none. The supervisor's examples of TaskAgent, three in the slot of TSFMAgent, and of
 CausalDiagnosisAgent, five in the slot of RuleLogicAgent, so the rig's supervisor sees 28 examples with the

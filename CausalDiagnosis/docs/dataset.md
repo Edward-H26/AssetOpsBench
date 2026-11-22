@@ -18,7 +18,7 @@ Two public copies of the same recordings are used as cross-checks. The IndustryA
 
 On the configurations that run on the tools of AssetOpsBench, the documents that its servers read are written by the environment itself. `CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/episode_documents.py` writes the registry, failure mode and telemetry documents of every episode from the asset profile through `CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/profile_documents.py`. The environment reads no recordings of any other asset of AssetOpsBench.
 
-The 17 anchored scenarios are the hydraulic pump records of the AssetOpsBench dataset on Hugging Face. `CausalDiagnosis/frameworks/AssetOpsBench/scenarios/download_scenarios.py` fetches them at a pinned revision and checks their SHA-256, and the repository contains no copy of them.
+The 17 anchored scenarios are the hydraulic pump records of the AssetOpsBench dataset on Hugging Face. `CausalDiagnosis/frameworks/AssetOpsBench/scenarios/download_scenarios.py` fetches them at a pinned revision and checks their SHA-256, and the repository does not hold the fetched file.
 
 ---
 

@@ -465,6 +465,29 @@ def test_the_thinking_check_counts_a_think_block_that_the_chat_template_opened_i
     assert judge.thinking_replies("http://127.0.0.1:1/v1", "judge-model") == 2
 
 
+# British spellings of words of the tree's own prose. The word cancelled is not among them: it is the word of asyncio and of the
+# scheduler and a recorded end of an episode, which a trajectory may carry into a prompt as it was recorded.
+BRITISH_FORMS = re.compile(r"\b(colour|colours|behaviour|behaviours|favour|honour|labour|neighbour|centre|centres|centred|metre|metres|litre|fibre|analyse|analysed|analysing|normalise|normalised|normalising|organise|organised|recognise|recognised|realise|realised|summarise|summarised|prioritise|optimise|optimised|minimise|minimised|maximise|maximised|initialise|initialised|serialise|serialised|characterise|characterised|utilise|categorise|standardise|standardised|finalise|emphasise|penalise|penalised|generalise|visualise|labelled|labelling|modelled|modelling|travelled|signalled|levelled|catalogue|defence|offence|programme|grey|whilst|amongst|artefact|artefacts|judgement|ageing|tyre|mould|fulfil|enrol|licence|practise|totalled|totalling|fuelled|queueing)\b", re.IGNORECASE)
+
+
+def test_every_text_that_the_judge_module_sends_a_model_is_in_american_spelling(tmp_path, monkeypatch):
+    """The prompts of the thinking check of a judge job and the prompts of both protocols, with the reference answer of an oracle
+    that names a faulty set and of one that names none, hold no British spelling of a word of the tree's own prose. The texts are
+    read from the requests that the judge module sends, not from its constants."""
+    sent = judge_endpoint(monkeypatch, lambda method, url, body: (200, {"choices": [{"message": {"content": "yes"}}]}))
+    judge.thinking_replies("http://127.0.0.1:1/v1", "judge-model")
+    texts = [message["content"] for _method, _url, body, _timeout in sent for message in body["messages"]]
+    assert len(texts) == len(judge.THINKING_PROMPTS)
+    for protocol in judge.PROTOCOLS:
+        backend = FakeJudge([RUBRIC_PASS] * judge.PROTOCOLS[protocol]["calls"])
+        judge.judge_episode(episode_folder(tmp_path / protocol), backend, protocol, agent_model="agent-model")
+        assert len(backend.calls) == judge.PROTOCOLS[protocol]["calls"]
+        texts += [prompt for prompt, _temperature in backend.calls]
+    texts.append(judge.reference_answer({"diagnosis": [100, 100, 0, 130], "work_orders": []}))
+    found = sorted({match.group(0) for text in texts for match in BRITISH_FORMS.finditer(text)})
+    assert not found, found
+
+
 # ----- the code that wrote a judge record, and the replies that hold thinking -----
 
 @pytest.fixture

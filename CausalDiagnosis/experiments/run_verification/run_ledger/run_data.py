@@ -10,10 +10,10 @@ from . import hashing, serving_endpoints
 
 def data_files(facts_path, asset_id=None, anchored=False):
     """{name: {"path", "sha256"}} of the data a run reads: the recordings, the fitted models of the diagnostics server for the
-    asset, the tables that the package of the asset declares under TABLES (the label and grade tables of the rig), each keyed by
-    its attribute in lower case without _path, and the fetched scenarios for a run whose preset anchors its episodes. asset_id
-    None is the engine's default asset, as every record written before the key holds. A path that the asset has none of
-    records sha256 None."""
+    asset, the tables that the package of the asset declares under TABLES other than that models file (the label and grade tables
+    of the rig), each keyed by its attribute in lower case without _path, and the fetched scenarios for a run whose preset
+    anchors its episodes. asset_id None is the engine's default asset, as in a record that holds no such key. A path that the
+    asset has none of records sha256 None."""
     from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import DEFAULT_ASSET
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
@@ -22,9 +22,12 @@ def data_files(facts_path, asset_id=None, anchored=False):
     tables = {}
     for reference in ports.declared(asset_id, "TABLES", ()):
         key = reference.partition(":")[2].lower().removesuffix("_path")
+        path = ports.resolve(reference, f"{asset_id}: TABLES")
+        if key == "models" and Path(path) == Path(fit.models_path(asset_id)):
+            continue  # the models file of the asset, which the record holds under its own key
         if key in tables or key in ("facts", "models", "scenarios"):
             raise SystemExit(f"{asset_id}: TABLES names two tables under the key {key}, the second {reference}")
-        tables[key] = ports.resolve(reference, f"{asset_id}: TABLES")
+        tables[key] = path
     paths = {"facts": facts_path, "models": fit.models_path(asset_id), **dict(sorted(tables.items()))}
     if anchored:
         scenarios = scenario_set(asset_id)

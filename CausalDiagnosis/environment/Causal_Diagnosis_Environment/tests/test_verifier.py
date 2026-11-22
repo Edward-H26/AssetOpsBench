@@ -301,6 +301,44 @@ def test_the_timing_check_applies_to_scheduled_components_and_accepts_a_close_at
     assert verdict_of(oracle_like())["checks"]["timing"] == {"ok": True, "orders": []}
 
 
+def _order_on_a_pump_at_its_worst_level_from_the_start(close_delay):
+    """The verdict of a rig whose pump stands at its worst level from the start and never drops, with an order on the pump that
+    closes close_delay cycles after it, against an oracle whose window for the pump ends at cycle 9."""
+    ep = Episode([HEALTHY["cooler"], HEALTHY["valve"], 2, HEALTHY["accumulator"]])
+    ep.read(INSIDE)
+    ep.diagnose({**dict(zip(COMPONENTS, HEALTHY_LIST)), "pump": 2})
+    ep.order("pump")
+    ep.advance(close_delay)
+    ep.close("wo-1", "pump")
+    ep.finish()
+    ep.end()
+    return verify(ep.log, ep.released(), ep.oracle(work_orders=[("pump", 9)]), 10.0)
+
+
+def test_an_order_on_a_component_at_its_worst_level_from_the_start_gets_its_row_beside_the_checks_alone():
+    """The timing check times the components that degrade during the episode, so an order on a pump at its worst level from the
+    start has no row there; worst_level_timing gives it its row against the oracle's window end, late after it and in time by it,
+    while the checks, all_checks_ok, pass and every score are the same for the late and the timely close."""
+    late, in_time = _order_on_a_pump_at_its_worst_level_from_the_start(20), _order_on_a_pump_at_its_worst_level_from_the_start(LEAD_TIME + REPAIR_DOWNTIME)
+    for verdict in (late, in_time):
+        assert verdict["checks"]["timing"] == {"ok": True, "orders": []}
+    rows = late["worst_level_timing"]["orders"]
+    assert not late["worst_level_timing"]["ok"] and [(r["component"], r["window_end"], r["ok"]) for r in rows] == [("pump", 9, False)]
+    assert in_time["worst_level_timing"]["ok"] and in_time["worst_level_timing"]["orders"][0]["closed_t"] <= 9
+    same = ("checks", "all_checks_ok", "pass", "success", "recovered", "unnecessary")
+    assert {key: late[key] for key in same} == {key: in_time[key] for key in same}
+    # a component off its worst level gets no row: an order on a valve one level below its healthy level
+    ep = Episode([HEALTHY["cooler"], 90, HEALTHY["pump"], HEALTHY["accumulator"]])
+    ep.read(INSIDE)
+    ep.diagnose({**dict(zip(COMPONENTS, HEALTHY_LIST)), "valve": 90})
+    ep.order("valve")
+    ep.advance(20)
+    ep.close("wo-1", "valve")
+    ep.finish()
+    ep.end()
+    assert verify(ep.log, ep.released(), ep.oracle(work_orders=[("valve", None)]), 10.0)["worst_level_timing"] == {"ok": True, "orders": []}
+
+
 def _order_on_a_pump_that_a_hazard_drop_degraded(close_delay):
     """The verdict of a healthy rig whose pump a hazard drop takes to its worst level at cycle 5, with an order on the pump
     at cycle 6 that closes close_delay cycles later, against an oracle whose window for the pump ends at cycle 15."""

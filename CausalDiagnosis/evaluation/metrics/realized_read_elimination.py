@@ -28,7 +28,7 @@ from CausalDiagnosis.experiments.episode_runners import episode_launchers, run_c
 from CausalDiagnosis.utils import csv_rows
 from CausalDiagnosis.utils import json_files  # noqa: E402,F401  puts src/ on the import path, as for every driver of this folder
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import cost_unit  # noqa: E402
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.tools import MODELS_PATH
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import models_path
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.tools.fitted_models import load_models  # noqa: E402
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.diagnostics_model import EffectDiagnostics
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import profile_view  # noqa: E402
@@ -42,7 +42,7 @@ class Yardstick:
     """The belief of the server's filter over a prefix of the released evidence, under the fits of one models.json that the
     server of the episode runs, which leave out the block of the combination the episode started in."""
 
-    def __init__(self, path=MODELS_PATH, left_out=None):
+    def __init__(self, path, left_out=None):
         models = load_models(path)  # raises FileNotFoundError with the fit command when models.json is absent
         if left_out is None:
             raise ValueError("the yardstick replays the fits of the episode's server, which leave out the block of its start, so it needs the start as left_out")
@@ -67,9 +67,15 @@ class Yardstick:
         return set(self.models.space.groups.get(group, ()))
 
 
+def yardstick(path=None, left_out=None):
+    """The yardstick of the models file at path, built once per file and start; without a path the models file of the default
+    asset as fit_models holds it at the call, which the tests point at a copy."""
+    return _yardstick(Path(models_path() if path is None else path), None if left_out is None else tuple(left_out))
+
+
 @lru_cache(maxsize=None)
-def yardstick(path=MODELS_PATH, left_out=None):
-    return Yardstick(path, None if left_out is None else tuple(left_out))
+def _yardstick(path, left_out):
+    return Yardstick(path, left_out)
 
 
 def released_before(released, index, time, with_read=False):

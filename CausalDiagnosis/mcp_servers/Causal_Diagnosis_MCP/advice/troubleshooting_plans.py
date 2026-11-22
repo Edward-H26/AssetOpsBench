@@ -1,5 +1,5 @@
 """Troubleshooting plans of rank_root_causes, E20: each top combination walked forward to a restored rig (version 7,
-CausalDiagnosis/docs/causal-diagnosis-mcp.md, section Troubleshooting plans).
+CausalDiagnosis/docs/causal-diagnosis-mcp.md, section Candidate plans).
 
 The rig cannot be repaired once per candidate to see which repair works, so the walk forward happens in the server. For
 each distinct faulty set among the returned candidates (the first top_k by mass), the ranking reports the sensor group whose next reading would confirm or refute the

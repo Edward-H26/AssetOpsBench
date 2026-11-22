@@ -23,7 +23,7 @@ Everything of one dataset lives in its folder `<asset_id>/`: the asset file `ass
 | Evidence kind | `__init__.py` | `recorded_levels` needs nothing. Another kind enters with `kinds.register_kind` and the fields of the next table |
 | Rule kinds | `__init__.py` | a kind of rule that no built in kind covers, added with `rules.register_kind` |
 | Labels | `__init__.py` | `LABELS = "module:function"`, the function that gives the diagnosability label of the initial combination of an episode in the form the verifier reads, a mapping with the boolean `separable` and, under `e18`, a second verdict with a boolean `separable` of its own, the verdict of a second rule, or `None`. The verifier credits a declaration only in an episode whose initial combination both verdicts mark not diagnosable within the budget, so a port with one rule states the same verdict under both. Without the declaration every initial combination counts as diagnosable within the budget |
-| Generated tables | `__init__.py` | `TABLES`, a tuple of `"module:ATTRIBUTE"` strings, one per path of a table that code of the port computes on first use. A test session then reads and writes copies |
+| Generated tables | `__init__.py` | `TABLES`, a tuple of `"module:ATTRIBUTE"` strings, one per path of a table that code of the port computes on first use, each path defined through `dataset_packages.table_path`. A test session then reads and writes copies, in its own process and in the processes that its tests start |
 | Accepted texts | `CausalDiagnosis/datasets/<asset_id>/accepted_texts.json` | the coincidences between a text an agent reads and a combination of the asset that the test of agent texts accepts, each with its `file`, `text`, `count` and `why` |
 
 ## What an evidence kind states

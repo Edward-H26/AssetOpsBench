@@ -5,7 +5,7 @@ usage, from the fork root with the fork's virtual environment first on PATH, aft
   python -m CausalDiagnosis.frameworks.AssetOpsBench.reproduction.acceptance_check RUN_DIR [RUN_DIR ...] [--port agent_as_tool_paper|plan_execute_paper] [--out DIR]
 
 A port is checked against the paper's values of its own design on runs that played it on the paper's scenarios,
-granite-3-3-8b-instruct on SGLang with the paper's decoding. The rule is fixed before any run:
+granite-3-3-8b-instruct on SGLang with the paper's decoding. The rule has three parts:
 
 - Decidable. The runs decide only when all four hold. Every run folder given is finished: run.json has its end and as many
   episodes done as planned. Every run that holds an episode of the port is a run of a registered set, runnable or
@@ -51,8 +51,8 @@ from CausalDiagnosis.frameworks.AssetOpsBench.agents.Plan_Execute_Paper.workflow
 
 # The tolerance of the steps check, in steps: the interval of a port's mean steps must lie within this distance of the
 # paper's value. Its ground: the paper prints one mean step count per design and task kind, to one decimal and without a
-# spread, so no width can be read off it. The width is a choice of the rule, a design parameter fixed before any
-# run with the other numbers of the registration. steps_meet_paper is the one function that reads it.
+# spread, so no width can be read off it. The width is a choice of the rule, a design parameter, and steps_meet_paper is
+# the one function that reads it.
 STEP_TOLERANCE = 1.0
 STEPS_RULE = (f"the 95 percent interval of the port's mean steps lies within {STEP_TOLERANCE:g} step{'' if STEP_TOLERANCE == 1 else 's'} "
               "of the paper's value on either side, an equivalence, so a wide interval misses where an overlap would let it pass")

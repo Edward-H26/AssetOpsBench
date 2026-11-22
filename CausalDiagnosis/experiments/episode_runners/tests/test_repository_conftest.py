@@ -2,8 +2,8 @@
 conftest.py, the package CausalDiagnosis whose modules define the two table paths and the two functions of the asset
 layer that the guard calls, the asset layer with a copy of its dataset_packages.py and one asset package that declares the two tables, and
 one test file. A pytest session runs there as a child process, so the guards are tested as the
-file that every session loads, and no file of the tree under test is written. A session passes when a test writes a table
-through the path of its module, fails at its end when a test writes a default table in place, and stops before its first test
+file that every session loads, and no file of the tree under test is written. A session passes when a test, or a process that
+a test starts, writes a table through the path of its module, fails at its end when a test writes a default table in place, and stops before its first test
 when the test process, or a process that a test starts, would import a package of the repository from another tree, or when the asset layer refuses
 the data file. A session that runs names the data file at the head of its log."""
 import os
@@ -17,6 +17,25 @@ from CausalDiagnosis.utils.paths import ROOT
 PYTESTS_OWN_PATH = '[tool.pytest.ini_options]\npythonpath = ["src"]\n'
 NO_PATH_OF_PYTEST = "[tool.pytest.ini_options]\n"
 TABLE_MODULE = "from pathlib import Path\n\n{name} = Path(__file__).with_name({file!r})\n"
+# the form of the tree, whose path the variable of the session's copies turns in every process that imports it
+TABLE_MODULE_OF_THE_TREE = ("from pathlib import Path\n\nfrom CausalDiagnosis.datasets.dataset_loader.dataset_packages import table_path\n\n"
+                            "{name} = table_path(Path(__file__).with_name({file!r}))\n")
+LABELS = "CausalDiagnosis/environment/reference_policies/labels.json"
+GRADES = "CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/grades.json"
+WRITES_IN_A_PROCESS_IT_STARTS = '''import subprocess
+import sys
+
+CHILD = """from CausalDiagnosis.environment.reference_policies import diagnosability_label as label
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import diagnosability_grade as grade
+
+label.LABELS_PATH.write_text("written by a child")
+grade.GRADES_PATH.write_text("written by a child")
+"""
+
+
+def test_case():
+    subprocess.run([sys.executable, "-c", CHILD], check=True)
+'''
 WRITES_THROUGH_THE_MODULE = ("from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import diagnosability_grade as grade\n\n\n"
                              "def test_case():\n    grade.GRADES_PATH.write_text('written by a test')\n")
 WRITES_IN_PLACE = ("from pathlib import Path\n\nfrom CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import diagnosability_grade as grade\n\n\n"
@@ -82,6 +101,25 @@ def test_a_session_fails_at_its_end_when_a_test_writes_a_default_table_in_place(
     status, output = session(small_repository, WRITES_IN_PLACE, small_repository / "src")
     assert status != 0 and "the session wrote the default tables in place" in output
     assert str(small_repository / "CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/grades.json") in output
+
+
+def test_a_process_that_a_test_starts_writes_the_copies_of_the_session_and_leaves_the_default_tables(small_repository):
+    """The table modules take their paths through table_path, as the modules of the tree do. A process that a test starts
+    imports them afresh, without the attributes that the session set, and the variable of the session hands it the copies."""
+    for module, name, file in (("CausalDiagnosis/environment/reference_policies/diagnosability_label.py", "LABELS_PATH", "labels.json"),
+                               ("CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/offline/diagnosability_grade.py", "GRADES_PATH", "grades.json")):
+        (small_repository / module).write_text(TABLE_MODULE_OF_THE_TREE.format(name=name, file=file))
+    status, output = session(small_repository, WRITES_IN_A_PROCESS_IT_STARTS, small_repository / "src")
+    assert status == 0, output
+    assert (small_repository / GRADES).read_text() == "as computed" and not (small_repository / LABELS).exists()
+
+
+def test_a_process_that_a_test_starts_writes_the_default_tables_through_modules_that_ignore_the_variable(small_repository):
+    """The control of the test above: the same session with table modules that take the file beside them whatever the
+    environment holds, the form before the variable, writes both default tables in place, and the session fails at its end."""
+    status, output = session(small_repository, WRITES_IN_A_PROCESS_IT_STARTS, small_repository / "src")
+    assert status != 0 and "the session wrote the default tables in place" in output, output
+    assert (small_repository / GRADES).read_text() == "written by a child" == (small_repository / LABELS).read_text()
 
 
 def test_a_table_that_an_asset_folder_declares_is_guarded_with_no_edit_of_the_conftest(small_repository):

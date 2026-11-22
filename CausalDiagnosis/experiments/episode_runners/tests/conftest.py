@@ -2,7 +2,10 @@
 The models of the diagnostics server are generated, not committed, so they are fitted once before the tests that need
 them; when the server package cannot be imported (its modules are being rebuilt) the fit is skipped and only the tests
 that start a diagnostics server fail."""
+import importlib
 import json
+import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -92,3 +95,23 @@ def registered_root_numbers(tmp_path, monkeypatch):
     path.write_text(json.dumps(data), encoding="utf-8")
     monkeypatch.setattr(registered, "PATH", path)
     return path
+
+
+def own_table_copies(patch, folder, copy=True):
+    """Points every generated table (dataset_packages.generated_tables) at a copy of its own under folder, taken from the copy of
+    the session, in this process and, through the variable of the copies, in the processes it starts, for runs that may add a
+    table that the session copies lack after a run of another module recorded those copies (the guard shared_tables_unchanged
+    of the root conftest.py). With copy False the tables are the files that an earlier call left under folder."""
+    from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
+
+    copies = json.loads(os.environ.get(ports.TABLE_COPIES) or "{}")
+    for name, attribute in ports.generated_tables():
+        module = importlib.import_module(name)
+        shared = Path(getattr(module, attribute))
+        own = folder / name / shared.name
+        own.parent.mkdir(parents=True, exist_ok=True)
+        if copy and shared.exists():
+            shutil.copyfile(shared, own)
+        patch.setattr(module, attribute, own)
+        copies = {default: str(own) if copy == str(shared) else copy for default, copy in copies.items()}
+    patch.setenv(ports.TABLE_COPIES, json.dumps(copies))

@@ -1,4 +1,4 @@
-from CausalDiagnosis.utils.paths import PACKAGE
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -10,9 +10,17 @@ from . import hashing, serving_endpoints, run_data
 UPLOAD_MANIFEST = "UPLOAD_MANIFEST.txt"  # written into the fork's copy on the cluster by CausalDiagnosis/cluster_jobs/0_setup/upload_fork.sh, absent in a clone
 
 
-def git_state(paths, root=run_data.ROOT):
+def _root(root):
+    """The root that a function of this module reads: the one given, else run_data.ROOT as it stands at the call, so that a caller
+    that points run_data.ROOT at another tree reads that tree through every function here."""
+    return run_data.ROOT if root is None else root
+
+
+def git_state(paths, root=None):
     """(commit, the given paths that differ from it) of the fork, or (None, None) when the fork is not a repository of its
     own, as on the cluster, whose copy is an upload without .git inside a folder that may lie in another repository."""
+    root = _root(root)
+
     def git(*args):
         return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, check=True).stdout
 
@@ -35,13 +43,13 @@ def recorded_code(meta):
     return code.get("sha256") or (meta.get("fork") or {}).get("code_sha256") or {}
 
 
-def tree_files(root=run_data.ROOT):
+def tree_files(root=None):
     """{list name: {path: full SHA-256}} of every file of a tree under design.CODE_ROOTS that an upload ships and that no rule of
     design.EXCLUDED takes out, each file under every list of design.lists_of. A file of no list stands under the empty name, so
     that a check can name it."""
     from CausalDiagnosis.experiments.run_verification.upload_manifest import skipped  # here, since upload_manifest imports this module
 
-    root = Path(root)
+    root = Path(_root(root))
     lists = {}
     for top in CODE_ROOTS:
         base = root / top.rstrip("/")
@@ -66,10 +74,11 @@ def identity_of(files, agent):
     return hashing.canonical_sha256(sorted([name, path, digest] for name in identity_lists(agent) for path, digest in (files.get(name) or {}).items()))
 
 
-def code_record(agent, root=run_data.ROOT):
+def code_record(agent, root=None):
     """The value of run.json code: the commit and every path under the roots that differs from it, untracked files included,
     both None without a repository of its own, the full SHA-256 of every file per list, the identity of the agent, and the
     hash of the upload manifest with the listed files that differ from it, for a tree without a commit."""
+    root = _root(root)
     files = tree_files(root)
     commit, dirty = git_state([top.rstrip("/") for top in CODE_ROOTS], root)
     manifest = Path(root) / UPLOAD_MANIFEST
@@ -88,10 +97,11 @@ def git_lines(root, *args):
         return None
 
 
-def tree_record_reasons(root=run_data.ROOT):
+def tree_record_reasons(root=None):
     """Rules 1, 2 and 4 of the start check of a run of record (CausalDiagnosis/docs/experiments.md): the tree is a repository at its
     own root, nothing under the code roots differs from its commit and no file lies in no list, and the commit stands on a branch
     of origin, so that others can check it out. A tree that CausalDiagnosis/cluster_jobs/0_setup/upload_fork.sh copied has no repository and gives development runs."""
+    root = _root(root)
     commit, dirty = git_state([top.rstrip("/") for top in CODE_ROOTS], root)
     if commit is None:
         return ["the tree is no git repository at its own root, as an upload of CausalDiagnosis/cluster_jobs/0_setup/upload_fork.sh is not"]
@@ -103,8 +113,9 @@ def tree_record_reasons(root=run_data.ROOT):
     return reasons
 
 
-def untracked_loaded(paths, root=run_data.ROOT):
+def untracked_loaded(paths, root=None):
     """Rule 3: the paths among paths that git does not track at HEAD, as an ignored file that a process imports."""
+    root = _root(root)
     tracked = set(git_lines(root, "ls-files", "--", *paths) or []) if paths else set()
     return [path for path in paths if path not in tracked]
 
@@ -128,13 +139,18 @@ def data_reasons(facts_path, asset_id=None):
 
 def tables_reasons(asset_id=None):
     """Rule 5 for the generated tables: the check of precompute_grid_tables.py finds every table of the asset written by the code of
-    this tree. It runs in its own process, which reads the tables and writes none."""
-    command = [sys.executable, str(PACKAGE / "experiments" / "cluster_runs" / "precompute_grid_tables.py"), "--check", *(["--asset", asset_id] if asset_id else [])]
-    done = subprocess.run(command, capture_output=True, text=True)
+    this tree. It runs in its own process, which reads the tables and writes none, as a module of the package from the root of the
+    tree with the root and its src on the import path, as the jobs run it, so a shell without PYTHONPATH gets the outcome of the
+    check. A check that fails otherwise than on a missing table is named with its status and the last line of its error output."""
+    root = _root(None)
+    path = [str(root), str(Path(root) / "src"), *([os.environ["PYTHONPATH"]] if os.environ.get("PYTHONPATH") else [])]
+    command = [sys.executable, "-m", "CausalDiagnosis.experiments.cluster_runs.precompute_grid_tables", "--check", *(["--asset", asset_id] if asset_id else [])]
+    done = subprocess.run(command, cwd=root, env={**os.environ, "PYTHONPATH": os.pathsep.join(path)}, capture_output=True, text=True)
     if done.returncode == 0:
         return []
     missing = [line for line in done.stdout.splitlines() if line.startswith("TABLES_MISSING")]
-    return missing or [f"the tables check of precompute_tables.py ended with status {done.returncode}"]
+    last = (done.stderr.strip().splitlines() or ["no error output"])[-1]
+    return missing or [f"the tables check of precompute_grid_tables.py ended with status {done.returncode}: {last}"]
 
 
 def open_reasons():
@@ -149,7 +165,7 @@ def open_reasons():
     return reasons
 
 
-def record_reasons(facts_path=None, asset_id=None, root=run_data.ROOT, tables=True):
+def record_reasons(facts_path=None, asset_id=None, root=None, tables=True):
     """The reasons of rules 1, 2, 4, 5 and 6, which need no run line and no endpoint; [] for a tree that can play runs of record."""
     return [*tree_record_reasons(root), *data_reasons(facts_path, asset_id), *(tables_reasons(asset_id) if tables else []), *open_reasons()]
 

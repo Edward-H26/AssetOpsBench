@@ -1,4 +1,4 @@
-"""The check of run folders and results folders before they go to the branch of the runs (CausalDiagnosis/cluster_jobs/README.md section 9): it reads
+"""The check of run folders and results folders before they go to the branch of the runs (CausalDiagnosis/cluster_jobs/README.md, section 4, After a run): it reads
 exactly the published set of each folder (public_record.published_files), copied into a staging folder, and passes only when
 1. no file holds an absolute path, the user name of this machine or a name of the names file, a URL of a host outside
    public_record.PUBLIC_HOSTS or an IPv4 address,

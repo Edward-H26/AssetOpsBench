@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 
 from CausalDiagnosis.experiments.cluster_runs.run_health_checks import JOB_RECORD
-from CausalDiagnosis.experiments.episode_runners.run_episodes.agent_kinds import MODEL_AGENTS
+from CausalDiagnosis.experiments.episode_runners.run_episodes.agent_kinds import AGENTS, MODEL_AGENTS
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import STATE_FILE, episode_dirs, episode_folder, read_rows
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger
 from CausalDiagnosis.experiments.run_verification.check_grid_complete import GRID, IN_FLIGHT, IN_FLIGHT_FIELDS, JOB_LOGS, LLM_CALLS, SAMPLER
@@ -28,8 +28,10 @@ JOB_RECORD_FIELDS = ("job", "state", "start", "end", "elapsed", "suspended", "no
 
 
 def run_meta(run_dir):
-    """The run.json of a run folder, an empty dict without it."""
-    return read_json(Path(run_dir) / RUN_FILE, {}) or {}
+    """The run.json of a run folder, an empty dict without it, with unrecorded naming the agent when the record holds none, as
+    ledger_meta names the fields that a folder lacks, so that no default stands in for the agent."""
+    meta = read_json(Path(run_dir) / RUN_FILE, {}) or {}
+    return {**meta, "unrecorded": [] if meta.get("agent") else ["agent"]}
 
 
 def is_unfinished(run_dir):
@@ -41,6 +43,15 @@ def is_unfinished(run_dir):
 def unfinished_runs(grid):
     """The folders of a grid folder that hold a run that did not finish, in name order."""
     return sorted(path for path in Path(grid).iterdir() if path.is_dir() and is_unfinished(path))
+
+
+def agent_unknown(meta):
+    """Why the kind of a run's agent is not known here, None when it is: the run records no agent, or the agent that it records is
+    none of the kinds that the tree declares, which is no evidence that no model ran."""
+    agent = meta.get("agent")
+    if not agent or "agent" in (meta.get("unrecorded") or []):
+        return "records no agent"
+    return None if agent in AGENTS else f"records the agent {agent}, which is not known here"
 
 
 def ledger_meta(run_dir):
@@ -57,7 +68,7 @@ def ledger_meta(run_dir):
     unrecorded = ([] if record.get("agent") else ["agent"]) + ([] if record else ["preset"]) + \
                  ([] if command is not None else ["runs in flight"]) + \
                  ([] if "asset_id" in config else ["asset"]) + ([] if "clock_mode" in config else ["clock mode"]) + \
-                 (["model", "serving identity"] if not model and (not record or record.get("agent") in MODEL_AGENTS) else [])
+                 (["model", "serving identity"] if not model and (record.get("agent") in MODEL_AGENTS or record.get("agent") not in AGENTS) else [])
     return {"asset_id": config.get("asset_id"), "agent": record.get("agent"), "agent_label": record.get("agent_label"),
             "config_name": (record.get("configuration") or {}).get("config_name"), "clock_mode": config.get("clock_mode"),
             "model": (model or {}).get("name"), "runs_in_flight": int(parallel) if parallel.isdigit() else None,

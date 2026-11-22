@@ -18,6 +18,7 @@ from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import CAUSAL_
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import episode_name, read_rows
 from CausalDiagnosis.experiments.episode_runners.run_configuration import load_config, load_world
 from CausalDiagnosis.utils.json_files import read_json, write_json
+from CausalDiagnosis.utils.atomic_writes_and_locks import READ_ONLY_TABLES
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 
 if not Path(default_facts_path()).exists():
@@ -335,23 +336,56 @@ def test_every_seeded_preset_deals_the_registered_split():
 
 
 def test_the_training_starts_play_the_training_seeds_at_the_sampling_temperature_in_the_mode_training(tmp_path, monkeypatch):
+    """A trial of the training path, which plays the development split as every sampling run outside a run of record does: the
+    training starts of a fold under one sample, at the sampling temperature, in the mode training."""
     seeds_of = start_states.training_seeds
     monkeypatch.setattr(start_states, "training_seeds", lambda env, split, sample, fold, master_seed, pool: seeds_of(env, split, sample, fold, master_seed, pool)[:2])
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setattr(agent_runs, "plan_execute_runner_class", lambda: FakePlanExecute)
     run_episodes.main(["--config", "base", "--agent", "plan_execute", "--model", MODEL, "--base-url", "http://127.0.0.1:9/v1", "--starts", "training",
-                       "--training-sample", "2", "--training-fold", "2", "--out", str(tmp_path / "runs")])
+                       "--training-sample", "2", "--training-fold", "2", "--training-split", training.DEVELOPMENT, "--out", str(tmp_path / "runs")])
     run_dir = _run_dir(tmp_path / "runs")
     meta = read_json(run_dir / "run.json")
     _, cycles, blocks = load_world()
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import HydraulicRigEnv
 
-    expected = seeds_of(HydraulicRigEnv(cycles, blocks, load_config("base")[1]), training.FOLDS, 2, 2, 42, 8)[:2]
+    played = run_episodes.planned_episodes.development_config(load_config("base")[1], blocks)
+    split = training.asset_training(RIG, cycles.facts_sha256, split=training.DEVELOPMENT).split
+    expected = seeds_of(HydraulicRigEnv(cycles, blocks, played), split, 2, 2, 42, 8)[:2]
     assert meta["mode"] == training.TRAINING_MODE and meta["starts"] == "training" and meta["training_sample"] == 2
-    assert meta[training.TRAINING_FOLD_KEY] == 2
+    assert meta[training.TRAINING_FOLD_KEY] == 2 and meta[training.TRAINING_SPLIT_KEY] == training.DEVELOPMENT
     assert meta["seeds"] == expected and (meta["master_seed"], meta["seed_pool"]) == (42, 8)
     assert meta["sampling_temperature"] == training.numbers(RIG).sampling_temperature == 0.7 and meta["training_variant"] == training.AS_RELEASED
     assert FakePlanExecute.seen["temperature"] == training.numbers(RIG).sampling_temperature
+
+
+class Reached(Exception):
+    """Raised by a stand-in of the step after a check, so that a test sees that a run passed the check."""
+
+
+def test_a_sampling_run_on_the_registered_split_plays_only_as_a_run_of_record(tmp_path, monkeypatch):
+    """The registered split is cross-fitted, so the training starts of the model of a fold lie on test combinations of the other
+    folds: a run of --starts training on the registered split whose start check gives a reason is refused by name before its run
+    folder exists and pointed to the development split, while the same run on the development split, the same run of record and
+    an evaluation run on the test starts with the same reason each reach the building of their runner."""
+    def reached(*args, **kwargs):
+        raise Reached
+
+    monkeypatch.setattr(run_episodes.runner_setup, "build_runner", reached)
+    monkeypatch.setenv(READ_ONLY_TABLES, "0")  # a run of record holds the tables read only for its process, so the teardown restores it
+    out = tmp_path / "runs"
+    model = ["--config", "base", "--agent", "plan_execute", "--model", MODEL, "--base-url", "http://127.0.0.1:9/v1", "--out", str(out)]
+    sampling = [*model, "--starts", "training", "--training-sample", "1", "--training-fold", "1"]
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: ["a reason of the start check"])
+    with pytest.raises(SystemExit, match="--starts training on the registered split .*a reason of the start check.*--training-split development"):
+        run_episodes.main(sampling)
+    for args in ([*sampling, "--training-split", training.DEVELOPMENT], [*model, "--starts", "sampled"]):  # a trial, and an evaluation run
+        with pytest.raises(Reached):
+            run_episodes.main(args)
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: [])  # a run of record
+    with pytest.raises(Reached):
+        run_episodes.main(sampling)
+    assert not out.exists()
 
 
 @pytest.mark.parametrize("args,message", [

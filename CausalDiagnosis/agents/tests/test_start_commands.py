@@ -1,6 +1,7 @@
 """AssetOpsBench's runner (src/agent/plan_execute/executor.py) turns the path of a server into its start in _make_stdio_params. A
 launcher that the driver writes beside the files of an episode starts isolated, as python -I <launcher path>, which its first
-lines require, whether its run folder lies inside the repository, as under the default --out, or outside it; a module of a
+lines require, whether its run folder lies inside the repository, as under the default --out, or outside it, and whatever dots
+the names of its folders hold, so no --out is refused for a dot; a module of a
 package of the repository starts as upstream starts it, as python -m <dotted path> from the repository root. The error output of
 a server follows the same rule (_server_errlog): a launcher writes it to hidden/ of its episode folder, a module of a package to
 the caller's standard error."""
@@ -14,7 +15,7 @@ from agent.plan_execute import executor
 from agent.runner import DEFAULT_SERVER_PATHS
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import DEFAULT_ASSET
 from CausalDiagnosis.experiments.episode_runners.episode_launchers import write_launchers
-from CausalDiagnosis.experiments.episode_runners.run_episodes.run_record import default_out, run_label
+from CausalDiagnosis.experiments.episode_runners.run_episodes.run_record import default_out, run_base, run_label
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import episode_name
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import RIG_SERVER
 
@@ -39,6 +40,17 @@ def test_a_launcher_in_a_run_folder_inside_the_repository_starts_isolated(tmp_pa
     episode = executor._REPO_ROOT / out / run_label("static", "scripted") / episode_name(0)
     for written in _episode_launchers(tmp_path / "written"):
         launcher = episode / written.name
+        assert _start(launcher) == ("python", ["-I", str(launcher)], None)
+
+
+def test_a_run_folder_under_an_out_folder_with_a_dot_inside_the_repository_is_not_refused(tmp_path):
+    """run_base gives the folder of a run under an --out inside the repository whose folder name holds a dot, and the launchers of
+    an episode there start isolated as anywhere else. Only the names are placed under the repository root."""
+    out = default_out(DEFAULT_ASSET) + "/with.dot"
+    run_dir = run_base(out, run_label("static", "scripted"))
+    assert run_dir == (executor._REPO_ROOT / out / run_label("static", "scripted")).resolve()
+    for written in _episode_launchers(tmp_path / "written"):
+        launcher = run_dir / episode_name(0) / written.name
         assert _start(launcher) == ("python", ["-I", str(launcher)], None)
 
 

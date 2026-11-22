@@ -6,7 +6,7 @@ from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import data_var
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.advice.conformal_intervals import Calibration
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.discriminant_urn_ranking import fit_discriminant_urn
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import EffectSpace, PoolData, RecordedBlocks, combo_key, fit_episode, parse_combo
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import MODELS_FORMAT, MODELS_PATH
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import MODELS_FORMAT, models_path
 
 
 class Models:
@@ -60,8 +60,14 @@ class EpisodeModels:
         return self._urn
 
 
+def load_models(path=None):
+    """The models file at path, parsed once per process; without a path the models file of the default asset as fit_models
+    holds it at the call, which the tests point at a copy."""
+    return _parsed_models(Path(models_path() if path is None else path))
+
+
 @lru_cache(maxsize=1)
-def load_models(path=MODELS_PATH):
+def _parsed_models(path):
     if not Path(path).exists():
         raise FileNotFoundError(f"{Path(path).name} is generated from the recordings of an asset and is not part of the repository: run "
                                 f"`python -m CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models`, which fits it on the data file of the asset, its release file or the file that "

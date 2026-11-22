@@ -285,6 +285,13 @@ def test_no_join_is_made_while_a_run_read_records_no_agent(tmp_path):
     reason = "the join by time needs the agent of every run read, and no agent is recorded for other"
     assert engine == {"note": reason} and calls == [] and rows[0]["engine_note"] == reason and rows[0]["engine_calls_joined"] is None
     assert rows[1]["engine_note"] == profile_table.NO_AGENT
+    alone = profile_table.build([other], [folder])  # read alone: the reason names the run without its agent, before the lack of a model run
+    assert alone[4] == {"note": reason} and alone[0][0]["engine_note"] == profile_table.NO_AGENT
+    strange = made_up.write_run(tmp_path / "strange", [(7, made_up.shifted(made_up.known_episode(), 100.0))],
+                                meta=made_up.model_meta(agent="made_up_agent"))
+    assert profile_table.build([run, strange], [folder])[4] == {  # a recorded agent of no declared kind is no baseline either
+        "note": "the join by time needs the kind of the agent of every run read, and strange records the agent made_up_agent, which is "
+                "not known here"}
 
 
 def test_the_note_of_an_episode_counts_its_unjoined_calls_its_differing_calls_and_its_lines_of_retries_apart():

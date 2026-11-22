@@ -515,12 +515,14 @@ def test_the_parts_bound_to_one_asset_refuse_another_asset(mounted, tmp_path):
     anchored = tmp_path / "anchored_bench.json"
     preset = json.loads((PACKAGE / "frameworks" / "AssetOpsBench" / "scenarios" / "anchored.json").read_text(encoding="utf-8"))
     anchored.write_text(json.dumps({**preset, "fault_rule": {"min_faulty": 1, "max_faulty": len(get_profile(BENCH).components)}}), encoding="utf-8")
-    for asset_id, args, reason in (
-            (BENCH, ["--config", "base", "--agent", "greedy"], "--agent greedy runs the reference classifiers"),
-            (BENCH, ["--config", "base", "--agent", "scripted", "--verifier-scope", "all"], "the verifier scope all runs the reference classifiers"),
-            (BENCH, ["--config", str(anchored), "--agent", "scripted"], "the anchored preset maps the scenarios of a scenario set"),
-            (DEMO, ["--config", "base", "--agent", "static"], "the static agent shows the recorded fields")):
-        with pytest.raises(SystemExit, match=f"{re.escape(reason)}.*(plays the asset {asset_id}|the asset {asset_id} that this run plays)"):
+    for asset_id, args, reason, tail in (
+            (BENCH, ["--config", "base", "--agent", "greedy"], "--agent greedy runs the reference classifiers", f"and this run plays the asset {BENCH}"),
+            (BENCH, ["--config", "base", "--agent", "scripted", "--verifier-scope", "all"], "the verifier scope all runs the reference classifiers",
+             f"and this run plays the asset {BENCH}"),
+            (BENCH, ["--config", str(anchored), "--agent", "scripted"], "the anchored preset maps the scenarios of a scenario set",
+             f"for the asset {BENCH} that this run plays"),
+            (DEMO, ["--config", "base", "--agent", "static"], "the static agent shows the recorded fields", f"and this run plays the asset {DEMO} of the kind")):
+        with pytest.raises(SystemExit, match=f"{re.escape(reason)}.*{re.escape(tail)}"):
             run_episodes.main([*args, "--asset", asset_id, "--seeds", "1", "--store", "memory", "--out", str(out)])
     assert not out.exists()
 

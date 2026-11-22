@@ -57,8 +57,8 @@ def registration(a, config, config_name, facts_path):
     the driver has loaded so far (rule 3, checked again at the end of the run), the data (rule 5; the run holds the generated tables
     read only, so a missing one stops it by name), the open values (rule 6), the serving of a model agent's endpoint and of a judge
     that judges in the run against the serving file of record, with the card of record (rules 7 and 8), the runs in flight of a preset
-    with a clock (rule 9), the start set, the development split, and the stamp of the adapter or the block that a trained variant
-    plays (rule 10). main() asks before any table could be written."""
+    with a clock (rule 9), the start set, the development split, the stamp of the adapter or the block that a trained variant
+    plays (rule 10), and an agent whose declaration keeps its runs out of the tables. main() asks before any table could be written."""
     reasons = tree_reasons()
     filler = [FILLER_REASON] if getattr(a, "filler", False) else []
     # rule 3 asks git about the commit, so it is asked only of a tree that passed rules 1, 2 and 4
@@ -79,4 +79,18 @@ def registration(a, config, config_name, facts_path):
         reasons.append(f"--training-split {a.training_split} plays the development split of a trial before the runs of record")
     if stamped := stamped_inputs(a, config):
         reasons.append(f"--training-variant {a.training_variant} plays {' and '.join(stamped)} built from runs that carry the stamp {STAMP}")
+    if not agent_kinds.DECLARED_AGENTS.get(a.agent, {}).get("registered", True):
+        reasons.append(f"--agent {a.agent} is a check that no table reads")
     return reasons + filler
+
+
+def refuse_registered_training(a, reasons, what):
+    """Refuses by name, before its run folder exists, a run that plays the training starts of the registered split of its asset, a
+    sampling run of fine tuning (--starts training) or a loop of GEPA, when the start check gives it reasons, and names the
+    development split. The registered split is cross-fitted: the training starts of the model of a fold lie on test combinations
+    of the other folds, at entry offsets that no replicate plays, so they are played only in a run of record, and a trial of the
+    training path plays the development split. An evaluation run on the test starts and a run of record pass."""
+    if reasons and a.training_split != DEVELOPMENT:
+        raise SystemExit(f"{what} on the registered split plays the training starts of its folds, which lie on test combinations of "
+                         f"the other folds, and only a run of record plays them, while this run is not of record: {'; '.join(reasons)}. "
+                         "A trial of the training path plays the development split: --training-split development")

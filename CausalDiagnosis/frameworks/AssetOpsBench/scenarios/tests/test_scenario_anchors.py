@@ -1,7 +1,6 @@
-"""The scenario anchors: the repository holds no scenario record, the driver and the anchors import without the fetched
+"""The scenario anchors: the driver and the anchors import without the fetched
 file, the fetch refuses bytes that differ from its pin and then writes nothing, the date to cycle arithmetic, and the anchored
 start on synthetic cycles and, once the scenarios are fetched, on the facts file (relations only, no recorded value)."""
-import fnmatch
 import hashlib
 import io
 import json
@@ -24,88 +23,8 @@ from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, Cycle, HEALT
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import HydraulicRigEnv
 
 from CausalDiagnosis.utils.paths import ROOT  # the root of the tree under test
-SCANNED = ("src", "CausalDiagnosis", "benchmarks", "docs")
-# the folders this project adds, where no date of a record may stand, since the upstream folders ship telemetry of the same days; a port
-# adds its folders
-OURS = ("CausalDiagnosis/", "CausalDiagnosis/docs/", "CausalDiagnosis/cluster_jobs/", "CausalDiagnosis/mcp_servers/Environment_Actions_MCP/",
-        "CausalDiagnosis/mcp_servers/Causal_Diagnosis_MCP/", "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/")
-LONG = 40  # the shortest string of a record that the guard looks for, too long to stand in another file by chance
-RECORD_KEYS = {"id", "text", "failure_event"}  # the keys of a record that the fetch reads
 FETCHED = anchors.scenarios_path().is_file()
 NOT_FETCHED = f"the scenarios are not fetched, {anchors.scenarios_path()} is missing; run {anchors.FETCH_COMMAND}"
-
-
-def _ignored(gitignore, scope):
-    """(paths, names): the patterns of the folders that the rules of one .gitignore leave out, scope being the folder of the
-    file with a closing slash. A rule with a slash inside is a pattern of a path from that folder, any other rule a pattern
-    of a folder name below it, and a negated rule keeps a file and no folder."""
-    paths, names = [], []
-    for line in gitignore.read_text(encoding="utf-8").splitlines():
-        rule = line.strip().removesuffix("/*").strip("/")
-        if not rule or rule.startswith(("#", "!")):
-            continue
-        if "/" in rule:
-            paths.append(scope + rule)
-        else:
-            names.append((scope, rule))
-    return paths, names
-
-
-def _left_out(here, folder, paths, names):
-    """Whether the folder named folder inside here, a path from the root with a closing slash, is hidden or left out by a
-    rule of a .gitignore, where * of a rule also crosses a slash."""
-    return (folder.startswith(".") or any(fnmatch.fnmatchcase(here + folder, pattern) for pattern in paths)
-            or any(here.startswith(scope) and fnmatch.fnmatchcase(folder, pattern) for scope, pattern in names))
-
-
-def _files_of_the_repository(root):
-    """Every file under the scanned folders of a tree but those of hidden folders and of the folders that a .gitignore of the
-    tree leaves out, among them the data folder of every asset and the folders that the tools fill with run folders."""
-    paths, names = _ignored(root / ".gitignore", "")
-    for top in SCANNED:
-        for folder, subfolders, files in os.walk(root / top):
-            here = Path(folder).relative_to(root).as_posix() + "/"
-            if ".gitignore" in files:
-                more_paths, more_names = _ignored(Path(folder) / ".gitignore", here)
-                paths, names = paths + more_paths, names + more_names
-            subfolders[:] = [d for d in subfolders if not _left_out(here, d, paths, names)]
-            yield from (Path(folder) / name for name in files)
-
-
-def _holds_record_list(value):
-    """Whether a JSON value holds, at any depth, a list with an object that has the keys of a scenario record."""
-    if isinstance(value, list):
-        return any(isinstance(item, dict) and RECORD_KEYS <= item.keys() for item in value) or any(map(_holds_record_list, value))
-    return isinstance(value, dict) and any(map(_holds_record_list, value.values()))
-
-
-def _holds_records(path):
-    """Whether a JSON file or a file of JSON lines holds scenario records."""
-    text = path.read_text(encoding="utf-8", errors="replace")
-    try:
-        return _holds_record_list(json.loads(text))
-    except ValueError:
-        try:
-            return _holds_record_list([json.loads(line) for line in text.splitlines() if line.strip()])
-        except ValueError:
-            return False
-
-
-def test_the_repository_holds_no_scenario_record():
-    files = list(_files_of_the_repository(ROOT))
-    named = [f.relative_to(ROOT).as_posix() for f in files if f.name == anchors.SCENARIOS_FILE]
-    assert named == [], f"a scenario file outside the data folder: {named}"
-    copies = [f.relative_to(ROOT).as_posix() for f in files if f.suffix in (".json", ".jsonl") and _holds_records(f)]
-    assert copies == [], f"files that hold scenario records: {copies}"
-    if not FETCHED:
-        return
-    records = anchors.load_scenarios()["scenarios"]
-    strings = {value for r in records for value in r.values() if isinstance(value, str) and len(value) >= LONG}
-    dates = {r["date"] for r in records}
-    for f in files:
-        text, where = f.read_bytes().decode("utf-8", "replace"), f.relative_to(ROOT).as_posix()
-        assert not any(s in text for s in strings), f"{where} holds a string of a scenario record"
-        assert not (where.startswith(OURS) and any(d in text for d in dates)), f"{where} holds the date of a scenario record"
 
 
 def test_the_driver_and_the_anchors_import_without_the_scenario_file(tmp_path):

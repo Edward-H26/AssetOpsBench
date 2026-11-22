@@ -17,6 +17,8 @@ paths = [
   # the same two files at their places in CausalDiagnosis/
   '''(^|/)CausalDiagnosis/experiments/run_verification/invariant_digests\.json$''',
   '''(^|/)CausalDiagnosis/episode_viewer/fixed_starts\.json$''',
+  # the SHA-256 digests of the results index that CausalDiagnosis/evaluation/result_tables/tables_from_runs writes, no secret
+  '''(^|/)CausalDiagnosis/results/INDEX\.json$''',
 ]
 # Known-safe placeholder values (regex). Add real false positives here.
 regexes = [

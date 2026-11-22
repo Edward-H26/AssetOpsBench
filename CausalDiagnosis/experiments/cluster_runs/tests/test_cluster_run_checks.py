@@ -208,7 +208,7 @@ def test_an_order_placed_before_the_failure_whose_repair_closes_after_it_is_not_
 
 
 def test_the_start_cap_is_the_registered_share_of_the_development_starts_rounded_up(tmp_path_factory, monkeypatch, capsys):
-    """Amendment 34.16 rule 3: a round and a pilot play the registered share of the development starts of the asset, rounded up
+    """A round and a pilot play the registered share of the development starts of the asset, rounded up
     to a whole start with the share read as an exact fraction, and cap prints that count for the launch line."""
     n = development_checks.development_count(DEFAULT_ASSET)
     assert n > 0
@@ -299,7 +299,7 @@ def test_the_valid_share_is_read_on_every_row_without_the_mcp_and_the_exact_matc
 
 
 def test_a_gate_whose_bar_no_count_reaches_or_lies_at_or_below_the_floor_is_refused(tmp_path, tmp_path_factory, monkeypatch, capsys):
-    """Part one, section 5, with the bar of amendment 34.16: on starts that share one faulty set, the constant answer is right in
+    """The gate and its bar: on starts that share one faulty set, the constant answer is right in
     every episode and no count of them separates from it, and with the floor of pass raised above four fifths in a copy of the
     file the bar of 4 of 5 lies below the floor; both times the check refuses the registration and reads nothing else."""
     _gate(tmp_path)

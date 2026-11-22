@@ -230,6 +230,8 @@ def main(argv):
     plan = planned_episodes.episode_plan(config, a.seeds_list, cycles, blocks, a.scenario_ids)
     # the start check, before any table is fitted and before the run folder exists
     reasons = start_check.registration(a, config, config_name, facts_path)
+    if a.starts == "training":
+        start_check.refuse_registered_training(a, reasons, "--starts training")
     hold_tables(reasons)
     runner, judge_options = runner_setup.build_runner(a, config_name, config, price_table, cycles, blocks, facts_path, registered=not reasons)
     runner.unregistered = reasons

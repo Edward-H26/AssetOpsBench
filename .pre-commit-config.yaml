@@ -16,6 +16,8 @@ repos:
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
+        # the generated SHA-256 digest tables of the fixed starts, the invariant digests and the results index, no secret
+        exclude: ^CausalDiagnosis/(episode_viewer/fixed_starts|experiments/run_verification/invariant_digests|results/INDEX)\.json$
 
   - repo: local
     hooks:

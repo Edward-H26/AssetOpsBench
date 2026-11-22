@@ -65,6 +65,7 @@ def verify(log, released, oracle, cost_oracle, grade=None, scope="writes", predi
         "separable_e18": separable_e18,
         "checks": checks,
         "all_checks_ok": all(c["ok"] for c in checks.values()),
+        "worst_level_timing": episode_checks._worst_level_timing(log, orders, oracle),  # reported beside the checks, in no aggregate
         "read_gate": count_gate["read_gate"],
         "diagnosis_per_component": hard["diagnosis_per_component"],
         "diagnosis_all_correct": all_correct,

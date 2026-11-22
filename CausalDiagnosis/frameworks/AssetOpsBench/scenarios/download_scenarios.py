@@ -5,7 +5,7 @@ The scenarios are the records of data/asset/hydrolicpump_utterance.jsonl (spelle
 ibm-research/AssetOpsBench on Hugging Face, taken at the pinned revision REVISION. The SHA-256 of the bytes and the count of
 records are checked against the pin before anything is written, and a file that differs is refused. The fetch follows the
 retry policy of every fetch (CausalDiagnosis/utils/download_retry.py). --from-file reads the same file of a local clone of the
-dataset under the same checks. The repository holds the pin and no record of the dataset.
+dataset under the same checks. The repository holds the pin and not the scenario file.
 """
 from CausalDiagnosis.utils import download_retry
 from CausalDiagnosis.utils.paths import SRC
@@ -18,9 +18,9 @@ from datetime import date
 from pathlib import Path
 
 DATASET = "ibm-research/AssetOpsBench"
-REVISION = "5e25bb7f2cd37fb68b9a9e1f99d170ca5be7ce17"
+REVISION = "5e25bb7f2cd37fb68b9a9e1f99d170ca5be7ce17"  # pragma: allowlist secret
 SOURCE_FILE = "data/asset/hydrolicpump_utterance.jsonl"
-SOURCE_SHA256 = "654ff0181dc3a8ef586585db45da16a6b36c618ac933279c90ec5aa923a0fa30"
+SOURCE_SHA256 = "654ff0181dc3a8ef586585db45da16a6b36c618ac933279c90ec5aa923a0fa30"  # pragma: allowlist secret
 RECORDS = 17
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 USER_AGENT = "Mozilla/5.0"  # a generic agent string, never a person's name or address

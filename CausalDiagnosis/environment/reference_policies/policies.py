@@ -1,4 +1,4 @@
-"""Reference policies over the v2 action set (CausalDiagnosis/docs/environment.md, section Reference policies). The greedy
+"""Reference policies over the v2 action set (CausalDiagnosis/docs/environment.md, section Baseline policies). The greedy
 policy lives in greedy_policy.py with the per-tier classifiers.
 
 A policy has start(first_envelope), called with the envelope that reset returns (its result is the asset profile), and

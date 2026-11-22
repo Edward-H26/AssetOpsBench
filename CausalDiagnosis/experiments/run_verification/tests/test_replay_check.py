@@ -32,6 +32,8 @@ from CausalDiagnosis.experiments.run_verification.run_identity_file_lists import
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.verifier import misdiagnosis_charge_of
 from CausalDiagnosis.mcp_servers.utils import transcript
+from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports
+from CausalDiagnosis.experiments.episode_runners.tests.conftest import own_table_copies
 
 # the rig's action server with the diagnostics server on a preset without a clock and on the preset whose clock charges the wall
 # seconds between two calls, the AssetOpsBench servers behind the metering layer on the memory store, and a trial of the training
@@ -45,16 +47,24 @@ SHIFT = 600.0  # seconds added to every wall clock reading of the calls of a tra
 _MADE = {}  # form of RUNS: the folder of its scripted run, made once per session and only read afterward
 
 
-@pytest.fixture(scope="session")
-def scripted(tmp_path_factory, table_guard):
+@pytest.fixture(autouse=True)
+def read_the_replay_tables(replay_tables, monkeypatch):
+    """Every test of this module reads and writes the tables of replay_tables, in its process and in the processes it starts."""
+    own_table_copies(monkeypatch, replay_tables, copy=False)
+
+
+@pytest.fixture
+def scripted(tmp_path_factory, table_guard, replay_tables, monkeypatch):
     """scripted(form) is the folder of the scripted run of that form of RUNS, made at its first use in the session after the label
     and grade tables of PRESETS are computed, and those of TRIAL_PRESETS on the development starts, as a grid computes them before
-    its first line, so that no run extends a table that its replay then reads in another state. A test that edits a run edits a
-    copy of it (_copy)."""
+    its first line, so that no run extends a table that its replay then reads in another state. Every test that takes it, of this
+    module or of another, reads and writes the tables of replay_tables, in its process and in the processes it starts, so that a
+    run and its replays read the same tables whichever module made the run. A test that edits a run edits a copy of it (_copy)."""
     if not Path(default_facts_path()).exists():
         pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH")
     if importlib.util.find_spec("mcp") is None:
         pytest.skip("needs the mcp package")
+    own_table_copies(monkeypatch, replay_tables, copy=False)
 
     def run_of(form):
         if form not in _MADE:
@@ -71,7 +81,8 @@ def scripted(tmp_path_factory, table_guard):
             moved = [event["files"] for event in ledger.load(run_dir)["events"] if event["what"] == pooling_rules.DATA_CHANGED]
             assert not moved, f"a table changed while the run played, so the run recorded it in another state: {moved}"
             _MADE[form] = run_dir
-            table_guard.record()  # the run recorded the session copies of the tables, so no later test may change them
+            # the run recorded the tables of replay_tables, so no later test may change them
+            table_guard.record([Path(getattr(importlib.import_module(name), attribute)) for name, attribute in ports.generated_tables()])
         return _MADE[form]
 
     return run_of

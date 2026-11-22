@@ -18,7 +18,7 @@ SCORE_COLUMNS = ("pass", "graded_pass", "graded_pass_n", "graded_top1", "graded_
                  "diagnosis_all_correct", "faulty_set_right", "recovered", "unnecessary", "false_alarms", "cost",
                  "cost_normalized", "downtime_total",
                  "detection_delay", "repair_delay", "turns_to_correct_diagnosis", "abstained", "abstention_cites_reading", "abstention_correct",
-                 "prediction_verdict", "failure_class", "end_reason", "time_used", "steps", "provenance_ok", "write_count_ok", "timing_ok", "ordering_ok", "read_gate", "reward",
+                 "prediction_verdict", "failure_class", "end_reason", "time_used", "steps", "provenance_ok", "write_count_ok", "timing_ok", "ordering_ok", "worst_level_timing_ok", "read_gate", "reward",
                  "cost_oracle", "grade", "judge_pass", "static_faulty_set_correct", "static_repairs_match_oracle")
 BOOKKEEPING_COLUMNS = ("tool_calls", "refusals", "causal_calls", "llm_calls", "input_tokens", "output_tokens", "plan_steps",
                        "plans", "surprises", "revisions", "fallbacks", "first_plan_mode", "replay_matches", "gepa_call",

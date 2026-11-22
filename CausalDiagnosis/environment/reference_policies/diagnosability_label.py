@@ -30,6 +30,7 @@ import json
 from pathlib import Path
 
 from CausalDiagnosis.datasets.dataset_loader import recordings as records
+from CausalDiagnosis.datasets.dataset_loader.dataset_packages import table_path
 from CausalDiagnosis.datasets.dataset_loader.evidence_source import SEGMENT
 from CausalDiagnosis.datasets.dataset_loader.profile_registry import get_profile
 from CausalDiagnosis.utils.atomic_writes_and_locks import files_digest, locked, refuse_writing, write_json_atomically
@@ -41,7 +42,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import Hydraul
 from CausalDiagnosis.environment.reference_policies.greedy_policy import GreedyPolicy, ServedClassifiers
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.start_state_seeds import EVALUATION_POOL, combination_seeds, combo_key
 
-LABELS_PATH = records.release_path(PROFILE).parent / "labels.json"  # derived from the recordings, so it stays out of git with the other data files
+LABELS_PATH = table_path(records.release_path(PROFILE).parent / "labels.json")  # derived from the recordings, so it stays out of git with the other data files
 # 6 since a rollout plays the live recordings only where a clock runs on the row and the rules key holds whether one runs
 LABELS_FORMAT = 6
 ROLLOUTS = 10  # rollouts per start, as many as the server's E18 takes

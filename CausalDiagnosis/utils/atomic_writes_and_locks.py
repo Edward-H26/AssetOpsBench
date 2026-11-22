@@ -36,6 +36,9 @@ def write_json_atomically(path, obj, indent=None):
         json.dump(obj, f, indent=indent)
 
 
+LOCK_SUFFIX = ".lock"  # the suffix of the lock file that locked() leaves beside the file it locks, which no ledger records
+
+
 @contextmanager
 def locked(path):
     """An exclusive lock on a file beside path, held while a process reads path, adds to it and writes it back, so that two
@@ -43,7 +46,7 @@ def locked(path):
     of the metering layer locks the state file of an episode. The lock file stays behind, empty."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path.with_name(path.name + ".lock"), "a") as lock:
+    with open(path.with_name(path.name + LOCK_SUFFIX), "a") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         try:
             yield

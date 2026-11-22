@@ -1,6 +1,6 @@
 """LoRA fine tuning of the agent model on the examples of rejection_sampling_examples.py (the training table), one adapter per agent, arm and fold
 of the cross-fitting. It runs in the training environment of CausalDiagnosis/cluster_jobs/0_setup/requirements-train.txt, a virtual environment of its own on the
-cluster, and imports nothing of the fork, since that environment holds the training packages and not the fork's (CausalDiagnosis/cluster_jobs/README.md, section Training in
+cluster, and imports nothing of the fork, since that environment holds the training packages and not the fork's (CausalDiagnosis/docs/experiments.md, section Training in
 the environment), beyond training_variants/, which needs the standard library alone and names the adapters.
 
 usage, on one GPU of the cluster through CausalDiagnosis/cluster_jobs/3_run/train_lora.sbatch, with HYD_TRAINING naming the training folder:

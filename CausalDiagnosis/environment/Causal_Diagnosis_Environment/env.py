@@ -386,7 +386,9 @@ class HydraulicRigEnv:
         if self.done:
             info.update(log=self.log, reason=self.log[-1]["reason"])
         notifications = self.notifications()
-        self._notified = len(self.log)
+        if action.get("type") != NO_CALL_ACTION:
+            # a no_call step answers no agent, so its notifications stay pending for the next counted call
+            self._notified = len(self.log)
         return self.envelope(result, refusal, notifications), self._step_charges, self.done, info
 
     def _cut_short(self):

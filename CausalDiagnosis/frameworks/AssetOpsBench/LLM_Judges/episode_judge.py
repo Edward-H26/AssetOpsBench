@@ -457,7 +457,7 @@ def agent_model_of(episode_dir):
 
 
 # short prompts of the thinking check of a judge job, whose replies must hold no thinking under JUDGE_REQUEST
-THINKING_PROMPTS = ("Answer with the single word yes.", "Is 7 a prime number? Answer yes or no.", "Name the colour of a clear sky in one word.")
+THINKING_PROMPTS = ("Answer with the single word yes.", "Is 7 a prime number? Answer yes or no.", "Name the color of a clear sky in one word.")
 
 
 def thinking_replies(base_url, model, prompts=THINKING_PROMPTS):

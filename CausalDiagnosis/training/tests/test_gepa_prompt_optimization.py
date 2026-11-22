@@ -488,7 +488,7 @@ def _llm_prompts(ep_dir):
     return [call["prompt"] for call in read_json(ep_dir / "llm_calls.json")]
 
 
-def test_the_loop_plays_the_causal_agent_with_each_block_on_its_task_message_and_no_prompt_changes(tmp_path):
+def test_the_loop_plays_the_causal_agent_with_each_block_on_its_task_message_and_no_prompt_changes(tmp_path, monkeypatch):
     a = g.build_parser().parse_args(["--model", "scripted-causal", "--reflection-model", "fake-reflection", "--reflection-base-url",
                                      "http://127.0.0.1:9/v1", "--config", "static", "--block", "1", "--max-episodes", "5",
                                      "--training-fold", "1", "--out", str(tmp_path / "runs")])
@@ -504,6 +504,7 @@ def test_the_loop_plays_the_causal_agent_with_each_block_on_its_task_message_and
     stream = start_states.training_stream(HydraulicRigEnv(cycles, blocks, config), FOLDS, 3, 1)
     reflection = FakeReflection()
     before = prompt_constants()
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: [])  # a loop of record, the one that the registered split plays
     with _servers_in_process():
         run_dir, loop = g.run_loop.run_online(a, ["gepa_online.py"], settings, runner, config, None, stream, reflection)
     assert prompt_constants() == before and runner.task_block == ""
@@ -512,8 +513,8 @@ def test_the_loop_plays_the_causal_agent_with_each_block_on_its_task_message_and
     assert meta["mode"] == g.MODE and meta["gepa"]["card"] == "verifier" and meta["gepa"]["reflection_model"] == "fake-reflection"
     assert meta["gepa"]["agent"] == "causal" and meta["gepa"]["training_variant"] == "as_released" and meta["training_variant"] == "as_released"
     assert meta["gepa"]["training_fold"] == meta["training_fold"] == record["settings"]["training_fold"] == 1
-    # the loop asks the start check before its run.json, so a loop in a tree that is no repository carries the stamp
-    assert meta[TRAINING_SPLIT_KEY] == "registered" and meta["stamp"] == "development" and meta["stamp_reasons"]
+    # the loop asks the start check before its run.json, so a loop of record carries no stamp
+    assert meta[TRAINING_SPLIT_KEY] == "registered" and "stamp" not in meta and "stamp_reasons" not in meta
     assert meta["episodes_planned"] == 5 and meta["seeds"] == stream and "thresholds" not in meta
     names = [e["episode"] for e in record["episodes"]]
     assert ledger["status"] == "finished" and ledger["configuration"]["mode"] == g.MODE and sorted(ledger["episodes"]) == sorted(names)
@@ -546,6 +547,37 @@ def test_the_loop_plays_the_causal_agent_with_each_block_on_its_task_message_and
     assert {e["phase"] for e in record["episodes"]} == {"stream"} and not [key for key in record if "heldout" in key]
 
 
+class Reached(Exception):
+    """Raised by a stand-in of the step after a check, so that a test sees that a loop passed the check."""
+
+
+def test_a_loop_on_the_registered_split_plays_only_as_a_run_of_record(tmp_path, monkeypatch):
+    """A loop of GEPA on the registered split plays the training starts of its fold, which lie on test combinations of the other
+    folds: a loop whose start check gives a reason is refused by name before its run folder exists and pointed to the development
+    split, while a loop of a trial with the same reason and a loop of record on the registered split pass to their run.json."""
+    def reached(*args, **kwargs):
+        raise Reached
+
+    monkeypatch.setattr(run_episodes, "run_meta", reached)
+    runner, config = types.SimpleNamespace(config_name="static", facts_path=None), load_config("static")[1]
+    words = ["--model", "m", "--reflection-model", "r", "--reflection-base-url", "http://127.0.0.1:9/v1", "--training-fold", "1",
+             "--out", str(tmp_path / "runs")]
+    registered, trial = g.build_parser().parse_args(words), g.build_parser().parse_args([*words, "--training-split", "development"])
+
+    def online(a):
+        g.run_loop.run_online(a, ["gepa_online.py"], g.driver_settings(a), runner, config, None, [], FakeReflection())
+
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: ["a reason of the start check"])
+    with pytest.raises(SystemExit, match="a loop of GEPA on the registered split .*a reason of the start check.*--training-split development"):
+        online(registered)
+    with pytest.raises(Reached):
+        online(trial)
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: [])  # a loop of record
+    with pytest.raises(Reached):
+        online(registered)
+    assert not (tmp_path / "runs").exists()
+
+
 def test_main_runs_the_loop_through_the_endpoints_of_the_agent_and_of_the_reflection_model(tmp_path, monkeypatch):
     agent_server, agent_requests = _stand_in_endpoint(fixed_reply=SUMMARY_REPLY)
     reflection_server, reflection_requests = _stand_in_endpoint(fixed_reply=f"```\n{BETTER.strip()}\n```")
@@ -556,6 +588,7 @@ def test_main_runs_the_loop_through_the_endpoints_of_the_agent_and_of_the_reflec
         raise AssertionError("a loop chooses no seed of the test set")
 
     monkeypatch.setattr(run_episodes.planned_episodes, "chosen_seeds", no_test_set)
+    monkeypatch.setattr(run_episodes.start_check, "registration", lambda *args: [])  # a loop of record, the one that the registered split plays
     asked, stream_of = [], g.loop_settings.training_stream
     monkeypatch.setattr(g.loop_settings, "training_stream", lambda env, split, count, fold, first_seed, master_seed, pool, skip_per_state: asked.append(
         (count, fold, first_seed, master_seed, pool, skip_per_state)) or stream_of(env, split, count, fold, first_seed, master_seed, pool, skip_per_state))

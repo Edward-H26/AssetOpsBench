@@ -27,7 +27,7 @@ report of a run stays beside its synced run folder, outside the fork.
   fixture, the reader of scored runs and the acceptance rule on hand-made `scores.csv` files, without network.
   `test_layer_b.py` runs layer B's functions without a network, and with `AOB_LAYER_B` naming a built folder also the
   real servers over the real data on `fake_couchdb.py`.
-- `CausalDiagnosis/frameworks/AssetOpsBench/cluster_jobs/run_reproduction.sh` runs the pilot mode or the full reproduction on the cluster, as section 11 of `CausalDiagnosis/cluster_jobs/README.md` shows.
+- `CausalDiagnosis/frameworks/AssetOpsBench/cluster_jobs/run_reproduction.sh` runs the pilot mode or the full reproduction on the cluster, as section 3 of `CausalDiagnosis/cluster_jobs/README.md` shows.
 
 ## Runnable subset
 
@@ -155,7 +155,7 @@ L=$HOME/aob_layer_b
 PATH=$PWD/.venv/bin:$PATH python -m CausalDiagnosis.frameworks.AssetOpsBench.reproduction.fetch_public_servers_and_data --scenarios $F --out $L
 ```
 
-On the cluster, after section 2 of `CausalDiagnosis/cluster_jobs/README.md` (the clone of the fork under the project folder, with the cluster
+On the cluster, after section 0 of `CausalDiagnosis/cluster_jobs/README.md` (the clone of the fork under the project folder, with the cluster
 scripts in its `CausalDiagnosis/cluster_jobs` folder and those of this framework in `CausalDiagnosis/frameworks/AssetOpsBench/cluster_jobs`), a pilot mode run of twenty episodes goes inside a new serving job that serves granite and
 the stand-in judge on one H100. `WORK` is the project folder on the cluster, `FORK` the clone and `J` the folder of
 the judge model, as sections 2 and 6 of that README name them:
@@ -188,7 +188,7 @@ checks the setup and decides nothing. Runs that cannot decide are no outcome of 
 the same commit with no file of a port changed. After a second such verdict in a row no third job runs until the
 conditions it names are read and their cause is fixed outside the ports.
 
-On the laptop, after `bash CausalDiagnosis/cluster_jobs/4_after_run/sync_runs.sh` of section 12 of `CausalDiagnosis/cluster_jobs/README.md`, a new scoring with another judge, which keeps
+On the laptop, after `bash CausalDiagnosis/cluster_jobs/4_after_run/sync_runs.sh` of section 4 of `CausalDiagnosis/cluster_jobs/README.md`, a new scoring with another judge, which keeps
 the earlier verdicts of every episode as `judge_<protocol>.<model>.json`, and the check of a synced run come from the fork
 root:
 

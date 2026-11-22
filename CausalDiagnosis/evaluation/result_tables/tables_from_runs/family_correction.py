@@ -6,7 +6,7 @@ from CausalDiagnosis.evaluation.metrics.table_statistics import rounded as _r  #
 from . import cell_statistics
 
 
-# the readings of a registered comparison (part one, section 12, and its row for the other direction)
+# the readings of a registered comparison, reversed when it holds in the other direction
 READINGS = ("holds", "reversed", "does not hold", "not run", "uninformative")
 
 

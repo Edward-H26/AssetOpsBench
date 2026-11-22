@@ -77,7 +77,7 @@ def test_a_fine_tuned_run_reads_the_context_length_of_its_base_model(adapter_fir
 
 def run(launchers, script, tmp_path, surface="rig", question="What IoT sites are available?"):
     with ScriptedEndpoint(script) as ep:
-        runner = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", surface=surface,
+        runner = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", surface=surface,  # pragma: allowlist secret
                                  log_path=tmp_path / "react_log.txt", example_start=EXAMPLE_START)
         result = asyncio.run(runner.run(question))
     return runner, result, ep
@@ -192,7 +192,7 @@ def test_a_run_without_a_result_keeps_the_supervisors_counter(tmp_path, monkeypa
 
     with monkeypatch.context() as patched, ScriptedEndpoint(SITES_RUN) as ep:
         patched.setattr(supervisor_runner, "persist_trajectory", fail)
-        failed = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "failed.txt",
+        failed = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "failed.txt",  # pragma: allowlist secret
                                  example_start=EXAMPLE_START)
         with pytest.raises(OSError):
             asyncio.run(failed.run("What IoT sites are available?"))
@@ -215,7 +215,7 @@ def test_a_run_without_a_result_keeps_the_supervisors_counter(tmp_path, monkeypa
         await task
 
     with ScriptedEndpoint([held_until_the_cut, *SITES_RUN[1:]]) as ep:
-        cut = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "cut.txt",
+        cut = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "cut.txt",  # pragma: allowlist secret
                               example_start=EXAMPLE_START)
         with pytest.raises(asyncio.CancelledError):
             asyncio.run(cut_at_the_first_model_call())

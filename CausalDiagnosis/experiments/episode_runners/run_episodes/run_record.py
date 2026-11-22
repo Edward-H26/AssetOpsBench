@@ -118,18 +118,15 @@ RESUME_NONE = "no run in progress, a folder with a ledger of the status running,
 
 
 def run_label(config_name, agent_label):
-    # a run folder inside the repository makes the runner start each server as `python -m <dotted path>`, which splits a
-    # dot in any folder name, so the dots and slashes of a router model id such as z-ai/glm-5.3 become underscores here
+    # the label names one folder: the slashes of a router model id such as z-ai/glm-5.3 become underscores, and so do its
+    # dots, the form of the name of a run folder that the docs state and the tools that read run folders know
     return f"{config_name}_{agent_label}_{datetime.now():%Y%m%d-%H%M%S}".replace(".", "_").replace("/", "_")
 
 
 def run_base(out, name):
-    """The folder name under --out, refused when a folder name inside the repository holds a dot."""
-    base = (ROOT / out / name).resolve()
-    if base.is_relative_to(ROOT) and any("." in part for part in base.relative_to(ROOT).parts):
-        raise SystemExit(f"--out {out}: a folder name inside the repository may not contain a dot, since the runner imports the "
-                         "per-episode server launchers as modules of that path")
-    return base
+    """The folder of a run of that name under --out, which a relative --out names from the root of the repository. A launcher of an
+    episode starts as a file wherever its folder lies (episode_launchers.py), so a dot in a folder name is no reason to refuse it."""
+    return (ROOT / out / name).resolve()
 
 
 def run_folder(out, label):

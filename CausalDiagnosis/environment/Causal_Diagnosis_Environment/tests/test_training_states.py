@@ -50,7 +50,7 @@ def _judged_reached(env, split, model):
 
 
 def test_the_registered_split_is_the_rule_on_the_real_data(make_env):
-    """configs/training/hyd_1/folds.json is the rule's output with the K and the seed it records, fixed before any run, and the
+    """configs/training/hyd_1/folds.json is the rule's output with the K and the seed it records, and the
     rule replays from its seed alone."""
     env = make_env()
     registered = _registered()

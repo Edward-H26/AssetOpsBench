@@ -24,6 +24,7 @@ from CausalDiagnosis.experiments.episode_runners.run_folder_layout import read_r
 from CausalDiagnosis.environment.reference_policies import diagnosability_label as separability
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import diagnosability_grade as grade
+from CausalDiagnosis.experiments.episode_runners.tests.conftest import own_table_copies
 
 from CausalDiagnosis.experiments.run_verification.tests.test_gpu_card import JUDGE, JUDGE_URL, MODEL, URL, _endpoint, _of_record
 
@@ -40,10 +41,13 @@ def played(tmp_path_factory):
         pytest.skip("needs the mcp package")
     from CausalDiagnosis.experiments.cluster_runs import precompute_grid_tables as precompute_tables
 
-    precompute_tables.main(["--config", "base"])
     root = tmp_path_factory.mktemp("runs")
-    run = Path(run_episodes.main([*LINE.split(), *DEVELOPMENT, "--out", str(root)]))
-    filler = Path(run_episodes.main([*LINE.split(), *DEVELOPMENT, "--filler", "--out", str(root)]))
+    with pytest.MonkeyPatch.context() as patch:
+        # the runs here may add a table that the session copies lack, after a run of another module recorded those copies
+        own_table_copies(patch, tmp_path_factory.mktemp("tables"))
+        precompute_tables.main(["--config", "base"])
+        run = Path(run_episodes.main([*LINE.split(), *DEVELOPMENT, "--out", str(root)]))
+        filler = Path(run_episodes.main([*LINE.split(), *DEVELOPMENT, "--filler", "--out", str(root)]))
     return run, filler
 
 
@@ -104,10 +108,10 @@ def test_the_filler_of_a_line_drops_its_start_state_and_its_scenarios():
     assert grid_lines.filler_arguments("--config anchored --agent oracle --scenario-ids=2001/2003") == "--config anchored --agent oracle"
 
 
-def test_the_filler_of_a_line_whose_preset_pins_a_start_plays_the_development_starts(tmp_path):
+def test_the_filler_of_a_line_whose_preset_pins_a_start_plays_the_development_starts(tmp_path, monkeypatch):
     """A pin names the start of its line's own play: the line of a preset whose field start pins a start of the test set plays that
     start, and its filler, on the development starts, drops the pin and plays the development starts that its seeds draw, with no
-    pin in its run.json. The runs are the oracle, which needs no model."""
+    pin in its run.json. The runs are the oracle, which needs no model, on tables of their own, since they may add a table."""
     import json
 
     from CausalDiagnosis.datasets.splits.development_split import starts_of_test_set
@@ -118,6 +122,7 @@ def test_the_filler_of_a_line_whose_preset_pins_a_start_plays_the_development_st
         pytest.skip("hydraulic rig facts file not present; set HYD_FACTS_PATH")
     if importlib.util.find_spec("mcp") is None:
         pytest.skip("needs the mcp package")
+    own_table_copies(monkeypatch, tmp_path / "tables")
     _facts, _cycles, blocks = load_world()
     pinned = list(starts_of_test_set(run_episodes.get_profile("hyd_1"), blocks)[0])
     preset = tmp_path / "pinned.json"

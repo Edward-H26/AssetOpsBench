@@ -14,7 +14,7 @@ from CausalDiagnosis.experiments.episode_runners.run_episodes import diagnostics
 from CausalDiagnosis.utils.json_files import write_json
 from observability import set_run_context
 
-API_KEY_REFUSAL = "API_KEY is not set; the paper-era runners send it to the endpoint of --base-url"
+API_KEY_REFUSAL = "API_KEY is not set; the paper-era runners send it to the endpoint of --base-url"  # pragma: allowlist secret
 
 
 def diagnosis_example(config, blocks):

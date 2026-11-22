@@ -65,7 +65,7 @@ def launchers(folder, mode="answer"):
 
 def play(runner_class, paths, script, tmp_path, **settings):
     with ScriptedEndpoint(script) as endpoint:
-        runner = runner_class(paths, base_url=endpoint.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",
+        runner = runner_class(paths, base_url=endpoint.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",  # pragma: allowlist secret
                               example_start=stub_servers.EXAMPLE_START, **settings)
         result = asyncio.run(runner.run(QUESTION))
     return runner, result, endpoint
@@ -192,7 +192,7 @@ def test_a_cut_run_ends_as_a_time_out_and_keeps_its_records(tmp_path):
         return asyncio.current_task().cancelling()
 
     with ScriptedEndpoint(list(SUPERVISED)) as endpoint:
-        runner = MetaAgentRunner(paths, base_url=endpoint.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",
+        runner = MetaAgentRunner(paths, base_url=endpoint.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",  # pragma: allowlist secret
                                  example_start=stub_servers.EXAMPLE_START)
         started = time.perf_counter()
         assert asyncio.run(cut(runner)) == 0

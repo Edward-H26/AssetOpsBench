@@ -70,12 +70,11 @@ def refused(run_dir):
     the retired mode gepa stays outside the paper, as does a run that samples trajectories for fine tuning. A model agent on a row preset, or on an arm of the rows (ROW_PRESETS of
     episode_launchers.py, run_configuration.py, run_folder_layout.py, servers_of_a_run.py, CausalDiagnosis/utils/csv_rows.py and CausalDiagnosis/utils/json_files.py), over the rig's action server plays a surface no row of the paper has, since the action server serves the reference policies, the gym and training,
     while a reference policy there stays a reference and the static agent plays no tool. A run of chosen starts (chosen_starts)
-    plays one start state or named scenarios and not the start set that a cell reads."""
+    plays one start state or named scenarios and not the start set that a cell reads, a reason that comes last, so that a run of
+    chosen starts that another reason keeps out takes that reason and gives its root no kind (root_kind)."""
     meta = read_json(Path(run_dir) / "run.json", {})
     if meta.get("filler"):
         return FILLER_RUN
-    if chosen_starts(meta):
-        return CHOSEN_STARTS
     if (meta.get("backend") or {}).get("kind") == "memory":
         return MEMORY_BACKEND
     if meta.get("mode") == "gepa":
@@ -84,6 +83,8 @@ def refused(run_dir):
         return TRAINING_SAMPLE
     if meta.get("mode", "gym") == "gym" and meta.get("model") and meta.get("config_name") in ROW_PRESETS and surface_of(meta) == "rig":
         return RIG_SURFACE_ROW
+    if chosen_starts(meta):
+        return CHOSEN_STARTS
     return None
 
 

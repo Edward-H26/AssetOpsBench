@@ -370,6 +370,17 @@ def test_a_ledger_whose_record_holds_no_agent_records_no_agent(tmp_path):
     path = run / "ledger.json"
     path.write_text(path.read_text(encoding="utf-8").replace('"agent": "causal"', '"agent": null'), encoding="utf-8")
     assert run_files.ledger_meta(run)["unrecorded"] == ["agent"]
+    # without the agent nothing says that the run needed no model, so a missing model is named too; the control is a baseline
+    oracle = made_up.model_meta(agent="oracle", agent_label="oracle", model=None, serving={"agent": None, "judge": None})
+    policy = made_up.write_run(tmp_path / "policy", [(7, made_up.known_episode())], meta=oracle, unfinished=True)
+    path = policy / "ledger.json"
+    record = json.loads(path.read_text(encoding="utf-8"))
+    path.write_text(json.dumps({**record, "model": None}), encoding="utf-8")  # a baseline's ledger holds no model, as the driver writes it
+    assert run_files.ledger_meta(policy)["unrecorded"] == []
+    path.write_text(json.dumps({**record, "model": None, "agent": None}), encoding="utf-8")
+    assert run_files.ledger_meta(policy)["unrecorded"] == ["agent", "model", "serving identity"]
+    path.write_text(json.dumps({**record, "model": None, "agent": "made_up_agent"}), encoding="utf-8")  # an agent of no declared kind
+    assert run_files.ledger_meta(policy)["unrecorded"] == ["model", "serving identity"]
 
 
 def test_the_process_of_a_run_is_named_by_the_line_and_the_replicate_of_its_ledger(tmp_path):
@@ -429,7 +440,8 @@ def test_a_job_whose_card_seconds_are_not_read_names_its_baseline_with_its_part_
 
 def run_of(line, model_agent=True):
     """A made-up run of a line of the grid file as rate_windows reads it, its cell recorded whole and none of its episodes read."""
-    return {"dir": Path(f"run_{line}"), "process": (str(line), "none"), "model_agent": model_agent, "missing": [], "rows": []}
+    return {"dir": Path(f"run_{line}"), "process": (str(line), "none"), "model_agent": model_agent, "missing": [], "rows": [],
+            "meta": {"agent": "causal" if model_agent else "oracle", "unrecorded": []}}
 
 
 def test_at_two_runs_in_flight_a_baseline_run_neither_makes_a_window_nor_splits_one():
@@ -509,11 +521,12 @@ def test_a_run_whose_episodes_meet_two_parts_is_named_with_both_and_one_that_rec
     def row(start):
         return {"left_out": "", "started_at": start, "total_s": 20.0}
     spans = [(100.0, 150.0), (160.0, 200.0)]
-    straddling = {"dir": Path("run_x"), "missing": [], "rows": [row(90.0)]}
+    straddling = {"dir": Path("run_x"), "missing": [], "rows": [row(90.0)], "meta": {"agent": "oracle", "unrecorded": []}}
     assert jobs.other_run_note(straddling, spans) == "run_x reaches no served model, and its episodes lie in to_first_episode_s and episodes_span_s"
-    late = {"dir": Path("run_y"), "missing": ["agent", "preset"], "rows": [row(150.0), row(190.0)]}
+    late = {"dir": Path("run_y"), "missing": ["agent", "preset"], "rows": [row(150.0), row(190.0)],
+            "meta": {"agent": None, "unrecorded": ["agent", "preset"]}}
     assert jobs.other_run_note(late, spans) == "run_y records no agent, and its episodes lie in episodes_span_s and after_last_episode_s"
-    inside = {"dir": Path("run_z"), "missing": [], "rows": [row(150.0)]}
+    inside = {"dir": Path("run_z"), "missing": [], "rows": [row(150.0)], "meta": {"agent": "oracle", "unrecorded": []}}
     assert jobs.other_run_note(inside, spans) == "run_z reaches no served model, and its episodes lie in episodes_span_s"  # the control
 
 
@@ -568,3 +581,89 @@ def test_a_note_names_the_lines_of_in_flight_tsv_that_it_cannot_read_and_the_slu
     view = profile_table.build([grid / "run_a"])[2][0]
     assert broken["notes"] == [] and view["notes"] == ["job_logs holds no single Slurm log *-77.out",
                                                        "3 lines of in_flight.tsv are not its seven fields"]
+
+
+def test_a_cut_run_whose_ledger_holds_its_command_and_no_agent_takes_its_windows_out_of_the_rate_with_a_note(tmp_path):
+    """The ledger of run_c names its process and holds no agent: its process counts toward the windows as one that nothing says
+    what it played, and the window in which it was alive gives no rate, with the note of the rate; the control is the same job with
+    the agent of run_c, which counts that window."""
+    whole = profile_table.build([cut_job(tmp_path / "whole") / "run_a"])[2][0]
+    grid = cut_job(tmp_path / "null_agent")
+    path = grid / "run_c" / "ledger.json"
+    path.write_text(path.read_text(encoding="utf-8").replace('"agent": "causal"', '"agent": null'), encoding="utf-8")
+    view = profile_table.build([grid / "run_a"])[2][0]
+    assert whole["window_s"] == pytest.approx(9 * EPISODE) and view["window_s"] == pytest.approx(4 * EPISODE)
+    assert view["notes"] == [cut_note("run_b"), cut_note("run_c") + ", which record no agent",
+                             "run_c records no agent, and its episodes lie in episodes_span_s",
+                             "a run of the job records no agent, so the card-seconds of the job are not divided",
+                             "no rate from the 1 windows in which the process line_2_replicate_none was alive, since its run run_c records no "
+                             "agent"]
+
+
+def finished_job(tmp_path, agent):
+    """A made-up job at one run in flight whose model line plays four episodes and whose second line, a finished run with run.json
+    of the given agent, plays four more after it."""
+    start = made_up.wall(100.0)
+    events = [(int(start), "start", "units", "run", "line_0_replicate_none", 1, 0),
+              (int(start + 4 * EPISODE), "end", "units", "run", "line_0_replicate_none", 1, 0),
+              (int(start + 4 * EPISODE), "start", "units", "run", "line_1_replicate_none", 2, 0),
+              (int(start + 8 * EPISODE), "end", "units", "run", "line_1_replicate_none", 2, 0)]
+    grid = made_up.write_grid(tmp_path / "grid_99", "99", record=["99|COMPLETED|2026-01-05T10:00:00|2026-01-05T11:00:00|01:00:00|00:00:00|node7"],
+                              log=[made_up.runner_header(50.0)], in_flight=events)
+    made_up.write_run(grid / "run_model", [(7 + j, made_up.shifted(made_up.known_episode(), 100.0 + j * EPISODE)) for j in range(4)],
+                      process=("0", "none"))
+    meta = made_up.model_meta(agent=agent) if agent != "oracle" else made_up.model_meta(agent="oracle", agent_label="oracle", model=None,
+                                                                                         serving={"agent": None, "judge": None})
+    made_up.write_run(grid / "run_x", [(7 + j, made_up.shifted(made_up.known_episode(), 100.0 + (4 + j) * EPISODE)) for j in range(4)],
+                      meta=meta, process=("1", "none"))
+    return profile_table.build([grid / "run_model", grid / "run_x"])
+
+
+def test_a_finished_run_whose_run_json_holds_no_agent_leaves_the_card_seconds_undivided_and_says_so(tmp_path):
+    """run_x has run.json and its record holds no agent: nothing says that it reached no served model, so the card-seconds of the
+    job are not divided, the window in which it was alive gives no rate, and its rows say that the run records no agent. The
+    controls are the same job with run_x a model run, whose card-seconds divide the Elapsed by eight episodes, and with run_x a
+    baseline, whose card-seconds divide it by four with the note of its time."""
+    rows, cells, views, _calls, _engine = finished_job(tmp_path / "unknown", None)
+    view = views[0]
+    assert (view["model_runs"], view["model_episodes"], view["runs_without_model"]) == (1, 4, [])
+    assert view["card_s_per_episode"] is None and view["card_s_undivided"] is True and view["window_s"] == pytest.approx(4 * EPISODE)
+    assert view["notes"] == ["run_x records no agent, and its episodes lie in after_last_episode_s",
+                             "a run of the job records no agent, so the card-seconds of the job are not divided",
+                             "no rate from the 1 windows in which the process line_1_replicate_none was alive, since its run run_x records no "
+                             "agent"]
+    assert {(row["gpu_note"], row["engine_note"]) for row in rows if row["run"] == "run_x"} == {(profile_table.NO_AGENT, profile_table.NO_AGENT)}
+    assert cells[0]["runs"] == ["run_model", "run_x"] and cells[0]["notes"] == [
+        "run_x records no agent: its seconds, its model calls and its pass enter the sums of the cell, and its episodes get no GPU "
+        "figure, no card-seconds held alone and no split of the engine",
+        "the job grid_99 leaves its card-seconds undivided, so those of the cell are not divided"]
+    # what the note says: the calls of both runs are in the cell, the card-seconds held alone are of the model run's episodes alone
+    assert (cells[0]["episodes"], cells[0]["calls"]["model_calls"], cells[0]["cost"]["held_card_s_per_episode"]) == (8, 24, 16.5)
+    model_cells = finished_job(tmp_path / "model_cell", "causal")[1]
+    assert model_cells[0]["runs"] == ["run_model", "run_x"] and model_cells[0]["notes"] == []  # the control of the cell
+    model = finished_job(tmp_path / "model", "causal")[2][0]
+    assert (model["card_s_per_episode"], model["notes"], model["window_s"]) == (pytest.approx(3600.0 / 8), [], pytest.approx(8 * EPISODE))
+    baseline = finished_job(tmp_path / "baseline", "oracle")[2][0]
+    assert baseline["card_s_per_episode"] == pytest.approx(3600.0 / 4) and baseline["runs_without_model"] == ["run_x"]
+
+
+def test_a_run_whose_agent_is_of_no_declared_kind_is_not_known_here_and_leaves_the_card_seconds_undivided(tmp_path):
+    """run_x records the agent made_up_agent, which none of the kinds that the tree declares holds: a name the code does not know is
+    no evidence that no model ran, so the run is not taken for a baseline: the card-seconds of the job and of its cell are not
+    divided, the window in which it was alive gives no rate, and every note names the agent. The control is run_x a baseline of a
+    declared kind, whose card-seconds divide the Elapsed by the four model episodes with the note of its time."""
+    rows, cells, views, _calls, _engine = finished_job(tmp_path / "unknown_kind", "made_up_agent")
+    view = views[0]
+    why = "records the agent made_up_agent, which is not known here"
+    assert (view["model_runs"], view["model_episodes"], view["runs_without_model"]) == (1, 4, [])
+    assert view["card_s_per_episode"] is None and view["card_s_undivided"] is True and view["window_s"] == pytest.approx(4 * EPISODE)
+    assert view["notes"] == [f"run_x {why}, and its episodes lie in after_last_episode_s",
+                             f"run_x {why}, so the card-seconds of the job are not divided",
+                             f"no rate from the 1 windows in which the process line_1_replicate_none was alive, since its run run_x {why}"]
+    assert {(row["gpu_note"], row["engine_note"]) for row in rows if row["run"] == "run_x"} == {(f"the run {why}", f"the run {why}")}
+    assert cells[0]["notes"] == [f"run_x {why}: its seconds, its model calls and its pass enter the sums of the cell, and its episodes get "
+                                 "no GPU figure, no card-seconds held alone and no split of the engine",
+                                 "the job grid_99 leaves its card-seconds undivided, so those of the cell are not divided"]
+    baseline = finished_job(tmp_path / "baseline", "oracle")[2][0]  # the control: a declared kind without the served model
+    assert baseline["card_s_per_episode"] == pytest.approx(3600.0 / 4) and baseline["runs_without_model"] == ["run_x"]
+    assert run_files.agent_unknown({"agent": "oracle", "unrecorded": []}) is None and run_files.agent_unknown({"agent": "causal"}) is None

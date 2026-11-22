@@ -22,7 +22,7 @@ from . import intervention_effect
 from . import causal_tools
 
 from .tool_texts import A_BLOCK, A_COMPACT, A_E1, A_RULE
-from .fitted_models import MODELS_PATH, Models, fit_episode, load_models
+from .fitted_models import Models, fit_episode, load_models
 from .rank_root_causes import COMPACT_LEFT_OUT
 from .causal_tools import (
     CausalTools, DEFAULT_ABSTENTION_CUT, DEFAULT_ALPHA, DEFAULT_TOP_K, IG_EPSILON, branch_previews, channel_field,

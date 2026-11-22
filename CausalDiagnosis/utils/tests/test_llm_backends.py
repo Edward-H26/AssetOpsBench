@@ -77,11 +77,11 @@ def test_an_endpoint_bound_to_the_backend_wins_over_the_environment(monkeypatch)
     _install_fake_openai(monkeypatch, captured)
     monkeypatch.setenv("TOKENROUTER_BASE_URL", "https://judge.example/v1")
     monkeypatch.setenv("TOKENROUTER_API_KEY", "judge-key")
-    EndpointChatBackend("tokenrouter/granite", base_url="http://agent.example/v1", api_key="agent-key").generate_with_usage("hello")
-    assert captured["base_url"] == "http://agent.example/v1" and captured["api_key"] == "agent-key"
+    EndpointChatBackend("tokenrouter/granite", base_url="http://agent.example/v1", api_key="agent-key").generate_with_usage("hello")  # pragma: allowlist secret
+    assert captured["base_url"] == "http://agent.example/v1" and captured["api_key"] == "agent-key"  # pragma: allowlist secret
     captured.clear()
     EndpointChatBackend("tokenrouter/granite").generate_with_usage("hello")  # neither: the endpoint of the environment
-    assert captured["base_url"] == "https://judge.example/v1" and captured["api_key"] == "judge-key"
+    assert captured["base_url"] == "https://judge.example/v1" and captured["api_key"] == "judge-key"  # pragma: allowlist secret
 
 
 def test_extra_body_is_sent_only_when_the_backend_has_one(monkeypatch):

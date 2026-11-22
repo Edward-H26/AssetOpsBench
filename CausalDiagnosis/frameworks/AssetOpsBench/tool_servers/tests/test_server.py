@@ -26,7 +26,7 @@ from CausalDiagnosis.utils.paths import ROOT, SRC
 ASSET = {"site_name": "MAIN", "asset_id": "hyd_1"}
 CE = "CE_CoolingEfficiency_percent_1Hz"
 SETTINGS = {"kind": "memory"}
-DAY = "2022-09-12"  # the made-up day of an anchor, the date of no scenario record
+DAY = "2022-09-12"  # the made-up day of an anchor
 LAUNCHER = f'''import sys
 from pathlib import Path
 sys.path[:0] = {[str(ROOT), str(SRC)]!r}

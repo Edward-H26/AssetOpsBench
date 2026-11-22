@@ -43,6 +43,7 @@ from pathlib import Path
 import numpy as np
 
 from CausalDiagnosis.utils.atomic_writes_and_locks import locked, refuse_writing, write_json_atomically
+from CausalDiagnosis.datasets.dataset_loader.dataset_packages import table_path
 
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import asset_view, default_facts_path, profile_view, recorded_blocks, require_same_data, served_pairs
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import cost_unit, has_clock
@@ -51,11 +52,11 @@ from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.advice.troubleshooting_pla
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.advice.decision_rule import costs, decide
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import combo_key
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.advice.read_choice import record_read
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import MODELS_PATH, REFIT, code_digest, facts_sha256, refuse_default_files
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models import REFIT, code_digest, facts_sha256, refuse_default_files
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.belief_at_one_cycle import Posterior
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.served_recordings import left_of
 
-GRADES_PATH = Path(__file__).resolve().with_name("grades.json")
+GRADES_PATH = table_path(Path(__file__).resolve().with_name("grades.json"))
 GRADES_FORMAT = 9  # moves with the fits and the rule a rollout plays, which the rules key does not hold: 9 since the second block is a neighbor of the start
 ROLLOUTS = 10  # rollouts over the true block per combination, a design parameter
 GRADE_SAMPLES = 128  # Monte Carlo draws per test inside the grade's decisions and information gains
@@ -338,7 +339,7 @@ def main(argv=None):
 
     parser = argparse.ArgumentParser(description="grade every recorded combination under the default rules of the asset, beside models.json")
     parser.add_argument("--asset-id", help="a registered asset profile, the default asset when omitted")
-    parser.add_argument("--models", type=Path, default=MODELS_PATH, help="the models file of the asset")
+    parser.add_argument("--models", type=Path, help="the models file of the asset, models.json of the default asset when omitted")
     parser.add_argument("--budget", type=float, default=None, help="defaults to the configuration's budget")
     parser.add_argument("--rollouts", type=int, default=ROLLOUTS)
     parser.add_argument("--samples", type=int, default=GRADE_SAMPLES)
@@ -346,7 +347,7 @@ def main(argv=None):
     parser.add_argument("--force", action="store_true", help="recompute the table even when grades.json holds one for these rules")
     parser.add_argument("--out", type=Path, default=GRADES_PATH)
     args = parser.parse_args(argv)
-    refuse_default_files(parser, args, models=MODELS_PATH, out=GRADES_PATH)
+    refuse_default_files(parser, args, models=None, out=GRADES_PATH)
     rules = default_rules(args.asset_id)
     budget = budget_of(rules) if args.budget is None else args.budget
     models = load_models(args.models)

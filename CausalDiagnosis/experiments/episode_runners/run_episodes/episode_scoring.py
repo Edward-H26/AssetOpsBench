@@ -52,6 +52,8 @@ def verdict_row(verdict, reward, cost_oracle, judge):
     # the write count, timing and ordering checks, reported for every episode beside provenance and outside pass
     for column, check in CHECK_COLUMNS.items():
         row[column] = _check_ok(verdict.get("checks"), check)
+    # the timing of every order on a component at its worst level, which the verdict reports beside its checks
+    row["worst_level_timing_ok"] = (verdict.get("worst_level_timing") or {}).get("ok")
     row["reward"] = reward
     row["cost_oracle"] = cost_oracle
     row["judge_pass"] = None if judge is None else judge.get("pass")

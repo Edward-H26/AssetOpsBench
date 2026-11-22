@@ -51,7 +51,7 @@ def agent_step(thought, tool, arguments, answer):
 
 def run(launchers, script, tmp_path, question="What IoT sites are available?"):
     with ScriptedEndpoint(script) as ep:
-        runner = PlanExecutePaperRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in",
+        runner = PlanExecutePaperRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in",  # pragma: allowlist secret
                                         log_path=tmp_path / "react_log.txt", example_start=EXAMPLE_START)
         result = asyncio.run(runner.run(question))
     return runner, result, ep
@@ -268,7 +268,7 @@ def test_a_run_without_a_result_leaves_its_record_and_its_count(tmp_path, monkey
     monkeypatch.setattr(runner_module, "persist_trajectory", fail)
     script = [plan(("List the IoT sites.", "IoT Data Download", "None")), VALID, *agent_step("I need the sites.", "sites", "{}", "The sites are MAIN"), "MAIN"]
     with ScriptedEndpoint(script) as ep:
-        runner = PlanExecutePaperRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",
+        runner = PlanExecutePaperRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",  # pragma: allowlist secret
                                         example_start=EXAMPLE_START)
         with pytest.raises(OSError):
             asyncio.run(runner.run("What IoT sites are available?"))
@@ -363,7 +363,7 @@ def test_a_run_whose_model_never_answers_returns_at_the_rows_deadline_and_leaves
     try:
         before = {t.ident for t in threading.enumerate()}
         deadline = time.monotonic() + 3.0
-        runner = PlanExecutePaperRunner(launchers, base_url=silent.base_url, api_key="local", model="granite-stand-in",
+        runner = PlanExecutePaperRunner(launchers, base_url=silent.base_url, api_key="local", model="granite-stand-in",  # pragma: allowlist secret
                                         example_start=EXAMPLE_START)
         started = time.monotonic()
         with retry.episode_deadline(lambda: deadline):

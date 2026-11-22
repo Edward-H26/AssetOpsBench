@@ -19,4 +19,15 @@ def test_each_check_of_the_verifier_has_its_own_cell_beside_provenance():
     row = run_episodes.verdict_row(_verdict(count_gate=True, causality=True), 0.5, 10.0, None)
     assert (row["write_count_ok"], row["ordering_ok"], row["timing_ok"]) == (False, False, True)
     row = run_episodes.verdict_row({}, None, None, None)
-    assert all(row[k] is None for k in ("provenance_ok", "write_count_ok", "timing_ok", "ordering_ok"))
+    assert all(row[k] is None for k in ("provenance_ok", "write_count_ok", "timing_ok", "ordering_ok", "worst_level_timing_ok"))
+
+
+def test_the_timing_of_the_orders_at_the_worst_level_has_its_own_cell_beside_the_checks():
+    """worst_level_timing, which the verdict reports beside its checks, fills the cell worst_level_timing_ok alone: a late order
+    there leaves timing_ok and every other check cell as they are."""
+    run_episodes = _driver()
+    row = run_episodes.verdict_row({**_verdict(), "worst_level_timing": {"ok": False, "orders": []}}, 0.5, 10.0, None)
+    assert row["worst_level_timing_ok"] is False
+    assert {k: row[k] for k in ("provenance_ok", "write_count_ok", "timing_ok", "ordering_ok")} == dict.fromkeys(
+        ("provenance_ok", "write_count_ok", "timing_ok", "ordering_ok"), True)
+    assert run_episodes.verdict_row(_verdict(), 0.5, 10.0, None)["worst_level_timing_ok"] is None

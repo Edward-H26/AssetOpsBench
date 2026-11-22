@@ -3,13 +3,13 @@ import json
 from pathlib import Path
 from CausalDiagnosis.experiments.episode_runners.episode_launchers import LAUNCH_PRIVATE
 from CausalDiagnosis.experiments.run_verification.public_record import PRIVATE_FILE
+from CausalDiagnosis.utils.atomic_writes_and_locks import LOCK_SUFFIX
 
 
-# what no ledger records: the bytecode that Python writes beside a module it imports from a run folder, as the Plan-Execute
-# executor does when it starts the launcher of an episode folder inside the checkout as python -m, and the folder file of Finder
+# what no ledger records: the bytecode that Python writes beside a module it imports from a run folder, and the folder file of Finder
 IGNORED_DIRS = frozenset({"__pycache__"})
-# and the private files of a run and of the launchers of an episode (public_record.PRIVATE_FILE, common.LAUNCH_PRIVATE), which
-# lie outside the published set
+# and the private files of a run and of the launchers of an episode (public_record.PRIVATE_FILE, episode_launchers.LAUNCH_PRIVATE),
+# which lie outside the published set
 IGNORED_NAMES = frozenset({".DS_Store", PRIVATE_FILE, LAUNCH_PRIVATE})
 
 
@@ -22,10 +22,12 @@ def sha256_of(path):
 
 
 def ignored(relative):
-    """Whether a path relative to a run folder is one that no ledger records, a name of IGNORED_NAMES or a path through a folder
-    of IGNORED_DIRS, which the ledger check (verify_results_folder.py) and the file table of a walkthrough page leave out as well."""
+    """Whether a path relative to a run folder is one that no ledger records: a name of IGNORED_NAMES, a lock file, which
+    atomic_writes_and_locks.locked leaves empty beside the file it locks and which records nothing of a run, or a path through a
+    folder of IGNORED_DIRS. The ledger check (verify_results_folder.py) and the file table of a walkthrough page leave them out
+    as well, also where a ledger recorded one."""
     relative = Path(relative)
-    return relative.name in IGNORED_NAMES or bool(IGNORED_DIRS & set(relative.parts))
+    return relative.name in IGNORED_NAMES or relative.name.endswith(LOCK_SUFFIX) or bool(IGNORED_DIRS & set(relative.parts))
 
 
 def file_hashes(folder, exclude=()):

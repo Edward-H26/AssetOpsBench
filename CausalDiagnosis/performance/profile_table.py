@@ -28,7 +28,7 @@ IDENTITY = ("cell", "run", "grid", "episode", "seed", "scenario_id", "asset", "a
 GPU = ("sampler_rows", "gpu_busy_share", "gpu_energy_j", "gpu_period_s", "gpu_note")
 COLUMNS = (*IDENTITY, *stage_profile.COLUMNS, *GPU, "held_card_s", *engine_export.COLUMNS)
 NO_MODEL = "the agent reaches no served model"
-NO_AGENT = "the run records no agent"  # a run whose folder holds no ledger, whose agent may or may not reach the served model
+NO_AGENT = "the run records no agent"  # the note of no_model_note for a run whose record holds no agent
 NO_EXPORT = "no engine export is given"
 LABELS = {"total_s": "total T", "creation_s": "creation C", "cache_flush_s": "cache flush Fl, in C", "agent_part_s": "agent part P",
           "end_s": "end E", "model_s": "model M", "failed_model_s": "failed model Mf, in M", "tool_service_s": "tool service S",
@@ -41,17 +41,19 @@ PART_LABELS = {"server_start_s": "server start", "opening_s": "opening", "openin
                "after_last_episode_s": "after the last episode"}
 
 
-def no_model_note(unrecorded):
-    """Why a run gets no figure of the served model: its agent reaches none, or its folder records no agent."""
-    return NO_AGENT if "agent" in unrecorded else NO_MODEL
+def no_model_note(meta):
+    """Why a run gets no figure of the served model: its agent reaches none, or its agent is not known here, since the run records
+    none or records one of no kind that the tree declares."""
+    why = run_files.agent_unknown(meta)
+    return NO_MODEL if why is None else f"the run {why}"
 
 
 def run_sampler(run_dir, meta, unfinished, model_agent):
-    """(rows, period, note) of the sampler for the episodes of a run: none for an agent without a served model or a run that
-    records no agent, and none for a run that did not finish, since the prefix check of the sampler needs the record that run.json
+    """(rows, period, note) of the sampler for the episodes of a run: none for an agent without a served model or a run whose agent
+    is not known here, and none for a run that did not finish, since the prefix check of the sampler needs the record that run.json
     keeps."""
     if not model_agent:
-        return [], None, no_model_note(meta.get("unrecorded") or [])
+        return [], None, no_model_note(meta)
     if unfinished:
         return [], None, "the run has no run.json, whose record of the sampler the prefix check needs"
     return gpu_sampler.run_sampler(run_dir, meta)
@@ -117,16 +119,20 @@ def read_runs(run_folders):
 
 def engine_join(runs, exports):
     """(entries, calls, summary) of the export of the one job of the runs read, as engine_export.job_join gives them over the
-    calls of every model run read; none, with the reason in summary, without an export, when a run read records no agent, whose
-    calls may have left lines, or when a model run plays at more runs in flight than one, where the time does not tie a line to
-    its call."""
+    calls of every model run read; none, with the reason in summary, without an export, when the agent of a run read is not known
+    here, whose calls may have left lines, or when a model run plays at more runs in flight than one, where the time does not tie a
+    line to its call."""
     model = [run for run in runs.values() if run["model_agent"]]
     flights = sorted({str(run["meta"].get("runs_in_flight")) for run in model})
     unknown = [run["dir"].name for run in runs.values() if "agent" in run["missing"]]
+    unknown_kinds = [f"{run['dir'].name} {why}" for run in runs.values()
+                     if "agent" not in run["missing"] and (why := run_files.agent_unknown(run["meta"]))]
     if not exports:
         return {}, [], {"note": NO_EXPORT}
     if unknown:
         return {}, [], {"note": f"the join by time needs the agent of every run read, and no agent is recorded for {', '.join(unknown)}"}
+    if unknown_kinds:
+        return {}, [], {"note": f"the join by time needs the kind of the agent of every run read, and {'; '.join(unknown_kinds)}"}
     if not model:
         return {}, [], {"note": "no run read reaches the served model"}
     if flights != ["1"]:
@@ -142,13 +148,23 @@ def add_engine_columns(runs, entries, note):
         for row in run["rows"]:
             key = (run["dir"].name, row["episode"])
             if not run["model_agent"]:
-                row["engine_note"] = no_model_note(run["missing"])
+                row["engine_note"] = no_model_note(run["meta"])
             elif row["left_out"]:
                 continue
             elif key in entries:
                 row.update(engine_export.episode_columns(entries[key]))
             else:
                 row["engine_note"] = note or f"the episode holds no {run_files.LLM_CALLS}"
+
+
+def cell_notes(run):
+    """The notes of a run in the summary of its cell: what the folder of a run that did not finish records, and that its agent is
+    not known here, so that its seconds, its calls and its pass enter the sums of the cell while its episodes get no figure that
+    only a model agent gets."""
+    why = run_files.agent_unknown(run["meta"])
+    return ([jobs.unfinished_note(run)] if run["unfinished"] else []) + (
+        [f"{run['dir'].name} {why}: its seconds, its model calls and its pass enter the sums of the cell, and its episodes get no GPU "
+         "figure, no card-seconds held alone and no split of the engine"] if why else [])
 
 
 def build(run_folders, exports=()):
@@ -168,7 +184,8 @@ def build(run_folders, exports=()):
         summaries.append(cells.cell_summary(index, mine[0]["key"], [run["dir"].name for run in mine],
                                             [row for run in mine for row in run["rows"]],
                                             [s for run in mine for s in run["call_seconds"]],
-                                            [row for row in joined if (row["run"], row["episode"]) in kept], views, [jobs.unfinished_note(run) for run in mine if run["unfinished"]]))
+                                            [row for row in joined if (row["run"], row["episode"]) in kept], views,
+                                            [note for run in mine for note in cell_notes(run)]))
     calls = [row for path in given for row in joined if row["run"] == path.name]
     return [row for path in given for row in runs[path]["rows"]], summaries, views, calls, engine
 

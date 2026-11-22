@@ -22,6 +22,7 @@ def run_online(a, argv, settings, runner, config, price_table, stream, reflectio
     # the reasons of the start check before run.json, so that a loop that is not registered carries the stamp, as a run of
     # run_episodes/ does
     runner.unregistered = drivers.start_check.registration(settings, config, runner.config_name, runner.facts_path)
+    drivers.start_check.refuse_registered_training(settings, runner.unregistered, "a loop of GEPA")
     meta = drivers.run_meta(settings, runner, config, price_table, [], None)
     meta.update({"mode": run_folders.MODE, "gepa": loop_settings.gepa_meta(a, config.asset_id)})
     identity = run_folders.as_stored(run_folders.loop_identity(meta))

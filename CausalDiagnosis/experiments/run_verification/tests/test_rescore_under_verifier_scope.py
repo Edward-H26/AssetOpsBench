@@ -33,6 +33,7 @@ from CausalDiagnosis.evaluation.result_tables import pooling_rules  # noqa: E402
 from CausalDiagnosis.experiments.episode_runners import run_episodes  # noqa: E402
 from CausalDiagnosis.experiments.run_verification import verify_results_folder as verify_results  # noqa: E402
 from CausalDiagnosis.experiments.run_verification.tests.test_run_ledger import _meta  # noqa: E402
+from CausalDiagnosis.experiments.episode_runners.tests.conftest import own_table_copies  # noqa: E402
 
 GREEDY = ["--config", "real_time", "--clock-mode", "instant", "--agent", "greedy", "--seeds", "2"]
 
@@ -41,6 +42,8 @@ def _run(args, out):
     run_episodes.main([*args, "--out", str(out)])
     runs = [p for p in Path(out).iterdir() if p.is_dir()]
     assert len(runs) == 1
+    moved = [event["files"] for event in ledger.load(runs[0])["events"] if event["what"] == pooling_rules.DATA_CHANGED]
+    assert not moved, f"a table changed while the run played, so the run recorded it in another state: {moved}"
     return runs[0]
 
 
@@ -51,13 +54,23 @@ def _hashes(folder):
 @pytest.fixture(scope="module")
 def runs(tmp_path_factory):
     """The run under the default scope, the run started under the scope all, the rescored copy of the first, and the
-    hashes of the first's files before the rescoring."""
+    hashes of the first's files before the rescoring. The runs, their rescorings and their replays read generated tables of their
+    own for the module, with the tables of both runs' lines computed before the first run, as a grid computes them before its first
+    line, so that no run extends a table that its replay then reads in another state."""
+    from CausalDiagnosis.experiments.cluster_runs import precompute_grid_tables as precompute_tables
+
     root = tmp_path_factory.mktemp("rescore")
-    writes = _run(GREEDY, root / "writes")
-    direct = _run([*GREEDY, "--verifier-scope", "all"], root / "all")
-    before = _hashes(writes)
-    copy, n = rescore_scope.rescore_run(writes)
-    return writes, direct, copy, n, before
+    lines = (GREEDY, [*GREEDY, "--verifier-scope", "all"])
+    grid = root / "lines.txt"
+    grid.write_text("".join(" ".join(line) + "\n" for line in lines), encoding="utf-8")
+    with pytest.MonkeyPatch.context() as patch:
+        own_table_copies(patch, root / "tables")
+        precompute_tables.main(["--grid", str(grid)])
+        writes = _run(lines[0], root / "writes")
+        direct = _run(lines[1], root / "all")
+        before = _hashes(writes)
+        copy, n = rescore_scope.rescore_run(writes)
+        yield writes, direct, copy, n, before
 
 
 def test_the_copy_holds_the_verdicts_and_cells_of_a_run_started_under_the_scope_all(runs):

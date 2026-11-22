@@ -5,6 +5,7 @@ without gymnasium."""
 from CausalDiagnosis.utils.paths import CONFIGS, preset_path
 import json
 import os
+import shutil
 import subprocess
 import sys
 from dataclasses import replace
@@ -14,6 +15,7 @@ import pytest
 
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import EpisodeConfig
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
+from CausalDiagnosis.datasets.dataset_loader.dataset_packages import TABLE_COPIES
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import HIDDEN_FIELDS
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers import compose
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.gymnasium_wrapper import GYMNASIUM_AVAILABLE, HydraulicRigGym, oracle_cost, parse_action
@@ -228,6 +230,20 @@ def test_wrapper_imports_and_runs_without_gymnasium():
     subprocess.run([sys.executable, "-c", code], check=True, cwd=str(SRC.parent), env=dict(os.environ, PYTHONPATH=os.pathsep.join([str(SRC.parent), str(SRC)])))
 
 
+def child_tables(environment):
+    """The paths of the generated tables in a child without the session's lines, started with the environment given."""
+    listing = ("import importlib; from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports; "
+               "print(*(getattr(importlib.import_module(m), a) for m, a in ports.generated_tables()), sep=chr(10))")
+    child = subprocess.run([sys.executable, "-c", listing], check=True, capture_output=True, text=True, cwd=str(SRC.parent),
+                           env=dict(environment, PYTHONPATH=os.pathsep.join([str(SRC.parent), str(SRC)])))
+    return [Path(line) for line in child.stdout.splitlines()]
+
+
+def tree_tables():
+    """The files of the tree: the paths of the generated tables in a child without the session's variable of the copies."""
+    return child_tables({name: value for name, value in os.environ.items() if name != TABLE_COPIES})
+
+
 def test_the_children_of_both_wrapper_tests_grade_into_the_copy_and_leave_the_tables_of_the_tree_unchanged(tmp_path, monkeypatch):
     # the reset of each child grades the start of seed 0; with the grade table pointed at an empty file of the test the first
     # child grades and writes it, so a child that held the tree's grades.json, to read or to write, leaves that file absent
@@ -235,16 +251,45 @@ def test_the_children_of_both_wrapper_tests_grade_into_the_copy_and_leave_the_ta
 
     from CausalDiagnosis.environment.Causal_Diagnosis_Environment.tests.test_openenv_wrapper import test_wrapper_imports_and_runs_without_openenv
 
-    listing = ("import importlib; from CausalDiagnosis.datasets.dataset_loader import dataset_packages as ports; "
-               "print(*(getattr(importlib.import_module(m), a) for m, a in ports.generated_tables()), sep=chr(10))")
-    child = subprocess.run([sys.executable, "-c", listing], check=True, capture_output=True, text=True, cwd=str(SRC.parent),
-                           env=dict(os.environ, PYTHONPATH=os.pathsep.join([str(SRC.parent), str(SRC)])))
-    tree = [Path(line) for line in child.stdout.splitlines()]  # a child without the session's lines holds the files of the tree
+    tree = tree_tables()
     before = {path: path.read_bytes() if path.exists() else None for path in tree}
     monkeypatch.setattr(grade, "GRADES_PATH", tmp_path / "grades.json")
     test_wrapper_imports_and_runs_without_gymnasium()
     test_wrapper_imports_and_runs_without_openenv()
     assert (tmp_path / "grades.json").is_file()
+    assert {path: path.read_bytes() if path.exists() else None for path in tree} == before
+
+
+def test_a_child_without_the_lines_of_the_session_labels_and_grades_into_the_copies_that_its_environment_names(tmp_path, monkeypatch):
+    # the reset of the child labels and grades the start of seed 0, as an episode of a driver that a test starts does; the
+    # child gets no line of session_tables, only the variable of the copies, which names copies of the session's label table
+    # and models file and an empty grade table of this test, so the grade it writes lands there and the tables of the tree
+    # keep their bytes
+    from CausalDiagnosis.environment.reference_policies import diagnosability_label as separability
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
+
+    tree = tree_tables()
+    before = {path: path.read_bytes() if path.exists() else None for path in tree}
+    copies = {path: tmp_path / path.name for path in tree}
+    labels = copies[next(path for path in tree if path.name == "labels.json")]
+    if Path(separability.LABELS_PATH).exists():
+        shutil.copyfile(separability.LABELS_PATH, labels)
+    models = copies[next(path for path in tree if path.name == "models.json")]
+    if Path(fit.MODELS_PATH).exists():
+        shutil.copyfile(fit.MODELS_PATH, models)
+    monkeypatch.setenv(TABLE_COPIES, json.dumps({str(path.resolve()): str(copy) for path, copy in copies.items()}))
+    # every table resolves to its copy before a child that writes one starts, so a module that ignores the variable fails here
+    assert child_tables(os.environ) == [copies[path] for path in tree]
+    code = "\n".join([
+        "from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import EpisodeConfig",
+        "from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path",
+        "from CausalDiagnosis.environment.Causal_Diagnosis_Environment.gymnasium_wrapper import HydraulicRigGym",
+        "gym = HydraulicRigGym(EpisodeConfig(), default_facts_path())",
+        "gym.reset(0)",
+        "assert gym.label is not None and 'e18' in gym.label",
+    ])
+    subprocess.run([sys.executable, "-c", code], check=True, cwd=str(SRC.parent), env=dict(os.environ, PYTHONPATH=os.pathsep.join([str(SRC.parent), str(SRC)])))
+    assert copies[next(path for path in tree if path.name == "grades.json")].is_file() and labels.is_file()
     assert {path: path.read_bytes() if path.exists() else None for path in tree} == before
 
 

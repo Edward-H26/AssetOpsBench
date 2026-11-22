@@ -19,6 +19,7 @@ from CausalDiagnosis.experiments.run_verification import run_identity_file_lists
 from CausalDiagnosis.experiments.episode_runners import run_episodes
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import ROOT
 from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import default_facts_path
+from CausalDiagnosis.datasets.tests.conftest import session_tables
 from CausalDiagnosis.experiments.table_definitions.tests.test_code_lists import _fresh
 
 needs_a_run = pytest.mark.skipif(not Path(default_facts_path()).exists() or importlib.util.find_spec("mcp") is None,
@@ -91,10 +92,13 @@ def test_a_run_whose_process_loaded_a_file_outside_every_list_stops_without_run_
 
 @needs_a_run
 def test_a_run_that_ends_well_records_the_listed_files_its_driver_process_loaded(tmp_path):
-    """A fresh process, as on the cluster, since the process of the tests holds the modules of every test before it."""
+    """A fresh process, as on the cluster, since the process of the tests holds the modules of every test before it. The process
+    reads and writes the session's copies of the generated tables (session_tables), so that a default table of other code is
+    computed again in the copy and never in place."""
     env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(ROOT), str(ROOT / "src"), os.environ.get("PYTHONPATH", "")])}
-    done = subprocess.run([sys.executable, "-m", "CausalDiagnosis.experiments.episode_runners.run_episodes", "--config", "static",
-                           "--agent", "scripted", "--seeds", "1", "--out", str(tmp_path / "kept")],
+    driver = "\n".join([*session_tables(), "import runpy", "runpy.run_module('CausalDiagnosis.experiments.episode_runners.run_episodes', "
+                                                              "run_name='__main__', alter_sys=True)"])
+    done = subprocess.run([sys.executable, "-c", driver, "--config", "static", "--agent", "scripted", "--seeds", "1", "--out", str(tmp_path / "kept")],
                           cwd=ROOT, env=env, capture_output=True, text=True, timeout=900)
     assert done.returncode == 0, done.stderr[-3000:]
     (run_dir,) = [p for p in (tmp_path / "kept").iterdir() if p.is_dir()]

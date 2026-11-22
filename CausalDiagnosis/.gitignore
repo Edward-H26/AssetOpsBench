@@ -15,5 +15,6 @@ job.json
 results/calibration_*.md
 mcp_servers/Causal_Diagnosis_MCP/offline/models.json
 mcp_servers/Causal_Diagnosis_MCP/offline/grades.json
-# the empty lock file beside every JSON file written under its lock
-*.json.lock
+# the empty lock file beside every file written under its lock (utils/atomic_writes_and_locks.py), which records nothing of a
+# run, so that no ledger records it either
+*.lock

@@ -356,10 +356,12 @@ async def test_the_only_levels_of_a_registered_asset_in_the_texts_of_both_ports_
     with bound(store, harness.NAMES):
         definitions = {server: await meter.listed_tools(server) for server in ("iot", "fmsr", "wo", TASK_SERVER)}
     definitions["causal_diagnosis"] = []
-    for asset in texts.registered_assets(SRC):
+    checked = []
+    for asset in texts.registered_assets(ROOT):
         profile = get_profile(asset["asset_id"])
         if not set(profile.combinations()) >= set(blocks):
             continue
+        checked.append(asset["asset_id"])
         combination = example_start(profile, set(blocks))
         healthy = tuple(profile.healthy[c] for c in profile.components)
         assert combination in development_starts(profile, set(blocks)) and combination not in starts_of_test_set(profile, set(blocks))
@@ -403,7 +405,9 @@ def module_texts():
 
 def test_no_example_names_a_channel_of_a_registered_asset():
     texts = _texts_agent(SRC)
-    for asset in texts.registered_assets(SRC):
+    assets = texts.registered_assets(ROOT)
+    assert assets, "no registered asset was found"
+    for asset in assets:
         names = [*asset.get("channels", {}), *(c["field"] for c in asset.get("channels", {}).values() if "field" in c)]
         assert names
         for text in module_texts():
