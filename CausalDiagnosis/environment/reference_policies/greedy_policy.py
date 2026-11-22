@@ -50,9 +50,10 @@ def uniform_prior():
 
 
 class ServedClassifiers:
-    """The held-out predictions of a TierClassifiers keyed by the values a reading serves (public names, mean and std at
-    six significant digits), so that the policy decides on tool answers exactly as on the recordings. The constructor
-    refuses a table in which two cycles of a tier serve the same values."""
+    """The held-out predictions of a TierClassifiers keyed by the values a reading serves (public names, the served
+    statistics of the profile at six significant digits), the statistics the classifiers are fitted on, so that the policy
+    decides on tool answers exactly as on the recordings. The constructor refuses a table in which two cycles of a tier
+    serve the same values."""
 
     def __init__(self, classifiers, cycles):
         by_index = {c.index: c for c in cycles}

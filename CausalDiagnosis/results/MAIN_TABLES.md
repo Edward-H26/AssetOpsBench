@@ -219,16 +219,16 @@ For each agent with the CausalDiagnosis MCP, the paired difference of Pass betwe
 
 #### The reference policies on the layers (`tab:policies`)
 
-The policies need no model. The oracle knows the hidden state and must remain the best of the five reference policies, and doing nothing must score below every policy that passes, on every initial state of every row. The oracle's pass is a percentage.
+The policies need no model. The oracle knows the hidden state and must remain the best of the five reference policies, and doing nothing must score below every policy that passes, on every initial state of every row. Both rules cover the five reference policies on the rig's action server. The MCP follower plays AssetOpsBench's servers and submits the root cause that the CausalDiagnosis MCP ranks first, and its two columns are its pass and its reward. Both columns of pass are percentages.
 
-| Setting | Oracle pass (%) | Oracle reward | Greedy reference reward | Random reward | Do nothing reward | Always declare reward |
-|---|---|---|---|---|---|---|
-| Base | no run | no run | no run | no run | no run | no run |
-| + priced reads and writes | no run | no run | no run | no run | no run | no run |
-| + real-time clock | no run | no run | no run | no run | no run | no run |
-| + advanced real-time clock | no run | no run | no run | no run | no run | no run |
-| + repair rules | no run | no run | no run | no run | no run | no run |
-| + deterioration and failure | no run | no run | no run | no run | no run | no run |
+| Setting | Oracle pass (%) | Oracle reward | Greedy reference reward | Random reward | Do nothing reward | Always declare reward | MCP follower pass (%) | MCP follower reward |
+|---|---|---|---|---|---|---|---|---|
+| Base | no run | no run | no run | no run | no run | no run | no run | no run |
+| + priced reads and writes | no run | no run | no run | no run | no run | no run | no run | no run |
+| + real-time clock | no run | no run | no run | no run | no run | no run | no run | no run |
+| + advanced real-time clock | no run | no run | no run | no run | no run | no run | no run | no run |
+| + repair rules | no run | no run | no run | no run | no run | no run | no run | no run |
+| + deterioration and failure | no run | no run | no run | no run | no run | no run | no run | no run |
 
 #### What each big layer changes for the reference policies (`tab:policylayers`)
 

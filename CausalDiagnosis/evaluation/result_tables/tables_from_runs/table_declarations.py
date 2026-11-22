@@ -349,7 +349,7 @@ def declare_mcp_measures():
 
 @registered_table
 def declare_reference_policies():
-    return Table("POLICIES", "the reference policy of design.REFERENCE_POLICIES (oracle, greedy reference, random, do nothing and always declare) on every preset, the rows of the environment of design.LADDER among them, each clock mode and tool surface a row of its own",
+    return Table("POLICIES", "the policy of design.POLICY_TABLE_POLICIES, a reference policy of design.REFERENCE_POLICIES (oracle, greedy reference, random, do nothing and always declare) or the MCP follower, on every preset, the rows of the environment of design.LADDER among them, each clock mode and tool surface a row of its own",
                  "the oracle is the best of the five reference policies, with a reward at least that of every other reference policy, and doing nothing scores below every policy that the verifier passes, on every start of every layer",
                  "per policy, preset, clock mode and tool surface, the pass, the verifier's success and the mean reward over the gym episodes at the main level of every setting, each with an interval from a bootstrap clustered by block",
                  "how far an agent stands from the policy that knows the hidden state and from the policies that need no model, row by row",

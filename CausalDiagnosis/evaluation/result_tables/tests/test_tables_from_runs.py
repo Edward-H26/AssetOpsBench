@@ -17,6 +17,7 @@ from fractions import Fraction
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate
 from CausalDiagnosis.experiments.table_definitions import experiment_tables as design
 from CausalDiagnosis.evaluation.result_tables import pooling_rules
+from CausalDiagnosis.experiments.run_verification import verify_results_folder as verify_results
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import COLUMNS
 from CausalDiagnosis.experiments.episode_runners.episode_launchers import DEFAULT_RANKING_MODEL
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import METERED_SERVERS
@@ -1215,21 +1216,27 @@ def test_every_proportion_takes_the_interval_of_the_bootstrap_clustered_by_block
 
 
 def test_policies_hold_the_reference_policies_per_preset_with_pass_success_and_reward(tmp_path):
-    """POLICIES: one row per reference policy and preset at the main level of every setting, the random policy among them, while a policy
-    run at another guidance level and a model agent enter no row."""
+    """POLICIES: one row per reference policy and preset at the main level of every setting, the random policy among them, and the MCP
+    follower over AssetOpsBench's servers with the CausalDiagnosis MCP, while a policy run at another guidance level and a model agent
+    enter no row."""
     runs = tmp_path / "runs"
     for name, agent, config, passed, reward in (("oracle_base", "oracle", design.AGENTS_PRESET, True, 0.9), ("nothing_base", "do_nothing", design.AGENTS_PRESET, False, -0.2),
                                                 ("random_priced", "random", "priced", False, 0.1)):
         _run(runs, name, [_base_row(s, agent=agent, model="", config=config, success=passed, reward=reward if s < 2 else reward - 0.2, **{"pass": passed})
                           for s in range(4)], {"config_name": config, "model": None})
     _run(runs, "oracle_g1", [_base_row(s, agent="oracle", model="", guidance_level=1) for s in range(4)], {"config_name": design.AGENTS_PRESET, "model": None})
+    _run(runs, "follower_base", [_base_row(s, agent="mcp_follower", model="", diagnostics_server=True, reward=0.5, **{"pass": s == 0}) for s in range(4)],
+         {**BASE_META, "model": None})
     _run(runs, "pe", [_base_row(s, agent="plan_execute_m") for s in range(4)], BASE_META)
     rows = {(r["agent"], r["config"]): r for r in {t.id: rows for t, rows in aggregate.aggregate(runs, tmp_path / "out", resamples=50, fraction="1")}["POLICIES"]}
-    assert set(rows) == {("oracle", design.AGENTS_PRESET), ("do_nothing", design.AGENTS_PRESET), ("random", "priced")}
+    assert set(rows) == {("oracle", design.AGENTS_PRESET), ("do_nothing", design.AGENTS_PRESET), ("random", "priced"), ("mcp_follower", design.AGENTS_PRESET)}
+    follower = rows[("mcp_follower", design.AGENTS_PRESET)]
+    assert (follower["n"], follower["surface"], follower["pass"], follower["reward"]) == (4, "aob", 0.25, 0.5)
     oracle, nothing, random_policy = rows[("oracle", design.AGENTS_PRESET)], rows[("do_nothing", design.AGENTS_PRESET)], rows[("random", "priced")]
     assert (oracle["n"], oracle["pass"], oracle["success"], oracle["reward"], oracle["clock_mode"]) == (4, 1.0, 1.0, 0.8, "declared")
     assert (nothing["pass"], nothing["reward"], random_policy["pass"], random_policy["reward"]) == (0.0, -0.3, 0.0, 0.0)
     assert {label for label, _ in design.REFERENCE_POLICIES} == set(aggregate.REFERENCE_LABELS) and "random" in aggregate.REFERENCE_LABELS
+    assert aggregate.POLICY_TABLE_LABELS == (*aggregate.REFERENCE_LABELS, "mcp_follower")
 
 
 def test_layers_pairs_pair_each_layer_against_the_row_below_and_pool_the_three_agents(tmp_path):
@@ -1974,3 +1981,35 @@ def test_a_call_that_names_its_out_writes_its_pages_beside_it_and_no_page_of_the
     aggregate.main(["--runs", str(runs), "--out", str(tmp_path / "U" / "aggregate"), "--readme", str(tmp_path / "other" / "README.md"),
                     "--fraction", "1"])
     assert [p for p in outside(tmp_path / "U") if not p.startswith("T/")] == ["other/MAIN_TABLES.md", "other/README.md", "other/main_tables.tex"]
+
+
+@pytest.mark.registered_file  # the foot of aggregate.md prints the SHA-256 of the registered file as it is
+@pytest.mark.offline_file  # tab:mcpoffline reads the offline table of the results folder as it is
+def test_the_tables_and_pages_of_the_results_folder_of_the_fork_are_those_that_the_code_writes_from_no_run(tmp_path):
+    """The results folder of the fork holds the tables and pages that tables_from_runs/ and leaderboard.py write from no run, the
+    design of every table with empty cells, so an edit of the text or the columns of a table leaves them behind until they are
+    written again. The rebuild of verify_results_folder.py on an empty root, with the parameters of INDEX.json, writes them again,
+    and every CSV file equals that of the fork byte for byte, and the README, aggregate.md, MAIN_TABLES.md, main_tables.tex and
+    LEADERBOARD.md equal those of the fork apart from their date lines. INDEX.json stays out, since its section code changes with
+    every edit of the code that computes or renders the tables. The folder is copied without the run folders and the published
+    runs that git ignores, which a rebuild would read, and the rebuild reads the registered file and the offline table as they are,
+    as the command that writes the folder does. The control: the same copy with one line added to each page and one row to
+    POLICIES.csv fails on each of them."""
+    pages = ("tables/aggregate.md", "README.md", "MAIN_TABLES.md", "main_tables.tex", "LEADERBOARD.md")
+    runs = tmp_path / "runs"
+    runs.mkdir()
+
+    def stale(results):
+        return [problem for problem in verify_results.verify(results, [runs])[1]["tables"][1] if not problem.startswith("INDEX.json:")]
+
+    fork = tmp_path / "fork"
+    shutil.copytree(RESULTS, fork, ignore=shutil.ignore_patterns("runs", "published_runs"))
+    assert stale(fork) == [], ("the results folder of the fork differs from the code: write it again with python -m CausalDiagnosis "
+                               "tables all --runs <an empty folder named runs> --published <an empty folder>, then python -m "
+                               "CausalDiagnosis evaluation leaderboard --runs <the same folder>")
+    for page in pages:
+        with open(fork / page, "a", encoding="utf-8") as f:
+            f.write("a line that no rebuild writes\n")
+    with open(fork / "tables" / "POLICIES.csv", "a", encoding="utf-8") as f:
+        f.write("made_up\n")
+    assert sorted(stale(fork)) == sorted([f"{page}: the text differs" for page in pages] + ["tables/POLICIES.csv: 1 rows against 0 in the rebuild"])

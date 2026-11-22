@@ -7,7 +7,7 @@ from CausalDiagnosis.experiments.episode_runners.run_configuration import load_c
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.start_state_seeds import REPLICATES  # noqa: E402
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment import start_state_seeds as start_states  # noqa: E402  the fractions of the test set (fraction_plan, fraction_text, fraction_value)
 from CausalDiagnosis.evaluation.result_tables import pooling_rules  # noqa: E402
-from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, AS_RELEASED, HEALTHY_CONTROL_PRESET, PARALLEL_OFF_SUFFIX, OURS, REFERENCE_POLICIES, AGENTS_PRESET, AGENT_ROWS, row_label  # noqa: E402
+from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, AS_RELEASED, HEALTHY_CONTROL_PRESET, PARALLEL_OFF_SUFFIX, OURS, POLICY_TABLE_POLICIES, REFERENCE_POLICIES, AGENTS_PRESET, AGENT_ROWS, row_label  # noqa: E402
 from . import cell_statistics
 
 
@@ -205,6 +205,7 @@ def main_level_groups(episodes):
 
 # ----- the realized elimination of the paid reads (ELIM, ELIM_pairs) -----
 REFERENCE_LABELS = tuple(label for label, _ in REFERENCE_POLICIES)  # POLICY_AGENTS of run_episodes/, the agent column of their rows
+POLICY_TABLE_LABELS = tuple(label for label, _ in POLICY_TABLE_POLICIES)  # the agent column of the rows of POLICIES alone
 
 
 def elimination_episodes(episodes):

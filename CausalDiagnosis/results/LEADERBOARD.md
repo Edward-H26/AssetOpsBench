@@ -7,7 +7,7 @@ No run has been played on the current code, so the tables below hold no number. 
 - Agent models: none yet
 - Scoring: the verifier of the environment on the outcome in the hidden state, and the AssetOpsBench judge on the closing summary as a second scorer (judge models: none yet)
 - Runs counted: every run, by the start time of the run
-- Written on 2026-11-16 from 0 counted run folders
+- Written on 2026-11-22 from 0 counted run folders
 
 Pass is the verifier's pass with its 95 percent interval from a bootstrap that resamples start combinations, which on the lines of En4 also needs the read gate of the verifier scope all. The judge success rate is the share of episodes the judge passes, shown once every episode of the run has a verdict. The cost ratio is the mean over the episodes of the cost, prices plus downtime, over the cost of the oracle policy on the same seed. The delay of an episode is the larger of its detection and repair delay. The combinations set plays every start combination under its smallest seed, and the evaluation set plays each at five start states, one run per replicate, the first under a seed drawn with the master seed, so a line counts the episodes of every replicate played.
 
@@ -68,4 +68,5 @@ The declaring policy, which reads the cheapest sensor set once, cites that readi
 | Ag3 | Agent | the plan length |  |  |  |  | combinations | not run |  |  |  |  |  |
 | Ag7 | Agent | the read the board advises |  |  |  |  | combinations | not run |  |  |  |  |  |
 | Ag9 | Agent | the schedule of candidate plans |  |  |  |  | combinations | not run |  |  |  |  |  |
+| Ag10 | Agent | the structured output of the replies |  |  |  |  | combinations | not run |  |  |  |  |  |
 

@@ -28,11 +28,11 @@ POLICY_METRICS = ("pass", "success", "reward")
 
 
 def table_policies(episodes, ctx):
-    """One row per reference policy of design.REFERENCE_POLICIES, preset, clock mode and tool surface at the main level of every
-    setting, the policies on the rows of the environment, which need no model: the pass, the verifier's success and the
-    reward over the gym episodes, with intervals from a bootstrap clustered by block."""
+    """One row per policy of design.POLICY_TABLE_POLICIES, the reference policies of design.REFERENCE_POLICIES and the MCP follower,
+    preset, clock mode and tool surface at the main level of every setting, the policies on the rows of the environment, which need
+    no model: the pass, the verifier's success and the reward over the gym episodes, with intervals from a bootstrap clustered by block."""
     rows = []
-    kept = [e for e in episodes if e.get("mode") == "gym" and e.get("agent") in episode_selection.REFERENCE_LABELS and episode_selection.at_main_levels(e)]
+    kept = [e for e in episodes if e.get("mode") == "gym" and e.get("agent") in episode_selection.POLICY_TABLE_LABELS and episode_selection.at_main_levels(e)]
     for (agent, config, clock, surface), eps in cell_statistics.groups(kept, "agent", "config", "clock_mode", "surface").items():
         row = {"agent": agent, "config": config, "clock_mode": clock, "surface": surface, "n": len(eps)}
         for m in POLICY_METRICS:

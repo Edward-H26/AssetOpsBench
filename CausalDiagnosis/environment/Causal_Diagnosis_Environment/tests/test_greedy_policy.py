@@ -1,13 +1,16 @@
 """The per-tier classifiers of the greedy policy (CausalDiagnosis/environment/reference_policies/tier_classifiers.py): the linear algebra, the stratified
-folds, the cross-fit, the observation model, the information gain, and the lookup keyed by served values."""
+folds, the cross-fit, the observation model, the information gain, the lookup keyed by served values, and the features,
+which are the served statistics alone."""
+import dataclasses
 import random
 from pathlib import Path
 
 import pytest
 
-from CausalDiagnosis.environment.reference_policies.tier_classifiers import (COMBOS, N_FOLDS, TIERS, TierClassifiers, cross_fitted_predictions, lda_fit,
-                                    lda_predict, scatter, solve_spd, stratified_folds)
-from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, LEVELS, TIER_SENSORS, build_blocks, default_facts_path, load_cycles, tier_features
+from CausalDiagnosis.environment.reference_policies.tier_classifiers import (COMBOS, N_FOLDS, PROFILE, SERVED_SUFFIXES, TIERS, TierClassifiers,
+                                    cross_fitted_predictions, lda_fit, lda_predict, scatter, solve_spd, stratified_folds)
+from CausalDiagnosis.datasets.dataset_loader.recordings import public_name
+from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, LEVELS, TIER_SENSORS, build_blocks, default_facts_path, group_features, load_cycles
 from CausalDiagnosis.environment.reference_policies.greedy_policy import ServedClassifiers, expected_information_gain
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import served_values
 
@@ -19,6 +22,10 @@ BLOCKS = build_blocks(CYCLES)
 BY_INDEX = {c.index: c for c in CYCLES}
 CLF = TierClassifiers(CYCLES, BLOCKS)
 FOLD_SEEDS = tuple(range(10))  # the seeds under which the stratified folds are checked
+
+
+def served_features(cycle, tier):
+    return group_features(cycle, TIER_SENSORS[tier], SERVED_SUFFIXES)
 
 
 def test_linear_algebra_and_lda_on_hand_computed_cases():
@@ -53,8 +60,8 @@ def test_held_out_predictions_come_from_classifiers_fitted_without_the_fold():
     for tier, fold in ((1, 0), (3, 5)):
         train = [BY_INDEX[i] for combo in COMBOS if CLF.fold[combo] != fold for i in BLOCKS[combo]]
         test = [BY_INDEX[i] for combo in COMBOS if CLF.fold[combo] == fold for i in BLOCKS[combo]]
-        names = sorted(tier_features(train[0], tier))
-        rows = [[tier_features(c, tier)[n] for n in names] for c in train]
+        names = sorted(served_features(train[0], tier))
+        rows = [[served_features(c, tier)[n] for n in names] for c in train]
         for j, comp in enumerate(COMPONENTS):
             k = len(LEVELS[comp])
             sums, counts = [[0.0] * len(names) for _ in range(k)], [0] * k
@@ -64,7 +71,7 @@ def test_held_out_predictions_come_from_classifiers_fitted_without_the_fold():
                 sums[level] = [a + b for a, b in zip(sums[level], r)]
             model = lda_fit(scatter(rows), sums, counts)
             for c in test:
-                features = tier_features(c, tier)
+                features = served_features(c, tier)
                 assert lda_predict(model, [features[n] for n in names]) == CLF.predicted[tier][c.index][j]
 
 
@@ -105,3 +112,20 @@ def test_served_values_key_every_held_out_prediction_without_collisions():
         assert served.predict(tier, served_values(cycle, TIER_SENSORS[tier])) == CLF.predicted[tier][cycle.index]
     with pytest.raises(KeyError):
         served.predict(1, {"not": "served"})
+
+
+def test_the_classifiers_read_only_the_statistics_that_a_reading_serves():
+    """The features of a tier are the fields of a reading of its channels, the channels times the served statistics, so the
+    policy never decides on a recorded statistic that no agent sees: shuffling every other recorded statistic across the
+    cycles leaves every held-out prediction as it was."""
+    for tier, count in zip(TIERS, (12, 18, 34)):
+        names = CLF.feature_names[tier]
+        assert {public_name(n, PROFILE) for n in names} == set(served_values(CYCLES[0], TIER_SENSORS[tier]))
+        assert len(names) == len(TIER_SENSORS[tier]) * len(PROFILE.statistics["served"]) == count
+        assert all(len(row) == count for row in CLF.features[tier].values())
+    withheld = sorted(set(CYCLES[0].features) - {n for t in TIERS for n in CLF.feature_names[t]})
+    assert withheld
+    rng = random.Random(0)
+    shuffled = {n: rng.sample([c.features[n] for c in CYCLES], len(CYCLES)) for n in withheld}
+    cycles = [dataclasses.replace(c, features={**c.features, **{n: shuffled[n][k] for n in withheld}}) for k, c in enumerate(CYCLES)]
+    assert TierClassifiers(cycles, BLOCKS).predicted == CLF.predicted

@@ -186,6 +186,16 @@ def environment():
     return [(f"agents in the environment, {row[2]}", run_line(design.TRAINING_PRESET, row)) for row in design.MCP_ROWS]
 
 
+def follower():
+    """(comment, line) of the part follower: the MCP follower of design.MCP_FOLLOWER on every rung of the environment ladder, over
+    AssetOpsBench's servers with CouchDB and the CausalDiagnosis MCP, the cells of its two columns in the table of the reference
+    policies. Its runs enter no other table that selects agents. It calls no model, and the judge leaves its runs out, since it judges
+    the runs of the model agents."""
+    agent, name = design.MCP_FOLLOWER
+    return [(f"{name}, layer {rung} of {len(design.LADDER)}, {setting}", f"--config {preset} {SERVERS} --agent {agent}")
+            for rung, (preset, setting) in enumerate(zip(design.LADDER, design.LADDER_NAMES), 1)]
+
+
 def companion():
     """(comment, line) of the part companion: the arm of an ablation that stands beside the main table, on the rows of its place."""
     return [(comment, line) for name, comment, line in placed_lines() if is_companion(name, line)]
@@ -238,15 +248,15 @@ def evaluation():
 
 
 PARTS = ("main", "companion", "ladder", "layers", "training", "ablations", "pilot", "gate", "sampling", "environment_token", "layers_token",
-         "misdiagnosis_price", "environment")
+         "misdiagnosis_price", "environment", "follower")
 _PART_LINES = {"main": main_part, "companion": companion, "ladder": ladder, "layers": layers, "training": evaluation, "ablations": ablations,
                "environment_token": environment_token, "layers_token": layers_token, "misdiagnosis_price": misdiagnosis_price,
-               "environment": environment,
+               "environment": environment, "follower": follower,
                "pilot": pilot, "gate": gate, "sampling": sampling}
 # the parts whose lines play one run per replicate of the test set; the pilot and the gate play the development starts and a
 # sampling line one run of its training starts
 _REPLICATED = ("main", "companion", "ladder", "layers", "training", "ablations", "environment_token", "layers_token", "misdiagnosis_price",
-               "environment")
+               "environment", "follower")
 
 
 def part(name):

@@ -37,7 +37,7 @@ def test_the_declaration_of_assetopsbench_reads_without_importing_a_module_of_th
 
 
 def test_the_agents_surfaces_and_commands_of_assetopsbench_are_declared():
-    assert set(frameworks.agents()) == {"plan_execute", "agent_as_tool", "scripted"}
+    assert set(frameworks.agents()) == {"plan_execute", "agent_as_tool", "scripted", "mcp_follower"}
     assert frameworks.surfaces()["aob"]["servers"] == ("iot", "fmsr", "wo", "task")
     assert all(entry["framework"] == "AssetOpsBench" for entry in frameworks.agents().values())
     assert set(frameworks.commands()) == {"assetopsbench"}

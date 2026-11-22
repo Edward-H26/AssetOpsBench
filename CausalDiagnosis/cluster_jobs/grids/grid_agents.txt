@@ -1,7 +1,7 @@
 # The run grid of the main table, of the cumulative layer study and of the supporting ablations of the paper, written by
-# CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand, from experiment_tables.py: 100 run
+# CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand, from experiment_tables.py: 107 run
 # lines, one run per line and replicate of GRID_REPLICATES, 5 replicates, 47 episodes per run on a preset with faulty
-# starts and 1 on the healthy control (22120 episodes), played through run_grid.sbatch with GRID_STARTS=sampled, the
+# starts and 1 on the healthy control (23765 episodes), played through run_grid.sbatch with GRID_STARTS=sampled, the
 # test set. Every run line follows one comment line with the row or the ablation it serves. Lines 1 to 6 are the main
 # table, whose runs the rescoring of En4 scores again, and the next 6 the healthy control on the start with no faulty
 # component. Then the arm of En9 that stands beside the main table. The cumulative layer study plays the three rows with
@@ -13,10 +13,12 @@
 # with one setting changed, against the preset of training. Then 15 lines play the six rows on all six big layers and
 # the layer study on the rungs with a clock under the clock that charges the tokens the agent's model generated in place
 # of the wall seconds, a second condition of the clock, then 3 lines the ablation L1, the misdiagnosis price at the
-# budget, and the last 3 lines the three rows with the CausalDiagnosis MCP on all six big layers as released, each after
-# every other line, so that adding them left the place of every earlier line unchanged. Every line of this file plays on
-# a server without LoRA adapters, the server of the rows that the agents table compares, and the last part is the row of
-# the agents table that grid_training_evaluation.txt plays again beside the adapters.
+# budget, then 3 lines the three rows with the CausalDiagnosis MCP on all six big layers as released, and the last 6
+# lines the MCP follower on every layer, a policy without a model whose runs enter the table of the reference policies
+# and no other table that selects agents, each part after every other line, so that adding it left the place of every
+# earlier line unchanged. Every line of this file plays on a server without LoRA adapters, the server of the rows that
+# the agents table compares, and the part environment is the row of the agents table that grid_training_evaluation.txt
+# plays again beside the adapters.
 # main table, row 1 of 6, Plan-and-Execute
 --config base --servers aob --store couchdb --agent plan_execute --no-diagnostics
 # main table, row 2 of 6, Plan-and-Execute + CausalDiagnosis MCP
@@ -219,3 +221,15 @@
 --config deterioration --servers aob --store couchdb --agent agent_as_tool
 # agents in the environment, CausalDiagnosis agent + CausalDiagnosis MCP
 --config deterioration --servers aob --store couchdb --agent causal
+# MCP follower, layer 1 of 6, Base
+--config base --servers aob --store couchdb --agent mcp_follower
+# MCP follower, layer 2 of 6, + priced reads and writes
+--config priced --servers aob --store couchdb --agent mcp_follower
+# MCP follower, layer 3 of 6, + real-time clock
+--config real_time --servers aob --store couchdb --agent mcp_follower
+# MCP follower, layer 4 of 6, + advanced real-time clock
+--config advanced_real_time --servers aob --store couchdb --agent mcp_follower
+# MCP follower, layer 5 of 6, + repair rules
+--config repair_rules --servers aob --store couchdb --agent mcp_follower
+# MCP follower, layer 6 of 6, + deterioration and failure
+--config deterioration --servers aob --store couchdb --agent mcp_follower

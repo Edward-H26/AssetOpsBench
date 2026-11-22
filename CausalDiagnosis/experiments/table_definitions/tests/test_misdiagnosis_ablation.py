@@ -25,7 +25,7 @@ def test_the_misdiagnosis_price_at_the_budget_is_the_budget_of_the_asset(tmp_pat
     """The arm composes with the misdiagnosis price equal to the budget of the asset on the rig and on bench_1, and with every
     other value of the preset of training; it is the one arm of L1, placed as the switches of layers 2, 3 and 5, and the grid plays
     it once per design without the MCP in the part misdiagnosis_price, which grid_agents.txt plays after every earlier line and
-    before the part environment alone, the part appended after it."""
+    before the parts environment and follower alone, the parts appended after it."""
     for asset_id in ("hyd_1", "bench_1"):
         shutil.copytree(PORT, tmp_path / PORT.name, dirs_exist_ok=True, ignore=shutil.ignore_patterns("data", "__pycache__"))
         with mount_port(tmp_path):
@@ -39,8 +39,8 @@ def test_the_misdiagnosis_price_at_the_budget_is_the_budget_of_the_asset(tmp_pat
     lines = [line for _, line in run_lines.part("misdiagnosis_price") if f"--config {ARM} " in f"{line} "]
     assert len(lines) == len(design.FRAMEWORK_ROWS) and not [line for _, line in run_lines.part("ablations") if f"--config {ARM} " in f"{line} "]
     grid_run_lines = [line for line in grid_files.files()["grid_agents.txt"].splitlines() if not line.startswith("#")]
-    environment = [line for _, line in run_lines.part("environment")]
-    assert grid_run_lines[-len(lines) - len(environment):] == lines + environment  # appended in order, so each earlier line keeps its place
+    after = [line for part in ("environment", "follower") for _, line in run_lines.part(part)]
+    assert grid_run_lines[-len(lines) - len(after):] == lines + after  # appended in order, so each earlier line keeps its place
 
 
 def _episode(run_dir, seed, charge, reads):

@@ -480,6 +480,31 @@ def test_a_running_run_of_a_trained_agent_is_no_untrained_row_still_running(tmp_
     assert leaderboard.classify(running["plan_execute_m"]) is None and leaderboard.classify(running["agent_as_tool_m"]) == leaderboard.Slot("main", 3)
 
 
+def test_a_run_of_the_mcp_follower_is_a_reference_that_the_page_leaves_out(tmp_path):
+    """The MCP follower of design.POLICY_TABLE_POLICIES needs no model and plays AssetOpsBench's servers with the CausalDiagnosis MCP.
+    Of the tables that select agents POLICIES alone reads its runs, so the page sets a run of it on no line and INDEX.json gives the
+    reason. The control: without its entry in REFERENCES the label is unknown to the page and stops the script."""
+    assert [label for label, _ in design.POLICY_TABLE_POLICIES][len(design.REFERENCE_POLICIES):] == ["mcp_follower"] and "mcp_follower" in leaderboard.REFERENCES
+    runs = _runs(tmp_path / "runs")
+    _run(runs, "follower_policy", [_main_row(s, agent="mcp_follower", model="", diagnostics_server=True, **{"pass": s == 0}) for s in range(4)],
+         {**REFERENCE, "servers": list(METERED_SERVERS)})
+    text = _page(tmp_path, runs)
+    assert "`follower_policy`" not in text and "mcp_follower" not in text and "MCP follower" not in text
+    assert _left_out(tmp_path)["follower_policy"] == "a reference policy that the page leaves out"
+    assert leaderboard.classify(_as_run(_main_row(0, agent="mcp_follower", model=""))) is None
+    # the lines of the follower in grid_agents.txt, one per rung of the ladder, resolve to runs that the page leaves out as well
+    lines = [line for line in pending_lines.grid_lines(CLUSTER_JOBS / "grids" / "grid_agents.txt") if pending_lines.expected(line)["agent"] == "mcp_follower"]
+    assert [pending_lines.expected(line)["config_name"] for line in lines] == list(design.LADDER)
+    for line in lines:
+        fields = pending_lines.expected(line)
+        run = _as_run({"agent": "mcp_follower", "model": "", "config": fields["config_name"], **{k: fields[k] for k in GRID_SETTINGS}})
+        assert leaderboard.classify(run) is None and leaderboard.left_out(run, {}, [], {}) == "a reference policy that the page leaves out"
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(leaderboard, "REFERENCES", tuple(label for label in leaderboard.REFERENCES if label != "mcp_follower"))
+        with pytest.raises(ValueError, match="unknown agent label 'mcp_follower'"):
+            leaderboard.framework_of("mcp_follower", "")
+
+
 def test_a_run_of_the_random_policy_is_a_reference_that_the_page_leaves_out(tmp_path):
     """The random policy is a reference policy of design.REFERENCE_POLICIES and needs no model. The page shows the oracle and the
     declaring policy under the main table and no other reference, so a run of the random policy, or of the oracle on a row of

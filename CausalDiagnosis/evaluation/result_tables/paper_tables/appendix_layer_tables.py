@@ -1,10 +1,11 @@
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate
 from CausalDiagnosis.utils.csv_rows import as_bool
-from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, FULL_ENVIRONMENT, LADDER, LADDER_NAMES, LADDER_ROWS, MCP, REFERENCE_POLICIES, row_label
+from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, FULL_ENVIRONMENT, LADDER, LADDER_NAMES, LADDER_ROWS, MCP, MCP_FOLLOWER, REFERENCE_POLICIES, row_label
 from . import table_cells
 
 
-POLICY_CELLS = (("Oracle", "oracle", "pass"), *((name, label, "reward") for label, name in REFERENCE_POLICIES))  # (policy name, label, metric)
+POLICY_CELLS = (("Oracle", "oracle", "pass"), *((name, label, "reward") for label, name in REFERENCE_POLICIES),
+                *((MCP_FOLLOWER[1], MCP_FOLLOWER[0], metric) for metric in ("pass", "reward")))  # (policy name, label, metric)
 
 
 def layers_table(sheet):
@@ -104,9 +105,11 @@ def policies_table(sheet):
     lines = [sheet.counted("policies", setting, [setting], cells(preset, setting)) for preset, setting in zip(LADDER, LADDER_NAMES)]
     return table_cells.MainTable("policies", "The reference policies on the layers",
                      "The policies need no model. The oracle knows the hidden state and must remain the best of the five reference policies, and doing nothing must score below every "
-                     "policy that passes, on every initial state of every row. The oracle's pass is a percentage.",
+                     "policy that passes, on every initial state of every row. Both rules cover the five reference policies on the rig's action server. "
+                     f"The MCP follower plays AssetOpsBench's servers and submits the root cause that the {MCP} ranks first, and its two columns are its pass and its "
+                     "reward. Both columns of pass are percentages.",
                      ["Setting", *(table_cells.level_head(f"{name} {metric}", metric) for name, _, metric in POLICY_CELLS)],
-                     "lcccccc", [lines], tex_header=["Setting & " + " & ".join(table_cells.stacked(name, metric) for name, _, metric in POLICY_CELLS) + r" \\"])
+                     "l" + "c" * len(POLICY_CELLS), [lines], tex_header=["Setting & " + " & ".join(table_cells.stacked(name, metric) for name, _, metric in POLICY_CELLS) + r" \\"])
 
 
 def policy_layers_table(sheet):

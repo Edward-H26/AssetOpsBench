@@ -1,7 +1,8 @@
 """Per-tier classifiers for the greedy reference policy (CausalDiagnosis/docs/environment.md). Standard library only.
 
-One linear discriminant analysis per tier and component predicts the component's level from the channel summaries
-that a measurement returns. The classifiers are cross-fitted by combination: the 144 combinations go to N_FOLDS
+One linear discriminant analysis per tier and component predicts the component's level from the statistics that a
+reading of the tier's channels serves (the statistics table of the asset file), never from a recorded statistic that no
+reading returns. The classifiers are cross-fitted by combination: the 144 combinations go to N_FOLDS
 folds by a seeded draw stratified by level, and the stable cycles of each fold are predicted by classifiers fitted on
 the other folds. The held-out predictions form a table keyed by the measured values, and their counts give the
 observation model of the greedy policy. The tests check the folds under ten seeds (CausalDiagnosis/environment/Causal_Diagnosis_Environment/tests/test_greedy_policy.py).
@@ -23,6 +24,9 @@ SPLIT_RULE = ("folds of the 144 combinations, stratified by level: the combinati
               "joins the fold, among those not yet full, where its levels are least represented; the stable cycles of each "
               "fold are predicted by classifiers fitted on the stable cycles of the other folds")
 SHRINKAGE = 0.01
+# the features are the statistics a reading serves, so that the policy decides on what a tool answer holds and never on a
+# recorded statistic that no agent sees
+SERVED_SUFFIXES = tuple(f"_{s}" for s in PROFILE.statistics["served"])
 ALPHA_GRID = (0.1, 0.2, 0.5, 1, 2, 3, 5, 10, 20, 50, 100, 1000)
 
 
@@ -188,9 +192,10 @@ def observation_model(pred, cycle_combo):
 class TierClassifiers:
     """Cross-fitted per-tier, per-component LDA predictions and the observation model built from them.
 
-    fold[combo]: the fold of each combination under fold seed `seed`. features[tier]: cycle index -> the tier's
-    feature values in sorted-name order. lookup[tier]: measured values -> predicted level indices. base[tier] and
-    alpha[tier]: the observation model of that tier (observation_model).
+    fold[combo]: the fold of each combination under fold seed `seed`. feature_names[tier]: the served statistics of the
+    tier's channels in sorted-name order. features[tier]: cycle index -> the tier's feature values in that order.
+    lookup[tier]: measured values -> predicted level indices. base[tier] and alpha[tier]: the observation model of that
+    tier (observation_model).
     """
 
     def __init__(self, cycles, blocks, shrinkage=SHRINKAGE, n_folds=N_FOLDS, seed=0):
@@ -201,12 +206,13 @@ class TierClassifiers:
         self.fold = stratified_folds(n_folds, seed)
         self.split = f"{n_folds} {SPLIT_RULE}; fold seed {seed}"
         self.cycle_combo = {i: combo for combo in COMBOS for i in blocks[combo]}
-        self.features, self.predicted, self.base, self.alpha = {}, {}, {}, {}
+        self.features, self.feature_names, self.predicted, self.base, self.alpha = {}, {}, {}, {}, {}
         for tier in TIERS:
             channels = PROFILE.observation_kinds[f"tier{tier}"]["channels"]
-            feats = {i: records.group_features(by_index[i], channels, PROFILE) for i in self.cycle_combo}
+            feats = {i: records.group_features(by_index[i], channels, PROFILE, SERVED_SUFFIXES) for i in self.cycle_combo}
             names = sorted(next(iter(feats.values())))
             x = {i: [f[n] for n in names] for i, f in feats.items()}
+            self.feature_names[tier] = names
             self.features[tier] = x
             pred = cross_fitted_predictions(x, self.cycle_combo, self.fold, shrinkage)
             self.predicted[tier] = pred

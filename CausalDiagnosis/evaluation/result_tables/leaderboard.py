@@ -74,7 +74,7 @@ SWITCHES = {
     "seq": ("Ag9", "the schedule of candidate plans off, every read step alone with its own ranking"),
     "noschema": ("Ag10", "structured output off, the planning and the orientation replies decoded without the JSON schema of their form, as the two reimplemented designs decode"),
 }
-REFERENCES = ("oracle", "do_nothing", "greedy", "random", "declare", "scripted")  # labels without a model, of which the page shows ANCHORS
+REFERENCES = ("oracle", "do_nothing", "greedy", "random", "declare", "scripted", "mcp_follower")  # labels without a model, of which the page shows ANCHORS
 ANCHORS = ("oracle", "declare")  # the best of the five reference policies and the most a constant declaration can earn, under the main table and on no other line
 STATIC_AGENT = ("Sc3", "one model call over the question, without the gym")
 FACTORS = {  # setting of RUNS.csv and the ablation that varies it, its level in a row being that of the row's preset

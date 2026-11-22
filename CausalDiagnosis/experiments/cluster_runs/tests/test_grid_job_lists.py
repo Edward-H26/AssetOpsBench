@@ -58,7 +58,7 @@ def test_every_rung_of_the_ladder_is_played_once_by_the_three_agents_with_the_mc
     assert not any(with_mcp for _agent, with_mcp, _name in design.TRAINING_BASELINES)
     baselines = [run_lines.run_line(design.TRAINING_PRESET, row) for row in design.TRAINING_BASELINES]
     assert baselines == [line for _comment, line in run_lines.ladder()[-3:]] and all(lines.count(line) == 1 for line in baselines)
-    assert len(lines) == len(set(lines)) == 100
+    assert len(lines) == len(set(lines)) == 107
 
 
 def test_every_supporting_ablation_plays_its_arms_on_the_preset_and_with_the_rows_of_its_place():

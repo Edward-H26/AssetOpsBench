@@ -77,10 +77,14 @@ def test_every_cell_of_a_registered_comparison_plays_on_the_server_of_its_family
 
 def test_the_part_environment_plays_the_rows_with_the_mcp_on_the_full_environment_after_every_other_line():
     """The part environment holds the three rows with the MCP on all six big layers as released, the lines that the part training
-    plays without training beside the adapters, and closes grid_agents.txt, so every earlier line keeps its place."""
+    plays without training beside the adapters, and follows every earlier line of grid_agents.txt, so every earlier line keeps its
+    place. The part follower, the MCP follower on every rung of the ladder, closes the file after it."""
     environment = [line for _, line in run_lines.part("environment")]
+    follower = [line for _, line in run_lines.part("follower")]
     assert environment == [run_lines.run_line(design.TRAINING_PRESET, row) for row in design.MCP_ROWS]
-    assert _file_lines("grid_agents.txt")[-len(environment):] == environment
+    assert follower == [f"--config {preset} {run_lines.SERVERS} --agent {design.MCP_FOLLOWER[0]}" for preset in design.LADDER]
+    assert _file_lines("grid_agents.txt")[-len(environment) - len(follower):] == environment + follower
+    assert run_lines.replicates("follower") == run_lines.replicates("main")
     assert run_lines.replicates("environment") == run_lines.replicates("main")
     released = [line for _, line in run_lines.part("training") if f"--training-variant {training.AS_RELEASED}" in line]
     assert [line.replace(f" --training-variant {training.AS_RELEASED}", "") for line in released] == environment

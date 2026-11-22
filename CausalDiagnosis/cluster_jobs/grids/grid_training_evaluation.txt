@@ -4,7 +4,8 @@
 # grid over the folders of these runs in a serving job of the judge alone (run_judge.sh), as for every other grid file.
 # An agent without training plays every start of a replicate, and the model of a fold plays the starts of the fold it
 # holds out. The lines without training serve the training table alone, whose comparisons read every variant on this
-# server; the agents table reads the same rows from the last part of grid_agents.txt, on a server without the adapters.
+# server; the agents table reads the same rows from the part environment of grid_agents.txt, on a server without the
+# adapters.
 # training table, Plan-and-Execute + CausalDiagnosis MCP, no training
 --config deterioration --servers aob --store couchdb --agent plan_execute --training-variant as_released
 # training table, Plan-and-Execute + CausalDiagnosis MCP, GEPA, the model of fold 1

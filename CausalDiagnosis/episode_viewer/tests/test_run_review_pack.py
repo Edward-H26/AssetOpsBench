@@ -33,7 +33,9 @@ def test_pick_takes_the_smallest_evaluation_seed_of_each_class_with_its_developm
     assert review_pack.pick([5], [0], lambda seed: True)["inseparable"] is None
 
 
-def test_fixed_starts_json_holds_what_the_code_picks_for_the_static_preset(tmp_path):
+def _static_fixed_starts(tmp_path):
+    """The static preset and the fixed starts that the code picks for it on a copy of the label table, so that no table is
+    written. Skips without the data file."""
     if not Path(default_facts_path()).exists():
         pytest.skip("no data file in this clone, as ASSETS_WITHOUT_DATA=1 states")
     from CausalDiagnosis.environment.reference_policies.diagnosability_label import LABELS_PATH
@@ -43,10 +45,15 @@ def test_fixed_starts_json_holds_what_the_code_picks_for_the_static_preset(tmp_p
         shutil.copyfile(LABELS_PATH, labels)
     _, cycles, blocks = review_pack.load_world()
     _, config = review_pack.load_config("static")
+    return config, review_pack.fixed_starts_of(config, cycles, blocks, labels)
+
+
+def test_fixed_starts_json_holds_what_the_code_picks_for_the_static_preset(tmp_path):
+    config, picked = _static_fixed_starts(tmp_path)
     fixed = json.loads(review_pack.FIXED_STARTS.read_text(encoding="utf-8"))
     key = review_pack.rules_key_of(config)
     assert fixed["presets"]["static"] == key and "anchored" not in fixed["presets"]
-    assert fixed["rules"][key] == review_pack.fixed_starts_of(config, cycles, blocks, labels)
+    assert fixed["rules"][key] == picked
 
 
 def test_fixed_starts_json_holds_every_preset_a_grid_file_plays_that_takes_fixed_starts():
@@ -90,14 +97,17 @@ def test_fixed_starts_of_another_data_file_are_refused(tmp_path):
     assert review_pack.read_fixed_starts(tmp_path / "missing.json") == {"presets": {}, "rules": {}}
 
 
-def test_every_rules_key_holds_the_inseparable_start_that_moved_with_the_first_replicate():
+def test_every_rules_key_holds_the_inseparable_start_that_moved_with_the_first_replicate(tmp_path):
     """The first replicate of (20, 100, 0, 130) moved from seed 114, which replayed the start
     state of the episode of its reserved seed, seed 3, to seed 4 (MOVED_OFF_DEVELOPMENT of test_start_state_seeds.py), now the smallest
     inseparable seed of the evaluation set, so every rules key holds reserved seed 3 and evaluation seed 4 as its inseparable
-    start, and 15 and 39 as its separable one as before."""
+    start, and as its separable one the pair that the code picks for the static preset on the label table, the same for every
+    rules key since the greedy reference reads only the statistics a reading serves."""
     fixed = json.loads(review_pack.FIXED_STARTS.read_text(encoding="utf-8"))
+    separable = next(iter(fixed["rules"].values()), {}).get("separable")
     assert fixed["rules"] and all(entry == {"inseparable": {"development_seed": 3, "evaluation_seed": 4},
-                                            "separable": {"development_seed": 15, "evaluation_seed": 39}} for entry in fixed["rules"].values())
+                                            "separable": separable} for entry in fixed["rules"].values())
+    assert separable == _static_fixed_starts(tmp_path)[1]["separable"]  # skipped here without the data file
 
 
 def test_the_page_check_names_the_files_whose_hash_differs_from_the_ledger():

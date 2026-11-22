@@ -171,6 +171,12 @@ COMPANIONS = {"En9": "discriminant_urn", HEALTHY_CONTROL_PRESET: "the six rows o
 # the reference policies of the environment, which need no model, as (agent label, name)
 REFERENCE_POLICIES = (("oracle", "Oracle"), ("greedy", "Greedy reference"), ("random", "Random"), ("do_nothing", "Do nothing"),
                       ("declare", "Always declare"))
+# the MCP follower as (agent label, name), a policy without a model that plays AssetOpsBench's servers and acts on what the
+# CausalDiagnosis MCP ranks first (frameworks/AssetOpsBench/agents/mcp_follower.py), and the policies of the appendix table of the
+# reference policies (POLICIES, tab:policies), the reference policies and the MCP follower, whose runs enter no other table that
+# selects agents
+MCP_FOLLOWER = ("mcp_follower", "MCP follower")
+POLICY_TABLE_POLICIES = (*REFERENCE_POLICIES, MCP_FOLLOWER)
 # the names the tables print for the training variants of training.TRAINING_VARIANTS, in the words of the paper
 VARIANT_NAMES = {AS_RELEASED: "no training", "gepa": "GEPA", "gepa_score_only": "GEPA on the score alone", "ft": "fine-tuning",
                  "ft_gepa": "fine-tuning + GEPA", "ft_unfiltered": "fine-tuning on unfiltered trajectories"}

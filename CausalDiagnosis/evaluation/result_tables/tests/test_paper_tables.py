@@ -22,7 +22,7 @@ from CausalDiagnosis.evaluation.result_tables import index_file, pooling_rules
 from CausalDiagnosis.experiments.run_verification import verify_results_folder as verify_results
 from CausalDiagnosis.experiments.episode_runners.episode_launchers import DEFAULT_RANKING_MODEL
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import METERED_SERVERS, RIG_SERVER
-from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, AAT, AAT_MCP, AS_RELEASED, CD, CD_MCP, FULL_ENVIRONMENT, H2_PRIME, HYPOTHESES, LADDER, LADDER_NAMES, LADDER_ROWS, H2_PRIME_MEASURES, PARALLEL_CONTRAST_ROWS, PE, PE_MCP, REFERENCE_POLICIES, AGENTS_PRESET, AGENT_LINES, AGENT_ROWS, TRAINING_BASELINES, TRAINING_COMPARISONS, TRAINING_FOLD_KEY, TRAINING_FOLDS, TRAINING_PRESET, TRAINING_ROWS, TRAINING_VARIANT_KEY, TRAINING_VARIANTS, VARIANT_NAMES, VISIT_FIELDS, VISITS
+from CausalDiagnosis.experiments.table_definitions.experiment_tables import ABLATION_PLACES, ARM_PRESETS, AAT, AAT_MCP, AS_RELEASED, CD, CD_MCP, FULL_ENVIRONMENT, H2_PRIME, HYPOTHESES, LADDER, LADDER_NAMES, LADDER_ROWS, H2_PRIME_MEASURES, PARALLEL_CONTRAST_ROWS, PE, PE_MCP, POLICY_TABLE_POLICIES, REFERENCE_POLICIES, AGENTS_PRESET, AGENT_LINES, AGENT_ROWS, TRAINING_BASELINES, TRAINING_COMPARISONS, TRAINING_FOLD_KEY, TRAINING_FOLDS, TRAINING_PRESET, TRAINING_ROWS, TRAINING_VARIANT_KEY, TRAINING_VARIANTS, VARIANT_NAMES, VISIT_FIELDS, VISITS
 from CausalDiagnosis.datasets.dataset_loader.profile_registry import get_profile
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.episode_config import DEFAULT_ASSET
 from evaluation.scorers import llm_judge
@@ -226,17 +226,20 @@ FLOOR_MARK = " (layer below at floor)"
 LAYERS_BY_HAND = ((f"+ priced reads and writes{FLOOR_MARK}", 1, 1, 1, 1, "0.312"), ("+ real-time clock", -1, 0, 0, -1 / 3, "0.312"),
                   ("+ advanced real-time clock", 1, -1, 0, 0, "1.000"), ("+ repair rules", -1, 0, -1, -2 / 3, "0.312"),
                   (f"+ deterioration and failure{FLOOR_MARK}", 1, 1, 1, 1, "0.312"))
-REWARD = {"oracle": 10, "greedy": 8, "random": 4, "do_nothing": 0, "declare": 2}  # the reward of a reference policy on Base, one less per big layer added
+REWARD = {"oracle": 10, "greedy": 8, "random": 4, "do_nothing": 0, "declare": 2, "mcp_follower": 6}  # the reward of a policy on Base, one less per big layer added
 
 
 def _policy_runs(root):
-    """The reference policies of REFERENCE_POLICIES on every preset of LADDER over the rig's action server, five starts each and no model:
-    the oracle passes every start and the others none, and a policy earns its REWARD less the position of the preset in LADDER."""
+    """The policies of POLICY_TABLE_POLICIES on every preset of LADDER, five starts each and no model, the reference policies over the rig's
+    action server and the MCP follower over AssetOpsBench's servers with the CausalDiagnosis MCP: the oracle passes every start and the
+    others none, and a policy earns its REWARD less the position of the preset in LADDER."""
+    reference = {label for label, _ in REFERENCE_POLICIES}
     for p, preset in enumerate(LADDER):
-        for label, _ in REFERENCE_POLICIES:
-            _run(root, f"{preset}_{label}", [_row(s, agent=label, model="", config=preset, clock_mode=aggregate.config_clock_mode(preset), diagnostics_server=False,
+        for label, _ in POLICY_TABLE_POLICIES:
+            servers = [RIG_SERVER] if label in reference else list(METERED_SERVERS)
+            _run(root, f"{preset}_{label}", [_row(s, agent=label, model="", config=preset, clock_mode=aggregate.config_clock_mode(preset), diagnostics_server=label not in reference,
                                                  ranking_model=DEFAULT_RANKING_MODEL, block=f"block{s}", n_faulty=N_FAULTY[s], reward=REWARD[label] - p,
-                                                 **{"pass": label == "oracle"}) for s in SEEDS], _meta(preset, model="", servers=[RIG_SERVER]))
+                                                 **{"pass": label == "oracle"}) for s in SEEDS], _meta(preset, model="", servers=servers))
 
 
 VARIANTS = TRAINING_VARIANTS
@@ -910,19 +913,47 @@ def test_the_layer_effects_print_per_layer_the_three_differences_the_pooled_one_
 
 
 def test_the_reference_policies_print_on_every_setting_need_no_model_and_read_the_pass_floor(tmp_path):
-    """Doing nothing scores below every policy that passes, the reading of the caption, while the oracle stays the best of the five reference policies."""
+    """Doing nothing scores below every policy that passes, the reading of the caption, while the oracle stays the best of the five reference
+    policies, which the caption keeps apart from the MCP follower, whose pass and reward close the table. The follower enters POLICIES and no
+    row of POLICY_LAYERS."""
     runs = tmp_path / "runs"
     _policy_runs(runs)
     tables, page, results = _aggregated(tmp_path, runs)
-    assert len(tables["POLICIES"]) == len(LADDER) * len(REFERENCE_POLICIES)
+    assert len(tables["POLICIES"]) == len(LADDER) * len(POLICY_TABLE_POLICIES)
+    assert {(r["agent"], r["surface"]) for r in tables["POLICIES"] if r["agent"] == "mcp_follower"} == {("mcp_follower", "aob")}
+    assert {r["agent"] for r in tables["POLICY_LAYERS"]} == {label for label, _ in REFERENCE_POLICIES}
     assert "## No model yet" in page and _table(page, "agents")[0][1:] == ["no run"] * 6
-    assert _lines(page, "policies")[0] == ["Setting", "Oracle pass (%)", *(f"{name} reward" for _, name in REFERENCE_POLICIES)]
-    assert _table(page, "policies") == [[setting, _same(100.0, ".1f"), *(_same(REWARD[label] - p) for label, _ in REFERENCE_POLICIES)]
+    assert _lines(page, "policies")[0] == ["Setting", "Oracle pass (%)", *(f"{name} reward" for _, name in REFERENCE_POLICIES), "MCP follower pass (%)", "MCP follower reward"]
+    assert _table(page, "policies") == [[setting, _same(100.0, ".1f"), *(_same(REWARD[label] - p) for label, _ in REFERENCE_POLICIES), _same(0.0, ".1f"), _same(REWARD["mcp_follower"] - p)]
                                         for p, setting in enumerate(LADDER_NAMES)]
     assert "doing nothing must score below every policy that passes, on every initial state of every row." in page and "floor" not in page.split("(`tab:policies`)")[1].split("\n#### ")[0]
+    assert ("Both rules cover the five reference policies on the rig's action server. The MCP follower plays AssetOpsBench's servers and submits the root "
+            "cause that the CausalDiagnosis MCP ranks first, and its two columns are its pass and its reward. Both columns of pass are percentages.") in _caption(page, "policies")
     tex = _tex(_latex(results), "policies")
-    assert tex["header"] == ["Setting & " + " & ".join(_two_lines(name, metric, "c") for name, metric in [("Oracle", "pass"), *((name, "reward") for _, name in REFERENCE_POLICIES)]) + r" \\"]
-    assert tex["body"][5] == r"+ deterioration and failure & 100.0 & 5.00 & 3.00 & -1.00 & -5.00 & -3.00 \\"
+    assert tex["format"] == "l" + "c" * (len(REFERENCE_POLICIES) + 3)
+    assert tex["header"] == ["Setting & " + " & ".join(_two_lines(name, metric, "c") for name, metric in [("Oracle", "pass"), *((name, "reward") for _, name in REFERENCE_POLICIES),
+                                                                                                   ("MCP follower", "pass"), ("MCP follower", "reward")]) + r" \\"]
+    assert tex["body"][5] == r"+ deterioration and failure & 100.0 & 5.00 & 3.00 & -1.00 & -5.00 & -3.00 & 0.0 & 1.00 \\"
+
+
+def test_the_mcp_follower_enters_tab_policies_alone_and_no_other_table_or_page_section(tmp_path):
+    """Behind every table of the page, the MCP follower plays every rung beside the reference policies (_policy_runs) over AssetOpsBench's
+    servers with the CausalDiagnosis MCP and without a model. Of the tables that aggregate writes its label enters POLICIES and the two
+    tables that read every agent label, RUNS, the index of every run folder read, and A8, the abstention rule per agent, which no page
+    and no line of the leaderboard reads, and of the page and its LaTeX form the table tab:policies alone names it. The control: every
+    reference policy of the same runs enters RUNS and A8 too, and POLICY_LAYERS and ELIM as well, so the sweep sees a label wherever a
+    table holds one."""
+    runs = tmp_path / "runs"
+    _every_table(runs)
+    tables, page, results = _aggregated(tmp_path, runs)
+
+    def holding(label):
+        return {name for name, rows in tables.items() if any(str(value) == label for row in rows for value in row.values())}
+
+    assert holding("mcp_follower") == {"POLICIES", "RUNS", "A8"}
+    assert all(holding(label) == {"POLICIES", "POLICY_LAYERS", "ELIM", "RUNS", "A8"} for label, _ in REFERENCE_POLICIES)
+    assert [section.split("\n", 1)[0] for section in page.split("\n#### ") if "MCP follower" in section] == ["The reference policies on the layers (`tab:policies`)"]
+    assert [table.split(r"\label{tab:", 1)[1].split("}", 1)[0] for table in _latex(results).split(r"\begin{table}")[1:] if "MCP follower" in table] == ["policies"]
 
 
 def test_a_fold_without_an_adapter_reads_the_runs_of_no_training_and_its_cells_carry_a_dagger(tmp_path):

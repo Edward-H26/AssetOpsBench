@@ -32,10 +32,10 @@ def test_ag9_writes_one_line_set_on_the_preset_of_training_and_no_second_referen
 
 def test_the_parts_cover_the_grid_file_and_name_their_replicates():
     assert run_lines.PARTS == ("main", "companion", "ladder", "layers", "training", "ablations", "pilot", "gate", "sampling",
-                                "environment_token", "layers_token", "misdiagnosis_price", "environment")
+                                "environment_token", "layers_token", "misdiagnosis_price", "environment", "follower")
     agents = (run_lines.part("main") + run_lines.part("companion") + run_lines.part("ladder") + run_lines.part("ablations")
               + run_lines.part("environment_token") + run_lines.part("layers_token") + run_lines.part("misdiagnosis_price")
-              + run_lines.part("environment"))
+              + run_lines.part("environment") + run_lines.part("follower"))
     grid_run_lines = [line for line in grid_files.files()["grid_agents.txt"].splitlines() if not line.startswith("#")]
     assert grid_run_lines == [line for _, line in agents]
     assert len(run_lines.part("main")) == len(design.AGENT_ROWS) + len(design.HEALTHY_CONTROL_ROWS)

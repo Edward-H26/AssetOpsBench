@@ -34,9 +34,10 @@ and all six big layers alone, the lines of the ladder that no table of the agent
 grid_agents.txt ends with the same rows under the clock that charges the tokens the agent's model generated in place of the wall
 seconds, a second condition of the clock: part environment_token, the six rows on the token twin of all six big layers, and part
 layers_token, the rungs of part layers on their token twins (design.TOKEN_PRESETS). Then part misdiagnosis_price, the ablation L1
-with the three agents without the CausalDiagnosis MCP, and last part environment, the three rows with the CausalDiagnosis MCP
-on all six big layers as released, each after every other line, so that adding them left the place of every earlier line
-unchanged. Every part plays on a server without LoRA adapters but the part training, which grid_training_evaluation.txt holds
+with the three agents without the CausalDiagnosis MCP, then part environment, the three rows with the CausalDiagnosis MCP
+on all six big layers as released, and last part follower, the MCP follower on every rung of the ladder, whose runs enter the
+table of the reference policies and no other table that selects agents, each after every other line, so that adding them left
+the place of every earlier line unchanged. Every part plays on a server without LoRA adapters but the part training, which grid_training_evaluation.txt holds
 and which plays beside the adapters (ADAPTER_PARTS), so the two cells of every registered comparison play on one serving setup:
 the agents table reads the rows with the MCP on the full environment from part environment, and the training table reads the
 same three lines without training from part training, on the server of its trained variants.

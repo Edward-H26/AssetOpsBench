@@ -71,7 +71,7 @@ from .cell_statistics import (
 from .family_correction import floor_cells, holm_joint, holm_over, reading, registered_floor, registered_size, untested
 from .episode_selection import (
     ABLATION_PLACES, AGENTS_PRESET, CONDITION, EN4_PRESET, HEALTHY_CONTROL_PRESET, MAIN_LEVELS, PRESET_LEVELS,
-    REFERENCE_LABELS, SWITCH_ABLATIONS, agent_episodes, at_main_settings, at_read, config_clock_mode, preset_config,
+    POLICY_TABLE_LABELS, REFERENCE_LABELS, SWITCH_ABLATIONS, agent_episodes, at_main_settings, at_read, config_clock_mode, preset_config,
     read_of, switch_episodes, switch_of)
 from .ablation_tables import (
     BINS, MISDIAGNOSIS_ABLATION, rankings, spearman, table_a12, table_misdiagnosis_price, verifier)

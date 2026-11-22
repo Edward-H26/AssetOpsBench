@@ -29,8 +29,9 @@ def text(header, entries):
 def files():
     """{file name: text} of the five grid files of CausalDiagnosis/cluster_jobs/."""
     tokens = run_lines.environment_token() + run_lines.layers_token()
-    faulty = run_lines.agents() + run_lines.companion() + run_lines.ladder() + run_lines.ablations() + tokens + run_lines.misdiagnosis_price() + run_lines.environment()
-    main = run_lines.main_part() + run_lines.companion() + run_lines.ladder() + run_lines.ablations() + tokens + run_lines.misdiagnosis_price() + run_lines.environment()
+    last = run_lines.misdiagnosis_price() + run_lines.environment() + run_lines.follower()
+    faulty = run_lines.agents() + run_lines.companion() + run_lines.ladder() + run_lines.ablations() + tokens + last
+    main = run_lines.main_part() + run_lines.companion() + run_lines.ladder() + run_lines.ablations() + tokens + last
     episodes = (len(faulty) * run_lines.STARTS + len(run_lines.healthy_control()) * run_lines.HEALTHY_STARTS) * run_lines.REPLICATES
     written = "written by CausalDiagnosis/experiments/cluster_runs/grid_job_lists.py and never by hand"
     development = ("played on the development starts alone, GRID_STARTS=development and GRID_SEEDS=1 with GRID_EXTRA=--start-cap=N, N the "
@@ -52,10 +53,13 @@ def files():
             f"changed, against the preset of training. Then {len(tokens)} lines play the six rows on all six big layers and the "
             "layer study on the rungs with a clock under the clock that charges the tokens the agent's model generated in place of "
             f"the wall seconds, a second condition of the clock, then {len(run_lines.misdiagnosis_price())} lines the ablation L1, the misdiagnosis "
-            f"price at the budget, and the last {len(run_lines.environment())} lines the three rows with the CausalDiagnosis MCP on all six big "
-            "layers as released, each after every other line, so that adding them left the place of every earlier line unchanged. "
+            f"price at the budget, then {len(run_lines.environment())} lines the three rows with the CausalDiagnosis MCP on all six big "
+            f"layers as released, and the last {len(run_lines.follower())} lines the MCP follower on every layer, a policy without a model whose "
+            "runs enter the table of the reference policies and no other table that selects agents, each part after every other line, so "
+            "that adding it left the place of "
+            "every earlier line unchanged. "
             "Every line of this file plays on a server without LoRA adapters, the server of the rows that the agents table compares, and "
-            "the last part is the row of the agents table that grid_training_evaluation.txt plays again beside the adapters.",
+            "the part environment is the row of the agents table that grid_training_evaluation.txt plays again beside the adapters.",
             main),
         "grid_pilot.txt": text(
             f"The optional pilot that measures the thinking rate against think_seconds_per_cycle of the asset file, which every run of "
@@ -78,7 +82,7 @@ def files():
             "judge, which runs after the grid over the folders of these runs in a serving job of the judge alone (run_judge.sh), as "
             "for every other grid file. An agent without training plays every start of a replicate, and the model of a fold plays the "
             "starts of the fold it holds out. The lines without training serve the training table alone, whose comparisons read every "
-            "variant on this server; the agents table reads the same rows from the last part of grid_agents.txt, on a server "
+            "variant on this server; the agents table reads the same rows from the part environment of grid_agents.txt, on a server "
             "without the adapters.",
             run_lines.evaluation()),
     }

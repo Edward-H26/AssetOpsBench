@@ -1,4 +1,4 @@
-# Ablation and result tables (2026-11-16)
+# Ablation and result tables (2026-11-22)
 
 Run folders under `runs`: 0; episodes read: 0. Intervals: a bootstrap of 10000 resamples drawn by recorded block, proportions included; paired differences match episodes on seed, scenario and every other factor; Holm at alpha 0.05 over the primary metric of a table.
 
@@ -201,7 +201,7 @@ No episode contributes to this table yet.
 
 ## A13_A17
 
-- What varies: the switches of the CausalDiagnosis agent, each turned alone on the same episodes and read from the label suffixes of CausalLoopOptions.label(): candidate troubleshooting plans off (Ag1, nobranch), plans for the top candidate only (Ag2, single), plan length one (Ag3, len1), and the read the board advises, by the discriminating test of E10 (Ag7, e10) or by one step edge cutting over repair plan classes, after the EC2 objective of Golovin, Krause and Ray, not their algorithm (Ag7, ec2), while the model decides every step in each
+- What varies: the switches of the CausalDiagnosis agent, each turned alone on the same episodes and read from the label suffixes of CausalLoopOptions.label(): candidate troubleshooting plans off (Ag1, nobranch), plans for the top candidate only (Ag2, single), plan length one (Ag3, len1), structured output off (Ag10, noschema), and the read the board advises, by the discriminating test of E10 (Ag7, e10) or by one step edge cutting over repair plan classes, after the EC2 objective of Golovin, Krause and Ray, not their algorithm (Ag7, ec2), while the model decides every step in each
 - Hypothesis: every switch lowers pass or raises the model calls per episode, and no switch improves both over the full agent
 - Metric: per switch with intervals, and tool surface at the main level of every setting as in AGENTS_pairs, pass, unnecessary replacements, model calls, thinking cycles (the sum of think_cycles over the hidden log), deviations, the share of test first plans, cost, the price of the reads (test_cost), top-1 accuracy on the starts whose first ranking puts two levels of one faulty set on top (level_accuracy), the repair sets ordered again and the realized elimination per read, and the paired difference of pass and model calls against the full agent with the agent label left out of the pairing key, Holm over the pass differences
 - What a result would mean: what each element of the agent is worth on its own
@@ -344,7 +344,7 @@ No episode contributes to this table yet.
 
 ## POLICIES
 
-- What varies: the reference policy of design.REFERENCE_POLICIES (oracle, greedy reference, random, do nothing and always declare) on every preset, the rows of the environment of design.LADDER among them, each clock mode and tool surface a row of its own
+- What varies: the policy of design.POLICY_TABLE_POLICIES, a reference policy of design.REFERENCE_POLICIES (oracle, greedy reference, random, do nothing and always declare) or the MCP follower, on every preset, the rows of the environment of design.LADDER among them, each clock mode and tool surface a row of its own
 - Hypothesis: the oracle is the best of the five reference policies, with a reward at least that of every other reference policy, and doing nothing scores below every policy that the verifier passes, on every start of every layer
 - Metric: per policy, preset, clock mode and tool surface, the pass, the verifier's success and the mean reward over the gym episodes at the main level of every setting, each with an interval from a bootstrap clustered by block
 - What a result would mean: how far an agent stands from the policy that knows the hidden state and from the policies that need no model, row by row

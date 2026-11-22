@@ -13,7 +13,8 @@ tool_servers
 
 # The agent kinds. model_agent: the agent calls a model (an agent without the flag counts as one, so the serving check holds for
 # it); route: the route of its model calls; surfaces: the tool surfaces it plays; trained: it
-# enters the training tables; paper_paradigm: it is a paradigm of the paper's tables; modules: the modules through which the
+# enters the training tables; paper_paradigm: it is a paradigm of the paper's tables; registered: the start check may register a
+# run of it, true when the flag is left out and false for a check that no table reads; modules: the modules through which the
 # driver reaches its code, which the test of the agent files imports alone in a fresh interpreter.
 AGENTS = {
     "plan_execute": {"model_agent": True, "route": "completion", "surfaces": ("aob",), "trained": True, "paper_paradigm": True,
@@ -25,6 +26,9 @@ AGENTS = {
     "scripted": {"model_agent": False, "surfaces": ("action", "aob"), "trained": False, "paper_paradigm": False,
                  "modules": ("CausalDiagnosis.frameworks.AssetOpsBench.agents.scripted_wiring_check",),
                  "entry": "CausalDiagnosis.frameworks.AssetOpsBench.agents.scripted_wiring_check:SCRIPTED"},
+    "mcp_follower": {"model_agent": False, "surfaces": ("aob",), "trained": False, "paper_paradigm": False,
+                     "modules": ("CausalDiagnosis.frameworks.AssetOpsBench.agents.mcp_follower",),
+                     "entry": "CausalDiagnosis.frameworks.AssetOpsBench.agents.mcp_follower:FOLLOWER"},
 }
 
 # The tool surfaces. servers: the server names in the order the driver registers them; state_file: the episode file every
@@ -99,4 +103,5 @@ LISTS = {
                            "agents/upstream_agent_package.py"),
     "agent:agent_as_tool": ("agents/Agent_As_Tool_Paper/", "agents/ReActXen/", "agents/agent_runs.py", "agents/upstream_agent_package.py"),
     "agent:scripted": ("agents/scripted_wiring_check.py", "agents/upstream_agent_package.py"),
+    "agent:mcp_follower": ("agents/mcp_follower.py", "agents/upstream_agent_package.py"),
 }
