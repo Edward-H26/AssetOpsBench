@@ -2,7 +2,7 @@
 evidence identifiers it rests on (obs/{n}/{field}, wo/{id}, pred/{n}), its time window in cycles, its assumptions as plain
 statements that trace every threshold to a price, a duration, a downtime rate or the declared error level, one
 uncertainty figure and a one line message; a failed call returns an ErrorResult."""
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, PrivateAttr, model_serializer
 
@@ -365,5 +365,169 @@ class OutcomeVerification(ToolResult):
     recovery_interval_high: Optional[float]
     recovery_posterior: Optional[float]
     predicted_combination: Optional[Dict[str, int]]  # the most probable combination after the action, which the verdict scores
+    predicted_mass: Optional[float]
+    recovery_status: str
+
+
+# ----- the shorter levels of response_format (tools/answer_levels.py); raw is the model of each tool above -----
+class Headline(BaseModel):
+    unchanged: Optional[str] = None  # the first key of a repeated answer, which names the call that first returned it
+    headline: str
+
+
+class RankingHeadline(Headline):
+    """A ranking at the level headline: its one line with the flag, the separating test and the cycle of the belief, which the
+    measures of the decisions read."""
+    read_first: bool
+    separating_test: Optional[SeparatingTest]
+    belief_time: int
+
+
+class RankingDetailed(RootCauses):
+    """A ranking at the level detailed: the fields of RootCauses with the identifiers it keeps and the keys of its assumptions,
+    readings, {n: the sensor group or the fields of reading n}, which names every other identifier, and the rule in words."""
+    unchanged: Optional[str] = None
+    readings: Dict[str, Union[str, List[str]]]
+    evidence_rule: str
+
+
+class ConciseCandidate(BaseModel):
+    rank: int
+    combination: Dict[str, int]
+    faults: List[Fault]
+    probability: float
+    evidence_ids: List[str]
+
+
+class ConciseBranch(BaseModel):
+    """A candidate plan without current_combination, the name of its combination that the readers of version 6 use."""
+    rank: int
+    ranks: List[int]
+    combination: Dict[str, int]
+    faults: List[Fault]
+    probability: float
+    faulty_set: List[str]
+    confirm_test: ConfirmTest
+    two_step: Optional[TwoStepTest]
+    repair_plan: RepairPlan
+    predicted_outcome: PredictedOutcome
+    expected_loss_if_acted: float
+    expected_loss_if_tested: float
+    cost_to_restored: CostToRestored
+
+
+class RankingConcise(ToolResult):
+    """A ranking at the level concise, the default: what an agent acts on."""
+    unchanged: Optional[str] = None
+    readings: Dict[str, Union[str, List[str]]]
+    evidence_rule: str
+    ranking_model: str
+    belief_time: int
+    effective_hypotheses: float
+    candidates: List[ConciseCandidate]
+    more_candidates: MoreCandidates
+    set_masses: List[SetMass]
+    current_fault_probability: Dict[str, float]
+    attribution: Optional[List[ComponentAttribution]] = None  # under branch_detail summary and full
+    read_first: bool
+    separating_test: Optional[SeparatingTest]
+    unseparated: List[str]
+    separating_channels: Dict[str, List[str]]
+    elimination: List[Elimination]
+    read_batch: List[BatchRead]
+    left_to_read: Dict[str, int]
+    costs: Dict[str, Any]
+    branches: List[ConciseBranch]
+    advice: Optional[Advice] = None
+
+
+class EvidenceReading(BaseModel):
+    n: int
+    t: int
+    sensor_group: str
+
+
+class EvidenceField(BaseModel):
+    field: str
+    unit: str
+    rate: str
+    normal_low: Optional[float] = None  # absent where the field has no public normal range
+    normal_high: Optional[float] = None
+    values: List[Optional[str]]  # one per reading, with low or high outside the normal range, None where the reading holds no such field
+
+
+class EvidenceDetailed(ToolResult):
+    """The evidence at the level detailed: one entry per field with its unit, rate and normal range and its values across the
+    readings."""
+    unchanged: Optional[str] = None
+    evidence_rule: str
+    sensor_group: str
+    n_observations: int
+    readings: List[EvidenceReading]
+    fields: List[EvidenceField]
+    work_orders_closed: List[ClosedWorkOrder]
+
+
+class EvidenceConcise(EvidenceDetailed):
+    """The evidence at the level concise: the fields with a value outside their normal range, and the count of the others by the
+    sensor group of their first reading."""
+    not_listed: Dict[str, int]
+
+
+class EffectDetailed(InterventionEffect):
+    unchanged: Optional[str] = None
+    readings: Dict[str, Union[str, List[str]]]
+    evidence_rule: str
+
+
+class EffectConcise(ToolResult):
+    """An estimate at the level concise: every value but the predicted summaries, which detailed and raw hold."""
+    unchanged: Optional[str] = None
+    readings: Dict[str, Union[str, List[str]]]
+    evidence_rule: str
+    prediction_id: str
+    action: str
+    component: Optional[str]
+    addresses_fault: float
+    recovery: float
+    recovery_interval_low: Optional[float]
+    recovery_interval_high: Optional[float]
+    price: float
+    duration: int
+    downtime_during_action: float
+    alpha: float
+    level_reachable: bool
+    risk_before: float
+    risk_after: float
+    direction: str
+    dead_band: Optional[float]
+    resampled_fits: int
+
+
+class VerificationDetailed(OutcomeVerification):
+    unchanged: Optional[str] = None
+    evidence_rule: str
+
+
+class VerificationConcise(ToolResult):
+    """A verification at the level concise: the verdict without the channels, which detailed and raw hold."""
+    unchanged: Optional[str] = None
+    evidence_rule: str
+    prediction_id: str
+    action: str
+    status: str
+    observation: Optional[int]
+    observed_t: Optional[int]
+    n_channels: int
+    alpha: float
+    level_reachable: bool
+    combined_score: Optional[float]
+    p_value: Optional[float]
+    consistent: Optional[bool]
+    recovery_predicted: float
+    recovery_interval_low: Optional[float]
+    recovery_interval_high: Optional[float]
+    recovery_posterior: Optional[float]
+    predicted_combination: Optional[Dict[str, int]]
     predicted_mass: Optional[float]
     recovery_status: str

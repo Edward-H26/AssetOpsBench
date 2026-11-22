@@ -18,6 +18,7 @@ A_URN = ("discriminant_urn: the v1 ranking model, one linear discriminant per se
          "fitted on the recorded blocks without the one the episode started in, repeated readings combined by a Polya urn around the "
          "confusion row of a cross fit on those blocks, every closed work order restoring its component; it has no transition model, so "
          "it serves static episodes, and E9 and the predictions keep the joint model's Gaussian predictive around this belief")
+MODEL_TEXTS = {"joint_block": A_BLOCK, "joint": A_JOINT, "discriminant_urn": A_URN}  # the text of each ranking model
 A_DEDUPE = ("a recording enters once with the union of its summaries: two readings show one recording when a record names both by one "
             "cycle, as when two groups read one recorded cycle, or when they agree on every summary they share and share one, as when "
             "the recording window wrapped")
@@ -30,6 +31,11 @@ A_E6 = ("E6: the filter is replayed under mean tables refitted on resamples of t
         "without its own block's draws as in the main table, and an interval of E6 is the range over the resampled fits of the call, "
         "resampled_fits of them; the range of R fits holds a further fit with probability (R - 1) / (R + 1), so it stands for the "
         "declared level only when R is at least (2 - alpha) / alpha; no band constant is used")
+A_E13 = ("E13: the prediction is for a standard order, and no emergency order is predicted; the belief after the action runs the "
+         "predict step through the order's lead time and repair downtime with its close on the cycle schedule_visit gives one order alone, so the replacement takes only when every component it depends on is healthy "
+         "at the close and the rule cards act meanwhile; for monitor it is the belief one cycle ahead; the recovery probability is the "
+         "mass of the healthy combination at the first reading after the action, and addresses_fault is the mass of the combinations in "
+         "which the component is faulty now")
 A_E14 = ("E14: the predicted mean of a summary after the action is the mean of the most probable combination of the belief after it, "
          "a tie going to the combination first in the candidate order, and its interval is the leave one block out conformal interval "
          "mean plus or minus q times the within standard deviation, with q the smallest calibration score, the cycles of every block "
@@ -60,6 +66,42 @@ A_COMPACT = ("branch_detail compact leaves out attribution, level_probability, s
              "them with every assumption text, the rules that every number of this reply follows")
 A_SIX_DIGITS = "values are the released ones, at six significant digits"
 A_BANDS = "the normal range of a channel mean is the public normal range of the asset profile, served by the action server, not a fitted threshold"
+
+# The key of each assumption text in the shorter levels of an answer (response_format.py). A fixed text has its own key, and
+# its sentence stands in the raw level and in CausalDiagnosis/docs/causal-diagnosis-mcp.md. A text that holds numbers of the call
+# is keyed by the words every form of it starts with, and the raw level gives it with those numbers. Any other text, a note on an
+# open work order, on a work order before a diagnosis or on the end of the episode, stays as it is, since it tells what the
+# environment will refuse.
+FIXED_KEYS = {A_RULE: "fits", A_E1: "E1", A_DEDUPE: "dedupe", A_BLOCK: "joint_block", A_JOINT: "joint", A_URN: "discriminant_urn",
+              A_PREDICT_STEP: "predict_step", A_E3: "E3", A_E4: "E4", A_E6: "E6", A_E13: "E13", A_E14: "E14", A_E16: "E16", A_TIME: "time",
+              A_COMPACT: "compact", A_BANDS: "bands", A_SIX_DIGITS: "six_digits"}
+CALL_KEYS = (("E2: ", "E2"), ("the parameters of the rule cards come ", "rule_cards"), ("the filter carried ", "states"), ("E7 to E10", "E7_E10"),
+             ("abstention_rule ", "abstention"), ("E21: ", "E21_E22"), ("candidates: the first ", "plans"), ("E15: ", "E15"),
+             ("the price is the part plus ", "price"), ("e10_rule, the earlier rule", "e10_rule"))
+RANKING_EVIDENCE_RULE = ("obs/<n>/<field> for every field of the sensor group that readings names for reading n, or of the fields it lists, "
+                         "and every wo/<id>; evidence_ids keeps the top channels of the attribution at their newest reading, of every "
+                         "other reading its first identifier that bears on the first candidate or else its first, and the work orders; "
+                         "raw lists every identifier")
+EFFECT_EVIDENCE_RULE = ("obs/<n>/<field> for every field of the sensor group that readings names for reading n, or of the fields it lists, "
+                        "every wo/<id> and the prediction; evidence_ids keeps one identifier of every reading, the work orders and the "
+                        "prediction; raw lists every identifier")
+EVIDENCE_TABLE_RULE = ("obs/<n>/<field> for the n of a reading of readings and the field of an entry of fields whose value for it is not "
+                       "null, and every wo/<id>; a value below the normal range of its field ends in low and one above it in high; "
+                       "evidence_ids keeps one identifier of every reading, outside its range where the reading has one, and the work "
+                       "orders; raw gives one item per value with its anomaly score")
+CONCISE_TABLE_RULE = EVIDENCE_TABLE_RULE + ("; for all or a sensor group concise lists only the fields with a value outside their range "
+                                            "and counts the others in not_listed by the sensor group of their first reading, which "
+                                            "detailed lists, and for a channel or a field every field")
+VERIFICATION_EVIDENCE_RULE = ("obs/<observation>/<field> for the field of every channel, and the prediction; evidence_ids keeps the "
+                              "prediction and the first of them; raw lists every identifier")
+VERIFICATION_CONCISE_RULE = VERIFICATION_EVIDENCE_RULE + "; concise leaves out the channels, which detailed lists"
+
+
+def assumption_key(text):
+    """The key of an assumption text in a shorter level, the text itself where it has none."""
+    if text in FIXED_KEYS:
+        return FIXED_KEYS[text]
+    return next((key for lead, key in CALL_KEYS if text.startswith(lead)), text)
 
 
 def cycles_text(count):

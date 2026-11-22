@@ -253,6 +253,24 @@ def test_a_count_takes_the_singular_only_when_it_prints_as_1():
     assert [r[2] for r in rows] == ["recovered true, 1 unnecessary order wo-3", "no identifier cited"]
 
 
+def test_a_profile_read_at_the_concise_level_is_shown_whole(tmp_path):
+    """The scripted plan on AssetOpsBench's servers asks the task server for the profile without response_format, so it reads the
+    default level concise, whose tool table and normal ranges are long tables of columns and rows. The page shows every tool and
+    every normal range of those tables as it shows a profile read at raw. The control: a page that reads the concise profile as
+    if it were raw fails on the tables."""
+    run_dir, rows, _meta = _run(["--config", "base", "--agent", "scripted", "--seeds", "1", "--servers", "aob"], tmp_path / "scripted")
+    assert rows[0]["error"] == "", rows[0]["error"]
+    ep_dir = run_dir / "seed000000"
+    answer = next(t["response"] for t in read_json(ep_dir / "trajectory.json") if t["tool"] == "get_asset_profile")
+    profile = json.loads(answer.rstrip("\n").split("\n")[0])
+    assert set(profile["tools"]) == {"columns", "rows"} and set(profile["normal_ranges"]) == {"columns", "rows"}  # the concise level
+    page = parts_of(walkthrough.render(ep_dir))[START]
+    tools = [dict(zip(profile["tools"]["columns"], row)) for row in profile["tools"]["rows"]]
+    assert tools and all(f"| `{t['name']}` | {t['server']} | {t['class']} |" in page for t in tools)
+    bands = [dict(zip(profile["normal_ranges"]["columns"], row)) for row in profile["normal_ranges"]["rows"]]
+    assert bands and all(f"| `{b['field']}` | {b['low']:.8g} | {b['high']:.8g} |" in page for b in bands)
+
+
 def test_a_reference_policy_page_shows_the_tool_table_its_episode_released(tmp_path):
     """A reference policy receives the profile in the envelope that opens the episode, so the page takes the rules and the
     tool table from released.json, the manifest of the episode's configuration, which on the real time row offers the work

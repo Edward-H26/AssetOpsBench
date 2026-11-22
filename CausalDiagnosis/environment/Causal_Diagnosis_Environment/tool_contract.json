@@ -134,7 +134,7 @@
     "get_episode_evidence": {
       "server": "causal_diagnosis",
       "class": "read",
-      "parameters": {"sensor_group": "string"},
+      "parameters": {"sensor_group": "string", "response_format": "string"},
       "duration": {"rule": "none", "cycles_per_unit": 0},
       "price": {"rule": "free"},
       "scored": false,
@@ -143,7 +143,7 @@
     "rank_root_causes": {
       "server": "causal_diagnosis",
       "class": "read",
-      "parameters": {"top_k": "integer", "branch_detail": "string"},
+      "parameters": {"top_k": "integer", "branch_detail": "string", "response_format": "string"},
       "duration": {"rule": "none", "cycles_per_unit": 0},
       "price": {"rule": "free"},
       "scored": false,
@@ -152,7 +152,7 @@
     "estimate_intervention_effect": {
       "server": "causal_diagnosis",
       "class": "read",
-      "parameters": {"action": "string"},
+      "parameters": {"action": "string", "response_format": "string"},
       "duration": {"rule": "none", "cycles_per_unit": 0},
       "price": {"rule": "free"},
       "scored": false,
@@ -161,7 +161,7 @@
     "verify_outcome": {
       "server": "causal_diagnosis",
       "class": "read",
-      "parameters": {"prediction_id": "string"},
+      "parameters": {"prediction_id": "string", "response_format": "string"},
       "duration": {"rule": "none", "cycles_per_unit": 0},
       "price": {"rule": "free"},
       "scored": false,

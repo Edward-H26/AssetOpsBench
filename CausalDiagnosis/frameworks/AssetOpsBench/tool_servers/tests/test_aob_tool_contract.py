@@ -59,10 +59,12 @@ def test_every_listed_tool_becomes_one_engine_action_of_its_class():
 
 
 def test_the_task_tools_keep_the_rig_entries_and_the_time_tools_join_on_the_clock_rows():
+    """The task tools keep the rig's entries, with the one parameter the layer adds, the level of its profile answer."""
     rig = contract.tools_of(contract.ACTION_SERVER)
     for name, entry in layer_contract.entries(TASK_SERVER).items():
         source = rig[name]
-        assert (entry["class"], entry["parameters"], entry["scored"]) == (source["class"], source["parameters"], source["scored"])
+        added = {"response_format": "string"} if name == "get_asset_profile" else {}
+        assert (entry["class"], entry["parameters"], entry["scored"]) == (source["class"], {**source["parameters"], **added}, source["scored"])
         assert (entry["price"]["rule"], entry["duration"]["rule"]) == (source["price"]["rule"], source["duration"]["rule"])
     base = ("get_asset_profile", "summarize_changes_since", "submit_diagnosis", "declare_insufficient_evidence", "finish")
     assert layer_contract.tools_of(TASK_SERVER, "base") == layer_contract.tools_of(TASK_SERVER, "priced") == base

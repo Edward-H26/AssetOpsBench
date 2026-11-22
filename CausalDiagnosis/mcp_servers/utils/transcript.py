@@ -7,10 +7,14 @@ and the exit of every served call of a tool that steps the environment, and each
 the arguments as the server received them, whether the call took a step of the environment, and the SHA-256 of the exact text
 that went back to the client, so a replay through the servers of another checkout compares every answer while the file holds
 none. A server that only reads the released evidence also keeps the text of its answer, which no other file of a server holds.
+A server that answers a call at a shorter level of response_format keeps the raw level of that answer beside the line of the call,
+in raw_answers.jsonl.gz (RAW_NAME), keyed by the number of the line and written under the same lock, so that a reader can show
+every answer at every level.
 The file is written by server code alone, never by an agent, a runner or the driver, and the run ledger hashes it with the other
 files of the episode folder. The module imports nothing of the MCP package, since the episode module of the action server
 imports it and stays importable without that package.
 """
+import gzip
 import hashlib
 import json
 import os
@@ -21,6 +25,7 @@ from pathlib import Path
 from CausalDiagnosis.utils.atomic_writes_and_locks import locked
 
 NAME = "transcript.jsonl"
+RAW_NAME = "raw_answers.jsonl.gz"  # one gzip member per call answered at a shorter level: {"n": its line, "raw": the raw level}
 FORMAT = 1
 # what the call that this task is serving has recorded and noted so far (serving), None outside a served call
 _CALL = ContextVar("transcript_call", default=None)
@@ -69,18 +74,22 @@ def _count(path):
 
 
 def begin(folder, **fields):
-    """Start the transcript of a new episode in the folder, in place of one that is there: line 0, of the kind start."""
+    """Start the transcript of a new episode in the folder, in place of one that is there: line 0, of the kind start. The raw
+    answers kept beside the transcript that was there (RAW_NAME) are keyed by its lines and go with it, under the same lock."""
     path = _path(folder)
     if path is None:
         return None
     with locked(path):
+        # before line 0, so that a begin cut short never leaves the new transcript beside the raw answers of another
+        (path.parent / RAW_NAME).unlink(missing_ok=True)
         path.write_text(_line(0, "start", {"format": FORMAT, **fields}), encoding="utf-8")
     return 0
 
 
-def append(folder, kind, **fields):
+def append(folder, kind, *, raw=None, **fields):
     """Append one line and return its number, None without an episode folder. The number is the count of the lines before it,
-    read under the lock, so the lines of every server process of the episode are numbered in the order they were written."""
+    read under the lock, so the lines of every server process of the episode are numbered in the order they were written. With
+    raw, the raw level of the answer of the line is kept in RAW_NAME under the same lock and keyed by the line."""
     path = _path(folder)
     if path is None:
         return None
@@ -88,7 +97,22 @@ def append(folder, kind, **fields):
         n = _count(path)
         with open(path, "a", encoding="utf-8") as f:
             f.write(_line(n, kind, fields))
+        if raw is not None:
+            record = json.dumps({"n": n, "raw": raw}, separators=(",", ":")) + "\n"
+            # one member per record, its header without a file name or a time, so the bytes of the file follow from the records
+            with open(path.parent / RAW_NAME, "ab") as f:
+                f.write(gzip.compress(record.encode("utf-8"), mtime=0))
     return n
+
+
+def raw_answers(folder):
+    """{line of a call: the raw level of its answer} for every call of the episode folder that a server answered at a shorter
+    level, empty without the file."""
+    path = Path(folder) / RAW_NAME
+    if not path.is_file():
+        return {}
+    with gzip.open(path, "rt", encoding="utf-8") as f:
+        return {record["n"]: record["raw"] for record in map(json.loads, f)}
 
 
 def read(folder):
@@ -137,10 +161,18 @@ def answered(folder, server, tool, arguments, text, is_error, stepped=False, kee
             "stepped": bool(stepped), **fields}
     if keep_text:
         line["answer"] = text
-    n = append(folder, "call", **line)
+    n = append(folder, "call", raw=None if call is None else call.get("raw"), **line)
     if call is not None:
         call["recorded"] = True
     return n
+
+
+def keep_raw(text):
+    """The raw level of the answer of the call being served, for a call that a server answers at a shorter level; answered keeps
+    it beside the line of the call (RAW_NAME). Outside a served call it does nothing."""
+    call = _CALL.get()
+    if call is not None:
+        call["raw"] = text
 
 
 def note(**fields):

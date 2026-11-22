@@ -222,3 +222,24 @@ def test_a_tiny_asset_that_states_its_five_sentences_shows_each_once(tiny_data, 
     finally:
         unregister_profile(profile.asset_id)
         kinds.unregister_kind(kind.name)
+
+@pytest.mark.parametrize("row", ["base", "priced"])
+def test_a_nested_sensor_group_names_the_group_inside_it_and_lists_no_field_twice(world, row):
+    """Every field of the telemetry stands once among the sensor groups, and a group that holds every field of an earlier one
+    is named by that group and its other fields, from which each group's fields follow. The control: listing every field of
+    every group again fails on the nested groups of the rig."""
+    text, _config = text_of(world, row)
+    cycles, blocks = world
+    env = RecordedRigEnv(cycles, blocks, preset_config(row))
+    env.reset(7)
+    groups = env.public_profile()["sensor_groups"]
+    lines = {line.split(" ")[3]: line for line in text.splitlines() if line.startswith("  - ") and line.split(" ")[3] in groups}
+    assert set(lines) == set(groups)
+    fields = {}
+    for group, line in lines.items():
+        returned = line.split("returns ", 1)[1]
+        inner = re.match(r"the fields of (\S+) and (.*)", returned)
+        fields[group] = (set(fields[inner.group(1)]) | set(inner.group(2).split(", "))) if inner else set(returned.split(", "))
+        assert fields[group] == set(groups[group]), group
+    listed = [f for line in lines.values() for f in line.split("returns ", 1)[1].removeprefix("the fields of ").split(", ")]
+    assert sorted(f.split(" and ")[-1] for f in listed if f not in groups) == sorted({f for g in groups.values() for f in g})

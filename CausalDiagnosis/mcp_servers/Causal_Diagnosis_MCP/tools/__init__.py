@@ -20,6 +20,7 @@ from . import fitted_models
 from . import rank_root_causes
 from . import intervention_effect
 from . import causal_tools
+from . import answer_levels
 
 from .tool_texts import A_BLOCK, A_COMPACT, A_E1, A_RULE
 from .fitted_models import Models, fit_episode, load_models

@@ -12,8 +12,9 @@ the row with their prices and durations, the rig's misdiagnosis sentence in the 
 table declares that price, the emergency clause with the scoring of a hold in force at the end where the
 emergency mode is on, the receipt line from the priced row on, with the rule that an alarm is raised once per channel
 where the receipt lists the notifications, and the limits. Level 3 adds a
-procedure. No level states the fault rule of the starts. The wording is
-part of the environment, so BRIEFING_VERSION changes with it.
+procedure. No level states the fault rule of the starts. A sensor group that holds the fields of a smaller one is named by that
+group and its other fields, so the question lists no field twice. The wording is part of the environment, so BRIEFING_VERSION
+changes with it.
 """
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment import layers
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import aob_tool_contract as layer_contract
@@ -24,7 +25,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import (D
                                             repair_cards, repair_sentences, repair_step, scoring_sentence, time_sentence, time_values)
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import listed as _listed
 
-BRIEFING_VERSION = "aob-v1.17"
+BRIEFING_VERSION = "aob-v1.18"
 EVIDENCE_FORMS = ("obs/<timestamp>/<field> for a value of a telemetry row, with the timestamp and the field as the row shows them",
                   "wo/<wonum> for a work order", "fmea/<source>/<code> for a failure mode")
 ALARM_FORM = "alarm/<cycle>/<channel> for the alarm of a notification"
@@ -148,10 +149,10 @@ def _telemetry_paragraph(profile, config):
     if priced:
         intro = ("history and latest_reading charge every cycle they return at the price per cycle of the cheapest sensor group whose "
                  "fields cover the fields returned, unless a group paid earlier for that cycle covers them, so reading a paid row again is free:")
-        groups = [f"  - {g} costs {prices[g]} per cycle and returns {', '.join(fields)}" for g, fields in profile["sensor_groups"].items()]
+        groups = [f"  - {g} costs {prices[g]} per cycle and returns {returned}" for g, returned in _group_fields(profile["sensor_groups"]).items()]
     else:
         intro = "Every read is free in this episode. The sensor groups, which a declaration of insufficient evidence names, are:"
-        groups = [f"  - {g} returns {', '.join(fields)}" for g, fields in profile["sensor_groups"].items()]
+        groups = [f"  - {g} returns {returned}" for g, returned in _group_fields(profile["sensor_groups"]).items()]
     if not config.has_clock():
         window = ""
     elif profile["durations"]["read_per_cycle"] > 0:
@@ -163,6 +164,18 @@ def _telemetry_paragraph(profile, config):
             "Name the sensors you need in history, "
             "since a history without a sensor list returns every field of every row. Row timestamps carry no time zone and history "
             "bounds take the same form, while work order dates carry the offset +00:00." + window + "\n" + intro + "\n" + "\n".join(groups))
+
+
+def _group_fields(sensor_groups):
+    """{group: the fields it returns in words}, a group that holds every field of an earlier one named by that group and its other
+    fields, the largest such group, so that a nested group does not list the fields of the one inside it again."""
+    out, earlier = {}, []
+    for group, fields in sensor_groups.items():
+        inner = max((g for g in earlier if set(sensor_groups[g]) < set(fields)), key=lambda g: len(sensor_groups[g]), default=None)
+        rest = [f for f in fields if inner is None or f not in sensor_groups[inner]]
+        out[group] = ", ".join(rest) if inner is None else f"the fields of {inner} and {', '.join(rest)}"
+        earlier.append(group)
+    return out
 
 
 def _iot_lines(profile, table):

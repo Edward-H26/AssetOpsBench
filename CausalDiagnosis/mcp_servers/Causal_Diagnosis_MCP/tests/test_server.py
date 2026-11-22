@@ -1,6 +1,7 @@
 """The MCP server over stdio when the mcp package is installed: four flat tools, every one declared read only, their
-parameters as the tool contract pins them (required, except the count of candidates and the view option of the branches),
-and answers through a launcher copied beside the released evidence, which names the block the fits of the episode leave out."""
+parameters as the tool contract pins them (required, except the count of candidates, the view option of the branches and the
+level of every answer), and answers through a launcher copied beside the released evidence, which names the block the fits of
+the episode leave out."""
 from CausalDiagnosis.utils.paths import ROOT, SRC
 import asyncio
 import importlib.util
@@ -37,11 +38,15 @@ def test_the_four_tools_are_read_only_and_required(tmp_path):
     hints, parameters, schemas = advertised(build_server(None))
     assert {n: h for n, h in advertised(build_server(None, ranking_model="discriminant_urn"))[0].items()} == hints
     assert set(hints) == set(TOOLS) and all(hints.values())
-    assert parameters == {"get_episode_evidence": {"sensor_group": "string"}, "rank_root_causes": {"top_k": "integer", "branch_detail": "string"},
-                          "estimate_intervention_effect": {"action": "string"}, "verify_outcome": {"prediction_id": "string"}}
-    # the two optional parameters are the count of candidates, the first DEFAULT_TOP_K unless the caller names more, and the view
-    # option of the reply, so a caller that knows neither gets the first candidates in the compact reply
-    optional = {"rank_root_causes": {"top_k": DEFAULT_TOP_K, "branch_detail": "compact"}}
+    assert parameters == {"get_episode_evidence": {"sensor_group": "string", "response_format": "string"},
+                          "rank_root_causes": {"top_k": "integer", "branch_detail": "string", "response_format": "string"},
+                          "estimate_intervention_effect": {"action": "string", "response_format": "string"},
+                          "verify_outcome": {"prediction_id": "string", "response_format": "string"}}
+    # the optional parameters are the count of candidates, the first DEFAULT_TOP_K unless the caller names more, the view option
+    # of the reply and the level of every answer, so a caller that knows none gets the first candidates in the compact reply at
+    # the level concise
+    optional = {"rank_root_causes": {"top_k": DEFAULT_TOP_K, "branch_detail": "compact", "response_format": "concise"},
+                **{name: {"response_format": "concise"} for name in ("get_episode_evidence", "estimate_intervention_effect", "verify_outcome")}}
     for name, schema in schemas.items():
         assert schema.get("required", []) == [p for p in schema["properties"] if p not in optional.get(name, {})]
         assert {p: s["default"] for p, s in schema["properties"].items() if "default" in s} == optional.get(name, {})
@@ -92,15 +97,27 @@ def test_server_answers_over_stdio(tmp_path):
                 ranking = await session.call_tool("rank_root_causes", {"top_k": 2})
                 effect = await session.call_tool("estimate_intervention_effect", {"action": "replace:valve"})
                 bad = await session.call_tool("estimate_intervention_effect", {"action": "replace:motor"})
-                return listed, ranking, effect, bad
+                defaults = [await session.call_tool("get_episode_evidence", {"sensor_group": "all"}), ranking, effect,
+                            await session.call_tool("verify_outcome", {"prediction_id": "pred/1"})]
+                full = await session.call_tool("get_episode_evidence", {"sensor_group": "all", "response_format": "raw"})
+                unknown = await session.call_tool("rank_root_causes", {"response_format": "full"})
+                return listed, ranking, effect, bad, defaults, full, unknown
 
-    listed, ranking, effect, bad = asyncio.run(session_calls())
+    listed, ranking, effect, bad, defaults, full, unknown = asyncio.run(session_calls())
     assert {t.name for t in listed} == set(TOOLS) and all(t.annotations.readOnlyHint for t in listed)
     ranked = json.loads(ranking.content[0].text)
     assert not ranking.isError and len(ranked["candidates"]) == 2 and ranked["ranking_model"] == "joint_block"
     assert not effect.isError and json.loads(effect.content[0].text)["prediction_id"] == "pred/1"
     assert not bad.isError and "error" in json.loads(bad.content[0].text)
     assert (tmp_path / "predictions.json").exists()
+    # the default of every tool is the level concise, one line of JSON whose structured content the client checked against the
+    # output schema; raw is the indented answer, and a level of another name, branch_detail's full among them, is an error answer
+    for answer in defaults:
+        text = answer.content[0].text
+        assert not answer.isError and "\n" not in text and json.loads(text) == answer.structuredContent["result"] and "evidence_rule" in json.loads(text)
+    evidence = json.loads(full.content[0].text)
+    assert "\n" in full.content[0].text and len(evidence["items"]) == len(episode.observations[0]["values"]) and "fields" not in evidence
+    assert "error" in json.loads(unknown.content[0].text)
 
     async def ablation_call():
         params = StdioServerParameters(command=sys.executable, env=env,
@@ -109,7 +126,7 @@ def test_server_answers_over_stdio(tmp_path):
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                return await session.call_tool("rank_root_causes", {"top_k": 1, "branch_detail": "summary"})
+                return await session.call_tool("rank_root_causes", {"top_k": 1, "branch_detail": "summary", "response_format": "raw"})
 
     ablation = json.loads(asyncio.run(ablation_call()).content[0].text)
     assert ablation["ranking_model"] == "discriminant_urn" and "abstention_rule fixed_cut" in " ".join(ablation["assumptions"])

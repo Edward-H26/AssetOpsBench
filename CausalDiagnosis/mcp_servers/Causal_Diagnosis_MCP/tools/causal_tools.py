@@ -97,7 +97,7 @@ class CausalTools:
         self.e10_margin, self.batch_cap, self.reserve_plans = e10_margin, batch_cap, reserve_plans
 
     # ----- the episode and the belief -----
-    def _released(self):
+    def _released(self, note=True):
         if self.released_path is None:
             raise episode_reading.NoEpisode("this server serves no episode; start one through the action server of the environment")
         if not self.released_path.exists():
@@ -105,7 +105,8 @@ class CausalTools:
         if self.models is None:
             raise episode_reading.NoEpisode("this server was launched without the block its fits leave out, which the driver names at launch")
         data = self.released_path.read_bytes()
-        transcript.note(released_sha256=transcript.bytes_sha256(data))  # the evidence this call read, for the line of the call
+        if note:
+            transcript.note(released_sha256=transcript.bytes_sha256(data))  # the evidence this call read, for the line of the call
         raw = json.loads(data.decode("utf-8"))
         if raw.get("format") != RELEASED_FORMAT:
             raise episode_reading.NoEpisode(f"the released evidence has format {raw.get('format')}; this server reads format {RELEASED_FORMAT}")
@@ -136,7 +137,7 @@ class CausalTools:
                   "stood at a cycle before the rule cards of that cycle, in the order they were released; the server never reads a seed "
                   "or the split, and no result names the start"),
                  tool_texts.sources_text(view), tool_texts.A_DEDUPE]
-        notes.append({"joint_block": tool_texts.A_BLOCK, "joint": tool_texts.A_JOINT, "discriminant_urn": tool_texts.A_URN}[self.ranking_model])
+        notes.append(tool_texts.MODEL_TEXTS[self.ranking_model])
         return notes
 
     def _predictions_path(self):
@@ -166,10 +167,12 @@ class CausalTools:
             channels = set(view.sensor_groups[group])
         else:
             sensor = view.sensor_of(group)
-            if sensor is None:
+            # the name itself must be the channel, its field or one of its summary fields, since the profile also reads a channel
+            # off the start of a longer name, such as a list of several
+            if sensor is None or group not in {sensor, view.channel_name(sensor), *(f for f in view.summary_fields if channel_field(f) == view.channel_name(sensor))}:
                 example = next(view.sensor_of(f) for g in sorted(view.sensor_groups) for f in view.group_fields(g))
                 return ErrorResult(error=f"unknown sensor_group {group}: use all, {', '.join(sorted(view.sensor_groups))}, a channel such as {example} "
-                                         f"or a field such as {view.channel_name(example)}")
+                                         f"or a field such as {view.channel_name(example)}, one name per call")
             channels = {view.channel_name(sensor)}
         items = []
         for reading in released.episode.readings:
@@ -624,11 +627,7 @@ class CausalTools:
         reachable = self.models.calibration.level_reachable(self.alpha)
         prediction_id = self._store_prediction(released, action, components, predicted)
         notes = self._model_assumptions(view) + [
-            ("E13: the prediction is for a standard order, and no emergency order is predicted; the belief after the action runs the "
-             "predict step through the order's lead time and repair downtime with its close on the cycle schedule_visit gives one order alone, so the replacement takes only when every component it depends on is healthy "
-             "at the close and the rule cards act meanwhile; for monitor it is the belief one cycle ahead; the recovery probability is the "
-             "mass of the healthy combination at the first reading after the action, and addresses_fault is the mass of the combinations in "
-             "which the component is faulty now"),
+            tool_texts.A_E13,
             tool_texts.A_PREDICT_STEP, tool_texts.A_E14, tool_texts.A_E6,
             (f"E15: risk is one minus the mass of the healthy combination before and after the action, and the direction uses a dead band "
              f"equal to the half width of the resampling interval of the recovery probability when that interval is a range over at least "

@@ -933,3 +933,19 @@ def test_the_models_file_carries_the_code_that_fitted_it_and_a_read_only_process
     with pytest.raises(GeneratedTableMissing, match="precompute_tables.sbatch"):
         fit.ensure_models(path, facts_path=given)
     assert path.read_bytes() == before
+
+def test_a_sensor_group_that_names_no_group_channel_or_field_is_refused_with_the_names_to_use(episode):
+    """sensor_group names one sensor group, one channel, its field or one of its summary fields. A longer name, such as a list
+    of several, is an error answer that names every group and the forms of the others, not the readings of the channel the
+    name starts with. The control: reading the channel off the start of the name answers the list with that channel's
+    items."""
+    tools = tools_for(episode)
+    episode.read("tier3")
+    with hidden_files_sealed():
+        for name in ("TS1_Temperature_C_1Hz,TS2_Temperature_C_1Hz", "TS1, TS2", "tier1,tier2", "TS1_Temperature"):
+            answer = tools.get_episode_evidence(name)
+            assert isinstance(answer, ErrorResult) and answer.error.startswith(f"unknown sensor_group {name}: use all, ")
+            assert all(group in answer.error for group in episode.rules["sensor_groups"]) and answer.error.endswith("one name per call")
+        for name in ("TS1", "TS1_Temperature_C_1Hz", "TS1_Temperature_C_1Hz_mean"):
+            answer = tools.get_episode_evidence(name)
+            assert not isinstance(answer, ErrorResult) and answer.items and {item.channel for item in answer.items} == {"TS1"}

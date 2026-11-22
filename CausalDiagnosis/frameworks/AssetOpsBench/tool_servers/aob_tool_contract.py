@@ -42,7 +42,8 @@ def load_contract():
     rig = contract.tools_of(contract.ACTION_SERVER)
     for name, entry in data["tools"][TASK_SERVER].items():
         source = rig[name]
-        entry.update({"class": source["class"], "action": name, "parameters": dict(source["parameters"]),
+        # the layer adds the level of its own profile answer (mcp_servers/utils/profile_levels.py) to the rig's parameters
+        entry.update({"class": source["class"], "action": name, "parameters": {**source["parameters"], **entry.get("added_parameters", {})},
                       "duration": {"rule": source["duration"]["rule"], "value_of": name},
                       "price": {"rule": source["price"]["rule"], "value_of": name}, "scored": source["scored"]})
     return data
@@ -128,7 +129,8 @@ def clock_durations(table):
 def _public_row(server, name, entry, config):
     """The row of one tool for a configuration: a task tool takes its parameters from the rig's contract of the configured
     asset, one condition level per component in submit_diagnosis, and every rule names the asset by its short noun."""
-    parameters = contract.tools_of(contract.ACTION_SERVER, config.asset_id)[name]["parameters"] if server == TASK_SERVER else entry["parameters"]
+    parameters = ({**contract.tools_of(contract.ACTION_SERVER, config.asset_id)[name]["parameters"], **entry.get("added_parameters", {})}
+                  if server == TASK_SERVER else entry["parameters"])
     old, new = load_contract()["asset_words"]["short_noun"], get_profile(config.asset_id).text["short_noun"]
     return {"name": name, "server": server, "class": entry["class"], "parameters": dict(parameters),
             "duration": contract.reword(entry["duration"]["rule"], old, new), "price": contract.reword(entry["price"]["rule"], old, new),

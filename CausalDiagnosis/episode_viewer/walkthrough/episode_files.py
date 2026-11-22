@@ -8,6 +8,7 @@ from CausalDiagnosis.agents.utils.tool_answers import EPISODE_OVER
 from CausalDiagnosis.experiments.episode_runners.servers_of_a_run import METERED_SERVERS as AOB_SERVERS, CAUSAL_SERVER, RIG_SERVER
 from CausalDiagnosis.experiments.episode_runners.run_folder_layout import HIDDEN, RELEASED_FILE, STATE_FILE, episode_name, read_rows
 from CausalDiagnosis.utils.json_files import read_json
+from CausalDiagnosis.mcp_servers.utils.profile_levels import raw_of
 from CausalDiagnosis.utils.public_rules.visits import is_no_call
 from . import controller_walk
 
@@ -179,7 +180,9 @@ class Episode:
         configuration that the envelope opening the episode hands a reference policy."""
         for n, call in enumerate(self.calls, 1):
             if call.tool == "get_asset_profile" and call.result is not None:
-                return call.result, f"It is the answer of `get_asset_profile` at step {n}, the call that hands the agent the profile."
+                # a shorter level of the task server writes the tool table and the normal ranges as long tables (response_format)
+                profile = raw_of(call.result) if isinstance(call.result.get("tools"), dict) else call.result
+                return profile, f"It is the answer of `get_asset_profile` at step {n}, the call that hands the agent the profile."
         profile = dict(self.released.get("rules") or {})
         profile.update(asset_id=self.released.get("asset_id"), seconds_per_cycle=self.config.get("seconds_per_cycle"),
                        think_seconds_per_cycle=self.config.get("think_seconds_per_cycle"))

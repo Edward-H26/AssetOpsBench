@@ -15,6 +15,7 @@ from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import aob_tool_contr
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.bind_episode_databases import bound
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_briefing import briefing
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_tool_contract import TASK_SERVER
+from CausalDiagnosis.mcp_servers.utils import profile_levels
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.in_memory_couchdb import MemoryServer
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_layer import DEFINITIONS_ONLY
 from CausalDiagnosis.mcp_servers.Environment_Actions_MCP import episode_state as episode
@@ -73,7 +74,7 @@ async def test_the_repair_rules_row_serves_the_manual_on_the_task_server(world):
 @pytest.mark.parametrize("row", ["base", "priced"])
 async def test_the_profile_is_the_layer_view_of_its_row(world, row):
     meter, engine, store, sessions = harness.memory_engine_episode(world, row)
-    reply = await meter.call(TASK_SERVER, "get_asset_profile", {})
+    reply = await meter.call(TASK_SERVER, "get_asset_profile", {"response_format": "raw"})
     profile = answer(reply, row)
     assert "fault_rule" not in profile and profile["asset"]["site"] == "MAIN"
     assert profile["asset"]["children"] == {c: f"hyd_1_{c}" for c in COMPONENTS}
@@ -205,3 +206,43 @@ async def test_all_healthy_and_no_work_order_is_a_valid_and_scored_answer_throug
     verdict = verify(engine.log, released_from_env(engine), engine.oracle(), 1.0)
     assert verdict["verified"] and verdict["false_alarms"] == 0 and verdict["unnecessary"] == orders
     assert verdict["pass"] == (orders == 0)
+
+def _raw_of(shorter):
+    """The raw profile rebuilt from a shorter one by the rule of profile_levels.py: the asset with the profile's asset_id, and
+    every long table back to one entry per field or per tool."""
+    rows = lambda table: [{column: value for column, value in zip(table["columns"], row) if value is not None} for row in table["rows"]]
+    view = dict(shorter)
+    view["asset"] = {"asset_id": shorter["asset_id"], **shorter["asset"]}
+    view["normal_ranges"] = {entry.pop("field"): entry for entry in rows(shorter["normal_ranges"])}
+    view["tools"] = rows(shorter["tools"])
+    return view
+
+
+@pytest.mark.parametrize("row", ["base", "priced"])
+async def test_the_default_profile_keeps_every_rule_and_value_of_the_raw_profile_in_one_line(world, row):
+    """concise, the default, and detailed hold every key and value of raw, since the sub-agents read the rules from the profile
+    alone: only the asset named twice and the long tables of the normal ranges and the tools are written once, as one line of
+    JSON before the receipt; headline is one line; a level of another name is an error answer of a counted step. The control:
+    a level that drops a rule, such as the clock or a tool, or rounds a normal range fails."""
+    meter, engine, *_ = harness.memory_engine_episode(world, row)
+    raw = answer(await meter.call(TASK_SERVER, "get_asset_profile", {"response_format": "raw"}), row)
+    for level in ("concise", "detailed", ""):
+        reply = await meter.call(TASK_SERVER, "get_asset_profile", {"response_format": level} if level else {})
+        text = reply.text.split("\n")[0]
+        assert not reply.is_error and json.loads(text) == answer(reply, row) and _raw_of(answer(reply, row)) == raw == profile_levels.raw_of(answer(reply, row))
+        assert "asset_id" not in answer(reply, row)["asset"] and answer(reply, row)["normal_ranges"]["columns"] == ["field", "low", "high"]
+    headline = answer(await meter.call(TASK_SERVER, "get_asset_profile", {"response_format": "headline"}), row)
+    assert set(headline) == {"headline"} and "\n" not in headline["headline"] and raw["asset_id"] in headline["headline"]
+    steps = engine.steps
+    wrong = await meter.call(TASK_SERVER, "get_asset_profile", {"response_format": "compact"})
+    assert wrong.is_error and "response_format must be one of headline, concise, detailed, raw" in wrong.text and engine.steps == steps + 1
+
+
+async def test_the_profile_lists_the_level_that_the_layer_adds_to_the_rig_signature(world):
+    """get_asset_profile of the task server takes response_format, which its description names in one line, while the rig's
+    action server keeps its own signature. The control: the rig's definition served unchanged lacks the parameter."""
+    meter, *_ = harness.memory_engine_episode(world, "base")
+    listed = {t.name: t for t in await meter.listed_tools(TASK_SERVER)}["get_asset_profile"]
+    rig = {t.name: t for t in await build_rig_server(DEFINITIONS_ONLY).list_tools()}["get_asset_profile"]
+    assert listed.inputSchema["properties"]["response_format"] == {"type": "string", "default": "concise"}
+    assert "response_format" not in (rig.inputSchema.get("properties") or {}) and listed.description == rig.description + profile_levels.LEVELS_LINE

@@ -35,7 +35,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers import laye
 import servers.fmsr.main as fmsr_server
 import servers.iot.main as iot_server
 import servers.wo.main as wo_server
-from CausalDiagnosis.mcp_servers.utils import transcript
+from CausalDiagnosis.mcp_servers.utils import profile_levels, response_levels, transcript
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import aob_tool_contract as layer_contract, episode_start_and_replay as rows
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_tool_contract import AOB_SERVERS, TASK_SERVER, WORK_TYPE_MODES, history_order_id
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.in_memory_couchdb import SOURCE_AGENTS, SOURCE_TRIGGERS
@@ -51,6 +51,7 @@ SERVERS = {"iot": iot_server, "fmsr": fmsr_server, "wo": wo_server}
 # the AssetOpsBench tools every row lists, the hidden ones left out
 TOOLS = {server: layer_contract.tools_of(server) for server in AOB_SERVERS}
 READS = ("history", "latest_reading")
+PROFILE_TOOL = "get_asset_profile"  # the task tool whose answer the layer writes at a level of response_format (mcp_servers/utils/profile_levels.py)
 ASSET_ARGUMENTS = ("asset_id", "asset_num")  # the arguments of the AssetOpsBench tools that name an asset
 DEFINITIONS_ONLY = Path(os.devnull)  # the rig's action server is built for its tool definitions alone, so no call reaches it
 
@@ -150,6 +151,7 @@ class MeterError(RuntimeError):
 class Reply:
     text: str
     is_error: bool = False
+    body: str = None  # a shorter profile without the key unchanged, whose hash the transcript keeps to find a repeat of it
 
 
 class Meter:
@@ -172,7 +174,7 @@ class Meter:
         own, and for the task server those of the rig's action server, whose task tools it serves with their signatures."""
         app = (build_rig_server(DEFINITIONS_ONLY, self.config.asset_id, record=False, config=self.config.episode) if server == TASK_SERVER
                else SERVERS[server].mcp)
-        return [t for t in await app.list_tools() if t.name in self.tools_of(server)]
+        return [_with_levels(t) if server == TASK_SERVER and t.name == PROFILE_TOOL else t for t in await app.list_tools() if t.name in self.tools_of(server)]
 
     async def call(self, server, tool, arguments=None):
         """One call through the engine. The entry of the service is read after the lock is held, in the thread that serves
@@ -332,13 +334,30 @@ class Meter:
         if refusal:
             return self._close(session, TASK_SERVER, tool, arguments, before, envelope, None, 0, {}, refusal)
         result = envelope["result"]
-        if tool == "get_asset_profile":
+        if tool == PROFILE_TOOL:
             result = self.config.profile_view(result)
-        elif tool == "get_current_time":
-            result = {**result, "current_datetime": self.config.timeline.timestamp(result["time"])}  # as ARE's System app
-        reply = Reply(json.dumps(result, indent=2, ensure_ascii=False))
+            reply = self._profile(session, result, arguments.get("response_format", response_levels.DEFAULT_LEVEL))
+        else:
+            if tool == "get_current_time":
+                result = {**result, "current_datetime": self.config.timeline.timestamp(result["time"])}  # as ARE's System app
+            reply = Reply(json.dumps(result, indent=2, ensure_ascii=False))
         written = layer_contract.entries(TASK_SERVER)[tool]["class"] == "write"
         return self._close(session, TASK_SERVER, tool, arguments, before, envelope, reply, 0, result if written else _count_summary(reply))
+
+    @staticmethod
+    def _profile(session, view, response_format):
+        """The profile at the level response_format names: raw as the task server always wrote it, a shorter level as one line of
+        JSON, opened by the key unchanged where an earlier profile of the episode had the same text. A level of another name
+        is an error answer of the step the call took."""
+        level = response_levels.level_of(response_format)
+        if level is None:
+            return Reply(json.dumps({"error": response_levels.level_error()}, indent=2, ensure_ascii=False), True)
+        if level == "raw":
+            return Reply(json.dumps(view, indent=2, ensure_ascii=False))
+        answer = profile_levels.profile(view, level)
+        body = response_levels.text_of(answer, ensure_ascii=False)
+        step = response_levels.first_step(getattr(session, "folder", None), TASK_SERVER, PROFILE_TOOL, body, key="body_sha256")
+        return Reply(body if step is None else response_levels.text_of(response_levels.marked(answer, step), ensure_ascii=False), body=body)
 
     # ----- parts -----
     async def _step(self, session, action, sync=True):
@@ -410,9 +429,18 @@ class Meter:
         if refusal is not None:
             entry["refused"] = refusal
         session.log_call(entry)
-        sent = Reply(f"{reply.text}\n{line}" if self.config.row.receipt else reply.text, reply.is_error)
+        sent = Reply(f"{reply.text}\n{line}" if self.config.row.receipt else reply.text, reply.is_error, reply.body)
         session.answered(server, tool, arguments, sent)  # the text the agent reads, for the transcript of the episode
         return sent
+
+
+def _with_levels(tool):
+    """The rig's definition of the profile with the parameter response_format that the layer adds and its one line in the
+    description."""
+    schema = tool.inputSchema or {"type": "object", "properties": {}}
+    properties = {**schema.get("properties", {}), "response_format": {"type": "string", "default": response_levels.DEFAULT_LEVEL}}
+    return tool.model_copy(update={"inputSchema": {**schema, "properties": properties},
+                                   "description": (tool.description or "") + profile_levels.LEVELS_LINE})
 
 
 def rewrite_evidence(identifiers, observations, config):
@@ -539,9 +567,10 @@ class StateFileSessions:
                 server, tool, arguments, reply = session.answer
                 ended = ({**episode.end_fields(entered, **self._clocks), **episode.ledger_fields(session.state)} if session.stepped
                          else {"enter_n": entered["n"]})
+                body = {} if reply.body is None else {"body_sha256": transcript.text_sha256(reply.body)}  # Meter._profile
                 transcript.answered(self.state_path.parent, server, tool, arguments, reply.text, reply.is_error, stepped=session.stepped,
                                     wall=entered["wall"], released_sha256=transcript.file_sha256(episode.released_path(self.state_path)),
-                                    **episode.generated_fields(session.generated), **ended)
+                                    **episode.generated_fields(session.generated), **ended, **body)
 
 
 class _StateSession:

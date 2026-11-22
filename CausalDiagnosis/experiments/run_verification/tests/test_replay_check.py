@@ -304,6 +304,36 @@ def test_a_call_of_the_diagnostics_server_is_fed_against_the_evidence_it_read(sc
     assert message in replay_check.replay_run(run)["problems"]
 
 
+def test_an_episode_with_a_repeated_identical_call_of_the_diagnostics_server_replays(scripted, tmp_path):
+    """A shorter answer of the diagnostics server that an earlier call of the same tool returned opens with unchanged and the step
+    of that call, which the server reads from the transcript of the episode, so the answer depends on the calls before it. An
+    episode with a repeated identical call, as the servers of this tree record it, replays with no problem, through replay_run and
+    through the replay of verify_results_folder, while the record of the repeat without its marker is named. The control: a marker
+    that names what the replay does not write again, a clock reading, makes the replay of the recorded episode differ."""
+    from CausalDiagnosis.experiments.episode_runners.run_configuration import load_world
+    from CausalDiagnosis.experiments.run_verification.replay_check import run_record_checks
+    from CausalDiagnosis.experiments.table_definitions.training_variants import asset_of
+
+    run = _copy(scripted("rig"), tmp_path / "run")
+    ep_dir = run / EPISODE
+    lines = transcript.read(ep_dir)
+    k = next(place for place, line in enumerate(lines) if line["kind"] == "call" and line["server"] == CAUSAL_SERVER
+             and line["tool"] == "get_episode_evidence")
+    _write_transcript(ep_dir, lines[:k + 1] + [lines[k]] + lines[k + 1:])  # the agent asks the same again at once
+    meta = read_json(run / "run.json")
+    store, _reason = run_record_checks.store_of(meta)
+    world = load_world(None, asset_of(meta))
+    first = replay_check.replay_episode(ep_dir, meta, tmp_path / "served", store, world)
+    assert any(problem.startswith(f"{run.name}/{EPISODE}: line {k + 1} differs") for problem in first["problems"]), first["problems"]
+    served = transcript.read(tmp_path / "served" / EPISODE)
+    assert json.loads(served[k + 1]["answer"])["unchanged"] == json.loads(served[k]["answer"]).get("unchanged",
+                                                                                                    f"unchanged since your call at step {sum(line['kind'] == 'call' for line in served[:k + 1])}")
+    for name in (transcript.NAME, STATE_FILE):  # the record as the servers wrote it, whose state names the line of its open service
+        shutil.copyfile(tmp_path / "served" / EPISODE / name, ep_dir / name)
+    assert replay_check.replay_run(run)["problems"] == []
+    assert verify_results.check_replay(run)[1] == []
+
+
 def _moved(lines, k, after):
     """The lines of a transcript with the line at place k moved to stand right after the line at place after."""
     rest = [line for place, line in enumerate(lines) if place != k]

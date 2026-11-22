@@ -1,6 +1,7 @@
 """The transcript of an episode (servers/transcript.py, CausalDiagnosis/mcp_servers/utils/transcript_hooks.py): the numbering of its lines under one lock,
-the reader that refuses a torn or edited file, the wrapper at the two handlers of the MCP package, and the lines of the action
-server, each with the hash of the text its client received. No test states a value computed from the rig data."""
+the reader that refuses a torn or edited file, the start of a new episode, which keeps no raw answer of the one before it, the
+wrapper at the two handlers of the MCP package, and the lines of the action server, each with the hash of the text its client
+received. No test states a value computed from the rig data."""
 import asyncio
 import json
 import os
@@ -85,6 +86,23 @@ def test_lines_are_numbered_in_append_order_and_a_torn_or_renumbered_file_is_ref
         transcript.read(tmp_path)
     # a new episode in the folder starts a new record
     assert transcript.begin(tmp_path, wall=2.0) == 0 and [line["kind"] for line in transcript.read(tmp_path)] == ["start"]
+
+
+def test_a_new_episode_in_a_folder_keeps_no_raw_answer_of_the_episode_before_it(tmp_path):
+    def call(raw):
+        """One served call whose answer the server shortened from raw, or sent at raw with None."""
+        with transcript.serving({}):
+            if raw is not None:
+                transcript.keep_raw(raw)
+            return transcript.answered(tmp_path, "s", "t", {}, "short", False)
+
+    transcript.begin(tmp_path, wall=1.0)
+    assert call("raw of the first episode") == 1 and transcript.raw_answers(tmp_path) == {1: "raw of the first episode"}
+    assert transcript.begin(tmp_path, wall=2.0) == 0
+    assert transcript.raw_answers(tmp_path) == {} and not (tmp_path / transcript.RAW_NAME).exists()
+    # line 1 of the new episode, a call sent at raw, keeps no record, and a later record is that of its own answer
+    assert call(None) == 1 and transcript.raw_answers(tmp_path) == {}
+    assert call("raw of the second episode") == 2 and transcript.raw_answers(tmp_path) == {2: "raw of the second episode"}
 
 
 def test_an_answer_text_with_any_line_separator_stays_one_line(tmp_path):

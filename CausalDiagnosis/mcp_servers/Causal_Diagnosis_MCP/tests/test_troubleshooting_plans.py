@@ -519,7 +519,7 @@ def test_two_candidates_of_one_faulty_set_share_one_branch_one_walk_and_one_pred
         assert faulty_now(ranking.candidates[r - 1].current_combination) == branch.faulty_set
     records = {p["id"]: p for p in stored_records(episode)}
     assert records[branch.repair_plan.plan_prediction_id]["recovery"] == branch.predicted_outcome.recovery_if_acted
-    assert load_contract()["tools"]["rank_root_causes"]["parameters"] == {"top_k": "integer", "branch_detail": "string"}
+    assert load_contract()["tools"]["rank_root_causes"]["parameters"] == {"top_k": "integer", "branch_detail": "string", "response_format": "string"}
 
 
 def test_the_ranking_returns_the_first_top_k_by_mass_and_counts_the_rest(episode):

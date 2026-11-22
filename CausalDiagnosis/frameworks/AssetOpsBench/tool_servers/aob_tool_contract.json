@@ -62,7 +62,7 @@
       "cancel_workorder": {"hidden": "the engine approves, executes and closes every order, so an agent's write after the creation would bypass it"}
     },
     "task": {
-      "get_asset_profile": {"row": "base"},
+      "get_asset_profile": {"row": "base", "added_parameters": {"response_format": "string"}},
       "get_current_time": {"row": "real_time"},
       "wait_for_notification": {"row": "real_time"},
       "lookup_fix": {"row": "repair_rules"},

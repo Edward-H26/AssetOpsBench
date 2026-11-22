@@ -130,3 +130,20 @@ async def test_a_recorded_clock_gives_both_surfaces_the_recorded_wall_time(world
             ("start", START_WALL), ("handover", START_WALL), ("enter", START_WALL + 30.0), ("call", START_WALL + 30.0), ("exit", None)]
     assert [line["server"] for line in transcript.read(rig)[2:]] == [contract.ACTION_SERVER] * 3
     assert [line["server"] for line in transcript.read(aob)[2:]] == [TASK_SERVER] * 3
+
+@pytest.mark.parametrize("row", ["base", "priced"])
+async def test_a_repeated_profile_opens_with_the_call_that_first_returned_it_and_raw_never_does(world, tmp_path, row):
+    """The transcript keeps the hash of a shorter profile without its key unchanged, so a profile process per call finds the
+    first call that returned the same profile, counting every call of the episode, also where a receipt that differs on every
+    call follows it; raw is written as before. The control: a profile that hashes its whole text with the receipt is never
+    found again on the priced row."""
+    path = start(tmp_path, row)
+    calls = [(TASK_SERVER, "get_asset_profile", {}), ("iot", "sites", {}), (TASK_SERVER, "get_asset_profile", {}),
+             (TASK_SERVER, "get_asset_profile", {"response_format": "raw"}), (TASK_SERVER, "get_asset_profile", {"response_format": "raw"})]
+    texts = [sent_text(answer) for answer in (await play(path, calls))[0]]
+    first, again = (json.loads(text.split("\n")[0]) for text in (texts[0], texts[2]))
+    assert "unchanged" not in first and again == {"unchanged": "unchanged since your call at step 1", **first}
+    raw_once, raw_twice = (text.rpartition("\n")[0] if row == "priced" else text for text in texts[3:])  # without the receipt line
+    assert "unchanged" not in raw_twice and raw_once == raw_twice and raw_once.startswith("{\n")
+    lines = [line for line in transcript.read(tmp_path) if line["kind"] == "call"]
+    assert lines[0]["body_sha256"] == lines[2]["body_sha256"] and "body_sha256" not in lines[3]
