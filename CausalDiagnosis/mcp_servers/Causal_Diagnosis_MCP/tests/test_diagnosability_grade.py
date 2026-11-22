@@ -261,7 +261,11 @@ def test_a_rollout_reads_the_fits_of_an_episode_of_its_start_and_a_live_segment_
     models, rules, asked = load_models(), gr.default_rules(), []
     monkeypatch.setattr(gr, "grade", lambda view, serving, start, budget, rng, rollouts, samples: asked.append(serving(rng)) or None)
     table = gr.ensure_grades(models, rules, path=tmp_path / "grades.json", rollouts=1, samples=8)
-    monkeypatch.setattr(models, "without", lambda start: episode_models(start) if start == START else pytest.fail(f"fits without {start}"))
+    # the fits are built before the patch, which episode_models would otherwise reach again through load_models(); setitem on
+    # the instance dict, so that the undo deletes the key, where setattr would leave the bound method as an instance attribute
+    # of the process-wide models, shadowing Models.without for every later test
+    fits = episode_models(START)
+    monkeypatch.setitem(vars(models), "without", lambda start: fits if start == START else pytest.fail(f"fits without {start}"))
     assert table["grades"][gr.combo_key(START)] is None
     (effect, record, live), = asked
     assert effect is episode_models(START).effect

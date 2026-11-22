@@ -168,15 +168,17 @@ class Posterior:
                 counts[f] = counts.get(f, 0) + 1
         return {f: sums[f] / counts[f] for f in sums}
 
-    def attribution(self, top_index):
+    def attribution(self, top_index, effect=None):
         """E4: for the top combination at the latest readings, the share of every summary's predicted deviation that each
-        component explains, and the explained anomaly mass E_j = sum_k a_k s_kj."""
+        component explains, and the explained anomaly mass E_j = sum_k a_k s_kj, from the coefficients and the healthy
+        reference of effect, the belief's own effect model when None."""
+        effect = self.effect if effect is None else effect
         values = self.latest_values()
         combo = self.candidates[top_index]
-        terms = np.abs(self.effect.component_terms(combo))
+        terms = np.abs(effect.component_terms(combo))
         totals = terms.sum(axis=0)
         shares = np.divide(terms, totals, out=np.zeros_like(terms), where=totals > 0)
-        anomaly = self.effect.anomaly_scores(values)
+        anomaly = effect.anomaly_scores(values)
         index = self.space.field_index
         out = {}
         for j, c in enumerate(self.space.components):

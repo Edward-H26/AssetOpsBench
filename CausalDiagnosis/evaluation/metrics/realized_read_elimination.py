@@ -40,7 +40,8 @@ TOLERANCE = 1e-6  # relative difference within which a forecast's effective numb
 
 class Yardstick:
     """The belief of the server's filter over a prefix of the released evidence, under the fits of one models.json that the
-    server of the episode runs, which leave out the block of the combination the episode started in."""
+    server of the episode runs, which leave out the block of the combination the episode started in and, as the server's
+    belief does (CausalTools._belief_model), the blocks that the readings of the prefix come from."""
 
     def __init__(self, path, left_out=None):
         models = load_models(path)  # raises FileNotFoundError with the fit command when models.json is absent
@@ -49,18 +50,31 @@ class Yardstick:
         self.models = models.without(left_out)
         self.backend = EffectDiagnostics(self.models, block=True, resampled=False)
         self.digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+        self._backends = {(): self.backend}
+
+    def _backend(self, played):
+        """The filter's model when the evidence holds readings of the blocks of played (combinations in the order of their first
+        reading, Models.served_blocks), one per set."""
+        if played not in self._backends:
+            fits = self.models.source.without_longest(self.models.start, list(played))
+            self._backends[played] = EffectDiagnostics(fits, block=True, resampled=False)
+        return self._backends[played]
 
     def view(self, released):
         """The view of the asset that the server builds from the released rules (adapter.CausalTools._released)."""
         return profile_view(released["rules"])
 
+    def _served(self, episode):
+        """The blocks that the readings of the evidence come from (Models.served_blocks), which the server's belief leaves out."""
+        return tuple(self.models.source.served_blocks([{"values": reading.values} for reading in episode.readings]))
+
     def effective(self, view, episode):
         """N(b) of the belief the filter replays over the episode's evidence."""
-        return self.backend.replay(view, episode).posterior().effective_hypotheses()
+        return self._backend(self._served(episode)).replay(view, episode).posterior().effective_hypotheses()
 
     def rate(self, view, episode):
         """The expected production loss per cycle of the belief the filter replays, at the episode's cycle."""
-        post = self.backend.replay(view, episode).posterior()
+        post = self._backend(self._served(episode)).replay(view, episode).posterior()
         return expected_downtime_rate(post.candidates, post.probabilities, costs(view, episode.time))
 
     def group_fields(self, group):
@@ -99,7 +113,7 @@ def read_records(released, stick=None, left_out=None):
     """One record per paid read of the released evidence in event order: the event's index, sensor group and cycles, N(b)
     before and after the read, the realized elimination, the loss rate of the belief the read met and the cost of E21 as
     charged. Empty, without loading the models, when the evidence holds no read. left_out is the combination the episode
-    started in, whose block the fits of the replay leave out, as the server's do."""
+    started in, whose block the fits of the replay leave out, as the server's do, with the blocks that the readings come from."""
     events = released.get("events", [])
     if not any(e.get("event") == "read" for e in events):
         return []

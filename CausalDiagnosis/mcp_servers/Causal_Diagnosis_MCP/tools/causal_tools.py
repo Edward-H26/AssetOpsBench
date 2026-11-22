@@ -30,6 +30,9 @@ ABSTENTION_RULES = ("decision", "fixed_cut")  # E10, or the v1 posterior cut kep
 # the candidates a ranking returns when the caller names no number; a caller may ask for more, with no maximum
 DEFAULT_TOP_K = 5
 DEFAULT_ABSTENTION_CUT = 0.95  # the v1 cut, used only under abstention_rule fixed_cut and named in the result
+# the share above the reference build that the budget of a build of the belief's fits adds, so that a rebuild, which leaves out
+# at least the blocks of the reference and builds less, stays inside it through the spread of machine load between builds
+PAD_MARGIN = 0.5
 
 
 def verifying_read_price(view, components, events):
@@ -95,6 +98,7 @@ class CausalTools:
         # the server fields of a decision threshold card: launch options that launcher.py casts from key=value arguments, absent
         # on every row, so that each keeps the default above
         self.e10_margin, self.batch_cap, self.reserve_plans = e10_margin, batch_cap, reserve_plans
+        self._belief_key, self._belief_backend, self._pad_seconds = None, None, None
 
     # ----- the episode and the belief -----
     def _released(self, note=True):
@@ -115,13 +119,54 @@ class CausalTools:
         rules = dict(raw["rules"], asset_id=raw["asset_id"]) if "asset_id" in raw else raw["rules"]
         return episode_reading.Released(raw, profile_view(rules), parse_released(raw), raw["status"], raw["events"])
 
-    def _belief(self, released):
+    def released_view(self):
+        """The view of the asset of the released evidence, from which a shorter level of an answer names the sensor groups. It
+        notes no hash, since the line of the call names the evidence the tool read, and the rules it reads hold for the whole
+        episode."""
+        return self._released(note=False).view
+
+    def _belief_model(self, released):
+        """The model the filter reads: the fits without the start's block and without the blocks that the released readings come
+        from (Models.served_blocks), so that no fit that weighs a reading has read the block it came from. Every number about a
+        named combination stays on the fits without the start's block alone (self.model). The fits are built again whenever the
+        released readings differ from those of the last build, whether or not a block was added, and every build is padded to one
+        budget: the time of a reference build on the same path that leaves out the start's block alone, the fewest blocks and so
+        the most work, times one plus PAD_MARGIN, raised to any slower build of the process, so that the time of a call follows the
+        released evidence and not the blocks."""
+        numbers = tuple(int(o["n"]) for o in released.raw.get("observations", []))
+        source = getattr(self.models, "source", None)
+        if source is None:  # fits handed in without their models file, as the synthetic models of the tests
+            return self.model
+        if self._belief_key != numbers:
+            if self._pad_seconds is None:
+                self._pad_seconds = self._timed_build(source, [self.models.start])[1] * (1 + PAD_MARGIN)
+            backend, elapsed = self._timed_build(source, source.served_blocks(released.raw.get("observations", [])))
+            self._pad_seconds = max(self._pad_seconds, elapsed)
+            time.sleep(self._pad_seconds - elapsed)
+            self._belief_backend, self._belief_key = backend, numbers
+        return self._belief_backend
+
+    def _timed_build(self, source, blocks):
+        """(the model of the belief without the start's block and the given blocks, the seconds its build took). The resampled
+        tables of E6 are drawn inside the build, since their cost follows the number of blocks the fits keep."""
+        started = time.perf_counter()
+        fits = source.without_longest(self.models.start, blocks)
+        backend = diagnostics_backend(EffectDiagnostics(fits, block=self.ranking_model != "joint"))
+        fits.effect.tables(fits.effect.resample_count)
+        return backend, time.perf_counter() - started
+
+    def _belief(self, released, without=()):
         """The filter over the released evidence and the belief now, the masses replaced by the urn model's under
-        discriminant_urn."""
-        flt = self.model.replay(released.view, released.episode)
+        discriminant_urn. without names the readings, by their number, that the replay leaves out on the same fits, which stay
+        those built for the released evidence, so the belief before a reading and the belief after it differ by the reading alone
+        and leaving the readings out builds no fits."""
+        episode = released.episode
+        if without:
+            episode = episode._replace(readings=[r for r in episode.readings if r.n not in without])
+        flt = self._belief_model(released).replay(released.view, episode)
         post = flt.posterior()
         if self.ranking_model == "discriminant_urn":
-            masses = urn_probabilities(self.models.urn, self.models.space, released.episode.readings, released.episode.closures)
+            masses = urn_probabilities(self.models.urn, self.models.space, episode.readings, episode.closures)
             post.override([masses.get(h, 0.0) for h in post.candidates])
         return flt, post
 
@@ -135,7 +180,7 @@ class CausalTools:
                   "taking only when every component it depends on is healthy, and every reading updates the belief by the likelihood of "
                   "the effect model where the rig served it, a reading of a read of zero duration and a closure settled while the clock "
                   "stood at a cycle before the rule cards of that cycle, in the order they were released; the server never reads a seed "
-                  "or the split, and no result names the start"),
+                  "or the split, and no result names the start or a block the episode has served"),
                  tool_texts.sources_text(view), tool_texts.A_DEDUPE]
         notes.append(tool_texts.MODEL_TEXTS[self.ranking_model])
         return notes
@@ -242,7 +287,7 @@ class CausalTools:
         current, levels = post.current_marginals(), post.level_probability()
         read_first, best, separating, abstention_text, read = self._rule_abstention(view, post, cost, decision, order, levels, serving, released)
         compact = detail == "compact"  # the default reply: what an agent that follows the advice reads, and nothing it does not
-        attribution = None if compact else post.attribution(order[0])[0]
+        attribution = None if compact else post.attribution(order[0], self.models.effect)[0]
         stability = post.stability()
         # the first top_k candidates with positive mass, by mass and then by the combination in component order (post.order); the
         # rest is counted in more_candidates, and the advice and the reserve below still read every candidate
@@ -799,17 +844,25 @@ class CausalTools:
                                       recovered_text or "not observable: another repair changed the combination")
         checks, combined, p_value, consistent = self.model.outcome_check(prediction, observed.values)
         channels = [ChannelCheck(field=f, predicted=m, observed=o, low=lo, high=hi, score=s) for f, m, o, lo, hi, s in checks]
-        recovery_posterior = None
+        recovery_posterior = confirmation = None
         if components:
             # the belief now holds every released reading and closure, the readings before the repair included, and is the
-            # belief that a ranking on the same evidence reports
+            # belief that a ranking on the same evidence reports, on the fits of the belief
             _flt, now = self._belief(released)
-            recovery_posterior = float(now.probabilities[now.candidates.index(view.healthy_combination())])
+            belief = dict(zip(now.candidates, map(float, now.probabilities)))
+            recovery_posterior = belief[view.healthy_combination()]
             recovered_text = (f"predicted recovery {prediction['recovery']:.3f}, mass of the healthy combination in the belief now "
                               f"{recovery_posterior:.3f}")
-        return self._verification(view, prediction, "verified", observed, channels, (combined, p_value, consistent), recovered_text, recovery_posterior, since)
+            predicted = parse_combo(prediction["predicted_combination"])
+            # after the call above, so that the fits are those built for the released evidence even after a prediction made again
+            _flt, earlier = self._belief(released, without={r.n for r in later})
+            confirmation = (belief[predicted], *most_probable(belief, self.models.space),
+                            *intervention_effect.reading_ratio(dict(zip(earlier.candidates, map(float, earlier.probabilities))), belief, predicted))
+        return self._verification(view, prediction, "verified", observed, channels, (combined, p_value, consistent), recovered_text, recovery_posterior, since,
+                                  confirmation)
 
-    def _verification(self, view, prediction, status, observed, channels, verdict, recovery_status, recovery_posterior=None, since=None):
+    def _verification(self, view, prediction, status, observed, channels, verdict, recovery_status, recovery_posterior=None, since=None,
+                      confirmation=None):
         interval_ = prediction.get("recovery_interval")
         reachable = self.models.calibration.level_reachable(prediction["alpha"])
         n = len(channels)
@@ -823,6 +876,26 @@ class CausalTools:
                             f"{tool_texts.combo_text(view, parse_combo(prediction['predicted_combination']))}, the predicted combination, the most probable "
                             f"after the action, with mass {prediction['predicted_mass']:.3f}: the largest standardized deviation over {n} channels is "
                             f"{combined:.2f}, conformal p value {p_value:.3f}")
+        confirmed = mass = top = top_mass = ratio = None
+        confirmed_text = ""
+        if confirmation is not None:
+            mass, top, top_mass, rival, ratio = confirmation
+            confirmed = intervention_effect.confirms(consistent, mass, ratio)
+            threshold, minimum = intervention_effect.CONFIRMATION_MASS, intervention_effect.CONFIRMATION_RATIO
+            if confirmed:
+                confirmed_text = (f"; confirmed: the belief now puts {mass:.3f} on the predicted combination, at least {threshold:g}, and the verifying "
+                                  f"readings do not favor its strongest rival, likelihood ratio {ratio:.3g}, at least {minimum:g}")
+            else:
+                short = "the reading is inconsistent" if not consistent else (f"below {threshold:g}" if mass < threshold else f"at least {threshold:g}")
+                if ratio is None:
+                    guard = ", and the likelihood ratio of the verifying readings is undefined, a mass being zero"
+                elif ratio < minimum:
+                    guard = (f", and the verifying readings favor its strongest rival {tool_texts.combo_text(view, rival)} over it, "
+                             f"likelihood ratio {ratio:.3g}, below {minimum:g}")
+                else:
+                    guard = ""
+                confirmed_text = (f"; not confirmed: the belief now puts {mass:.3f} on the predicted combination, {short}, and {top_mass:.3f} on "
+                                  f"its most probable combination {tool_texts.combo_text(view, top)}{guard}")
         return OutcomeVerification(
             prediction_id=prediction["id"], action=prediction["action"], status=status, observation=observed.n if observed else None,
             observed_t=observed.t if observed else None, channels=channels, n_channels=n, alpha=prediction["alpha"], level_reachable=reachable,
@@ -830,10 +903,13 @@ class CausalTools:
             p_value=p_value, consistent=consistent, recovery_predicted=prediction["recovery"],
             recovery_interval_low=None if interval_ is None else interval_[0], recovery_interval_high=None if interval_ is None else interval_[1],
             recovery_posterior=recovery_posterior, predicted_combination=dict(zip(view.components, parse_combo(prediction["predicted_combination"]))),
-            predicted_mass=prediction["predicted_mass"], recovery_status=recovery_status, evidence_ids=ids, time_window=window,
-            assumptions=self._model_assumptions(view) + [tool_texts.A_E14, tool_texts.A_E16, f"alpha = {prediction['alpha']:g} is the declared error level of the verdict", tool_texts.A_TIME],
+            predicted_mass=prediction["predicted_mass"], confirmed=confirmed, predicted_posterior=mass,
+            belief_top_combination=None if top is None else dict(zip(view.components, top)), belief_top_mass=top_mass, reading_ratio=ratio,
+            recovery_status=recovery_status, evidence_ids=ids, time_window=window,
+            assumptions=self._model_assumptions(view) + [tool_texts.A_E14, tool_texts.A_E16, tool_texts.A_CONFIRM,
+                                                         f"alpha = {prediction['alpha']:g} is the declared error level of the verdict", tool_texts.A_TIME],
             uncertainty=Uncertainty(kind="conformal_p_value", value=1.0 if p_value is None else p_value),
-            message=(f"{prediction['id']} ({prediction['action']}): {status}{verdict_text}; recovery {recovery_status}"
+            message=(f"{prediction['id']} ({prediction['action']}): {status}{verdict_text}{confirmed_text}; recovery {recovery_status}"
                      + (f"; made again for cycle {prediction['retimed']}, when its work orders were created, from the evidence its "
                         "estimate held" if "retimed" in prediction else "")
                      + ("" if reachable else f"; the calibration blocks cannot carry alpha {prediction['alpha']:g}, so no reading can be "

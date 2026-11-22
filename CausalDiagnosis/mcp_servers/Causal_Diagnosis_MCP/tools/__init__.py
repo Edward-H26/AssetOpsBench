@@ -8,7 +8,8 @@ write are predictions.json beside the released evidence, where estimate_interven
 of rank_root_causes store their predictions and verify_outcome reads them back, and the empty lock file beside it, which
 every store holds while it adds a record. The server that serves the tools appends
 every answer to the transcript of the episode (servers/transcript.py). Every threshold in a result traces to a
-price, a duration, a downtime rate or the declared error level, and the assumptions of the result say how. The wall time of
+price, a duration, a downtime rate, the declared error level, the declared confirmation mass or the declared
+confirmation ratio, and the assumptions of the result say how. The wall time of
 every ranking goes to the server's log on stderr, where the job's log keeps it. Where the clock of an episode counts the
 seconds between two calls of the action servers, the seconds of a call to this server lie between two such calls and are
 counted with them.

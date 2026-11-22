@@ -431,7 +431,7 @@ Question: Check whether the repair of CHL-A100 did what prediction pred/1 said.
 Thought 1: I need the verification of prediction pred/1 from CausalDiagnosisAgent.
 Action 1: CausalDiagnosisAgent
 Action Input 1: request=verify the outcome of prediction pred/1
-Observation 1: Prediction pred/1 of the action replace:compressor is verified against the reading after the repair: the outcome is consistent with the prediction and the recovery posterior is 0.97.
+Observation 1: Prediction pred/1 of the action replace:compressor is verified against the reading after the repair: the outcome is consistent with the prediction, the belief after the reading confirms it against its strongest rival and the recovery posterior is 0.97.
 
 Question: How likely is each candidate root cause of CHL-A100 after the last reading?
 Thought 1: I need a new ranking of the candidate root causes from CausalDiagnosisAgent.
@@ -661,8 +661,8 @@ Action Input 2: The predicted effect of replacing the compressor is prediction p
 Thought 1: I need to verify prediction pred/1 against the reading after the repair.
 Action 1: verify_outcome
 Action Input 1: prediction_id=pred/1
-Observation 1: {"prediction_id": "pred/1", "action": "replace:compressor", "status": "verified", "consistent": true, "recovery_posterior": 0.97}
+Observation 1: {"prediction_id": "pred/1", "action": "replace:compressor", "status": "verified", "consistent": true, "confirmed": true, "recovery_posterior": 0.97}
 Thought 2: I now have the verification.
 Action 2: Finish
-Action Input 2: Prediction pred/1 of the action replace:compressor is verified against the reading after the repair: the outcome is consistent with the prediction and the recovery posterior is 0.97.""",
+Action Input 2: Prediction pred/1 of the action replace:compressor is verified against the reading after the repair: the outcome is consistent with the prediction, the belief after the reading confirms it against its strongest rival and the recovery posterior is 0.97.""",
 }

@@ -43,3 +43,20 @@ def scored_combination_text(verdict):
     if not combination:
         return ""
     return f", predicted combination ({combination_text(combination)}), the most probable after the repair, with mass {fmt(verdict.get('predicted_mass'))}"
+
+
+def confirmation_text(verdict):
+    """Whether the belief after the verifying reading confirms the predicted combination, with the mass it puts there and, when it
+    does not, its most probable combination with that mass and, where the verifying readings favor its strongest rival, that
+    ratio; nothing for a verdict that carries no confirmation, as one of a monitor prediction or of an earlier version does."""
+    confirmed = verdict.get("confirmed")
+    if confirmed is None:
+        return ""
+    said = f"the belief now puts {fmt(verdict.get('predicted_posterior'))} on the predicted combination"
+    if confirmed:
+        return f", confirmed: {said}"
+    top = combination_text(verdict.get("belief_top_combination") or {})
+    ratio = verdict.get("reading_ratio")
+    # a likelihood ratio below 1 is a reading that favors the rival, whatever ratio the server confirms at
+    favored = f", and the verifying readings favor its strongest rival over it, likelihood ratio {ratio:.3g}" if ratio is not None and ratio < 1 else ""
+    return f", not confirmed: {said} and {fmt(verdict.get('belief_top_mass'))} on its most probable combination ({top}){favored}"

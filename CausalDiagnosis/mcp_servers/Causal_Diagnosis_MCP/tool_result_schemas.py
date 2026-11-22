@@ -366,6 +366,14 @@ class OutcomeVerification(ToolResult):
     recovery_posterior: Optional[float]
     predicted_combination: Optional[Dict[str, int]]  # the most probable combination after the action, which the verdict scores
     predicted_mass: Optional[float]
+    # whether the belief now confirms the predicted combination, the mass it puts on it, its most probable combination with that
+    # mass, and the likelihood ratio of the readings that verify the repair for the predicted combination against its strongest rival
+    # (None where a mass is zero); None where no repair was verified, and absent from an answer of an earlier version
+    confirmed: Optional[bool] = None
+    predicted_posterior: Optional[float] = None
+    belief_top_combination: Optional[Dict[str, int]] = None
+    belief_top_mass: Optional[float] = None
+    reading_ratio: Optional[float] = None
     recovery_status: str
 
 
@@ -530,4 +538,9 @@ class VerificationConcise(ToolResult):
     recovery_posterior: Optional[float]
     predicted_combination: Optional[Dict[str, int]]
     predicted_mass: Optional[float]
+    confirmed: Optional[bool] = None
+    predicted_posterior: Optional[float] = None
+    belief_top_combination: Optional[Dict[str, int]] = None
+    belief_top_mass: Optional[float] = None
+    reading_ratio: Optional[float] = None
     recovery_status: str

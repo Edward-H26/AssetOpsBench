@@ -834,8 +834,9 @@ class CausalLoopRunner:
     async def _verify_ready(self):
         """The verdict of every repair whose orders have all closed and for which a reading at or after the last close exists, which only a
         plan's read step takes: with the server verify_outcome on its prediction, after the ranking of the belief after
-        the repair, and without it the normal ranges of the first reading after the close (board.band_verdict). Returns the verdicts and
-        the refuted plans that backtracking recorded."""
+        the repair, and without it the normal ranges of the first reading after the close (board.band_verdict). With the server a
+        verdict that the belief did not confirm is asked again once a plan named a later reading (board.unconfirmed_verifications),
+        and the latest verdict replaces it. Returns the verdicts and the refuted plans that backtracking recorded."""
         board, verified = self.board, []
         for key, closed_t in board.pending_verifications():
             if board.over:
@@ -849,17 +850,27 @@ class CausalLoopRunner:
                 board.verifications[key] = verdict
                 verified.append((key, verdict))
                 continue
-            if not board.ranking_is_current():  # the belief after the repair, which the refutation test reads
-                await self._rank()
-            verdict = await self._diag("verify", prediction_id=key)
-            if "error" in verdict:
-                board.notes.append(f"the verification of {key} failed: {verdict['error']}")
-                board.verifications[key] = {"status": f"error: {verdict['error']}", "consistent": None, "recovery_predicted": None,
-                                            "recovery_posterior": None, "recovery_status": "", "message": verdict["error"]}
-                continue
-            board.add_verification(verdict)
-            verified.append((key, verdict))
+            await self._server_verdict(key, verified)
+        for key in board.unconfirmed_verifications():
+            if board.over:
+                break
+            await self._server_verdict(key, verified)
         return verified, await self._refute(verified)
+
+    async def _server_verdict(self, key, verified):
+        """verify_outcome on the prediction key, after the ranking of the belief now, which the refutation test reads; the verdict goes
+        on the board and into verified, an error into a note and a verdict that names it."""
+        board = self.board
+        if not board.ranking_is_current():
+            await self._rank()
+        verdict = await self._diag("verify", prediction_id=key)
+        if "error" in verdict:
+            board.add_note(f"the verification of {key} failed: {verdict['error']}", tie=("verification", key))
+            board.verifications[key] = {"status": f"error: {verdict['error']}", "consistent": None, "recovery_predicted": None,
+                                        "recovery_posterior": None, "recovery_status": "", "message": verdict["error"]}
+            return
+        board.add_verification(verdict)
+        verified.append((key, verdict))
 
     def _verifying_reading(self, key, closed_t):
         """The first reading at or after the last close of the repair whose orders cite key, of a group that verifies the repaired

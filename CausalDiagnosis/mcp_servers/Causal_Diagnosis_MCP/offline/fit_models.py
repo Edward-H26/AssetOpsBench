@@ -2,10 +2,11 @@
 the public rig data and never committed; ensure_models fits it on first use in the drivers and the tests
 (CausalDiagnosis/docs/causal-diagnosis-mcp.md, section The models file).
 
-Format 8 holds the space of the asset, the stable cycles of every recorded combination, the folds of the stratified cross fit
+Format 9 holds the space of the asset, the stable cycles of every recorded combination, the folds of the stratified cross fit
 of the environment's classifiers, the development blocks, which are the recorded combinations outside the test set of the
 asset, and for every recorded combination the form of its model: the interaction pairs and the covariance estimator, each with
-its log and the blocks its choice left out, and the report of the block effects. The entry form records the rule, where each
+its log and the blocks its choice left out, the grouping of its covariances (offline/covariance_grouping.py) with the gain
+that chose it, and the report of the block effects. The entry form records the rule, where each
 part of the form was chosen and a hash of the chosen forms. The fits of an episode leave out the block of its start, so the
 server builds them at launch from these cycles and the form of the start, in one fit per hypothesis that also leaves out the
 hypothesis's own block or the second block. The same file serves every episode. The fit reads the fault rule of the starts
@@ -25,21 +26,24 @@ from pathlib import Path
 from CausalDiagnosis.utils.atomic_writes_and_locks import files_digest, refuse_writing, write_json_atomically
 from CausalDiagnosis.datasets.dataset_loader.dataset_packages import table_path
 
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import LIVE_WINDOW, asset_folder, asset_view, default_facts_path, development_blocks, folds_of, is_default_asset, recorded_blocks, require_same_data
-from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import BLOCK_EFFECTS, COVARIANCE_ESTIMATORS, FOLD_SEED, FOLDS, EffectSpace, combo_key, model_forms
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import LIVE_WINDOW, asset_folder, asset_view, default_facts_path, development_blocks, folds_of, is_default_asset, recorded_blocks, require_same_data, served_segments
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import BLOCK_EFFECTS, COVARIANCE_ESTIMATORS, FOLD_SEED, FOLDS, EffectSpace, RecordedBlocks, combo_key, model_forms
+from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.covariance_grouping import GRID, candidates, select_groupings
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.belief.belief_at_one_cycle import DEFAULT_RANKING_MODEL, RANKING_MODELS
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import STATISTICS, file_sha256
 
 MODELS_PATH = table_path(Path(__file__).resolve().with_name("models.json"))
 RECORDED_LEVELS = "recorded_levels"  # the evidence kind whose stable cycles the model code fits
-MODELS_FORMAT = 8  # 8 since the second block that a fit leaves out is a combination next to the start when one is recorded
+MODELS_FORMAT = 9  # 9 since the form of every start holds the grouping of its covariances
 RESAMPLES, RESAMPLE_SEED = 200, 0
 RULE = ("one fit per hypothesis on the stable cycles of the recorded combinations other than the episode's start and the hypothesis, "
         "or, for a hypothesis without a block of its own among them, other than the start and one second block that a hash of the "
         "start's levels picks among the recorded combinations one component away from the start, or among all of them when none "
         "is recorded, so that every fit leaves out two blocks, for its mean, its within covariance by the covariance estimator "
-        "of the start's form and its block covariance of leave one block out misfits; the form of every start chosen before any episode "
-        "as the entry form states; the conformal calibration once per start on the blocks without the start's")
+        "of the start's form and its block covariance of leave one block out misfits, each mixed with the centred sample covariance of the "
+        "blocks at the hypothesis's level of the component that the grouping of the start's form names, without the same left out "
+        "block, at one minus its weight; the form of every start chosen before any episode as the entry form states; the conformal "
+        "calibration once per start on the blocks without the start's")
 FORM_RULE = ("the development blocks are the recorded combinations outside the test set; a part of the form that the development "
              "blocks identify is chosen on them, for a start among them on the others; a part that they do not identify is chosen once "
              "per start on every recorded block but the two that the fit of the start's own hypothesis leaves out, the start's and its "
@@ -49,7 +53,9 @@ FORM_RULE = ("the development blocks are the recorded combinations outside the t
              "interaction pairs are chosen by forward selection on the held out log likelihood of the cycles, on the development blocks "
              "when every pool of them that the rule uses identifies every pair in every training fold, and per start otherwise; the "
              "block effect is the registered ranking model, and its held out density at window level is reported for both registered "
-             "values and chooses nothing; the entry parts says where each part was chosen")
+             "values and chooses nothing; the grouping of the covariances is the pooled form or a component and a weight, the candidate of "
+             "the largest held out log score of the true start over the development starts other than the start, pooled unless it wins by "
+             "more than one standard error of the paired total, the nested gain reported; the entry parts says where each part was chosen")
 FORM_WINDOW = LIVE_WINDOW  # the window of the window means, the width of the live window that the environment serves
 REFIT = "Remove it and fit again with `python -m CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.fit_models`."
 
@@ -64,6 +70,10 @@ def fit(facts_path, resamples=RESAMPLES, seed=RESAMPLE_SEED, asset_id=None):
     development = development_blocks(view, blocks)
     forms, parts = model_forms(space, blocks, development, fold_of, FORM_WINDOW)
     parts["block_effect"]["value"] = DEFAULT_RANKING_MODEL
+    chosen, report, scores = select_groupings(RecordedBlocks(space, blocks, window=FORM_WINDOW), forms, development, view, served_segments())
+    for start, form in forms.items():
+        form["grouping"] = grouping_json(space, chosen[start])
+    parts["grouping"] = {"chosen": "per_start", "nested_gain": report}
     out = {
         "format": MODELS_FORMAT,
         "generated": datetime.date.today().isoformat(),
@@ -76,11 +86,21 @@ def fit(facts_path, resamples=RESAMPLES, seed=RESAMPLE_SEED, asset_id=None):
         "folds": {combo_key(h): int(fold_of[h]) for h in recorded},
         "blocks": {combo_key(h): blocks[h].tolist() for h in recorded},
         "form": {"rule": FORM_RULE, "window": FORM_WINDOW, "covariances": list(COVARIANCE_ESTIMATORS), "block_effects": list(BLOCK_EFFECTS),
-                 "development": [combo_key(h) for h in development], "parts": parts},
+                 "development": [combo_key(h) for h in development], "parts": parts,
+                 "grouping": {"weights": list(GRID), "candidates": [None if c is None else [space.components[c[0]], c[1]] for c in candidates(space)],
+                              "scores": {combo_key(s): v for s, v in scores.items()}}},
         "selections": {combo_key(start): selection_json(space, form) for start, form in forms.items()},
     }
     out["form"]["sha256"] = form_sha256(out)
     return out
+
+
+def grouping_json(space, choice):
+    """The grouping of one start as models.json holds it: the component by name and the weight, both null for the pooled form,
+    with the gain over the pooled form and its standard error that chose it."""
+    candidate = choice["candidate"]
+    return {"component": None if candidate is None else space.components[candidate[0]], "weight": None if candidate is None else candidate[1],
+            "gain": choice.get("gain", 0.0), "se": choice.get("se", 0.0)}
 
 
 def selection_json(space, form):
@@ -95,7 +115,8 @@ def form_sha256(models):
     """The hash of the chosen forms of a models file: the development blocks, where each part was chosen, and the pairs and the
     covariance estimator of every start. A freeze record can name it, so that a refit that chose another form is seen."""
     chosen = {"development": models["form"]["development"], "parts": models["form"]["parts"],
-              "selections": {key: {k: s[k] for k in ("pairs", "covariance")} for key, s in models["selections"].items()}}
+              "selections": {key: {**{k: s[k] for k in ("pairs", "covariance")}, "grouping": [s["grouping"]["component"], s["grouping"]["weight"]]}
+                             for key, s in models["selections"].items()}}
     return hashlib.sha256(json.dumps(chosen, sort_keys=True).encode()).hexdigest()
 
 
@@ -198,6 +219,7 @@ def main(argv=None):
     estimators = sorted({s["covariance"] for s in out["selections"].values()})
     print(f"wrote {args.out}: format {out['format']}, {out['fit']['fitted']} combinations, {len(out['form']['development'])} development blocks, "
           f"pairs chosen {out['form']['parts']['pairs']['chosen']}, {len(distinct)} distinct pair set(s), covariance {', '.join(estimators)}, "
+          f"grouping {sorted({(s['grouping']['component'], s['grouping']['weight']) for s in out['selections'].values()}, key=str)}, "
           f"form {out['form']['sha256'][:12]}, {args.out.stat().st_size} bytes")
 
 

@@ -1337,6 +1337,65 @@ def test_the_closing_summary_names_the_most_probable_combination_after_the_repai
             "the most probable after the repair, with mass 0.912.") in summary_turn(board, 6)
 
 
+def test_the_board_keeps_whether_the_server_confirmed_each_verdict(tmp_path):
+    """Through the CausalDiagnosis MCP on the path that ships: every verdict that the server verified reaches the board with whether
+    the belief after the reading confirms it, the mass of the predicted combination in that belief and its most probable combination
+    with its mass, so the status line and the rows of the predictions read the server's own answer."""
+    planner = ScriptedPlanner(lambda prompt, call: pytest.fail("the rule only controller must not ask for a plan"))
+    ep_dir, _row, _backend = _play(tmp_path, planner, {"rule_only": True})
+    verified = [v for v in read_json(ep_dir / "plans.json")["board"]["verifications"].values() if v["status"] == "verified"]
+    assert verified and all(v["confirmed"] in (True, False) and 0 <= v["predicted_posterior"] <= 1 and 0 < v["belief_top_mass"] <= 1
+                            and set(v["belief_top_combination"]) == set(v["predicted_combination"]) and v["reading_ratio"] > 0 for v in verified)
+
+
+@pytest.mark.parametrize("confirmed", [False, True])
+def test_the_board_and_the_summary_say_whether_the_belief_confirms_a_verified_prediction(confirmed):
+    """A verdict of verify_outcome says whether the belief after the reading confirms the prediction, and when it does not, the row of
+    the prediction and the closing summary name the most probable combination of the belief with its mass; a confirmed verdict says so
+    with the mass of the predicted combination."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import summary_turn
+    board = _synthetic_board(read_first=False)
+    board.add_order({"work_order": {"id": "wo-1", "component": "pump", "created_t": 1, "expected_close_t": 6, "status": "open"}}, "pred/b1")
+    board.add_changes({"alarms": [], "work_orders_closed": [{"id": "wo-1", "component": "pump", "source": "agent", "closed_t": 6}]})
+    board.add_verification({"prediction_id": "pred/b1", "status": "verified", "consistent": True, "recovery_predicted": 0.6,
+                            "recovery_posterior": 0.93, "predicted_combination": {"cooler": 100, "valve": 100, "pump": 0, "accumulator": 130},
+                            "predicted_mass": 0.912, "recovery_status": "", "message": "pred/b1 (replace:pump): verified", "confirmed": confirmed,
+                            "predicted_posterior": 0.97 if confirmed else 0.6,
+                            "belief_top_combination": {"cooler": 100, "valve": 100, "pump": 0, "accumulator": 130} if confirmed
+                            else {"cooler": 100, "valve": 90, "pump": 0, "accumulator": 130}, "belief_top_mass": 0.97 if confirmed else 0.35})
+    said = (", confirmed: the belief now puts 0.970 on the predicted combination" if confirmed else
+            ", not confirmed: the belief now puts 0.600 on the predicted combination and 0.350 on its most probable combination "
+            "(cooler 100, valve 90, pump 0, accumulator 130)")
+    row = next(line for line in _section(board.render(), "## Predictions").splitlines() if line.startswith("| pred/b1 |"))
+    assert said in row and said in summary_turn(board, 6)
+
+
+@pytest.mark.parametrize("confirmed, ratio, favored", [(False, 0.021, True), (False, 4.0, False), (False, None, False), (True, 12.4, False)])
+def test_the_board_says_when_the_verifying_readings_favor_the_strongest_rival_of_a_prediction_that_is_not_confirmed(confirmed, ratio, favored):
+    """The likelihood ratio of the verifying readings for the predicted combination against its strongest rival reaches the board
+    with the verdict. A verdict that is not confirmed and carries a ratio below 1 says that the readings favor the rival after the most
+    probable combination of the belief, which is then the predicted one; a verdict whose ratio is 1 or more or undefined, and a confirmed
+    one, say nothing of it."""
+    from CausalDiagnosis.agents.Causal_Diagnosis_Agent.prompts import summary_turn
+    board = _synthetic_board(read_first=False)
+    board.add_order({"work_order": {"id": "wo-1", "component": "pump", "created_t": 1, "expected_close_t": 6, "status": "open"}}, "pred/b1")
+    board.add_changes({"alarms": [], "work_orders_closed": [{"id": "wo-1", "component": "pump", "source": "agent", "closed_t": 6}]})
+    predicted = {"cooler": 100, "valve": 100, "pump": 0, "accumulator": 130}
+    board.add_verification({"prediction_id": "pred/b1", "status": "verified", "consistent": True, "recovery_predicted": 0.6,
+                            "recovery_posterior": 0.93, "predicted_combination": predicted, "predicted_mass": 0.912, "recovery_status": "",
+                            "message": "pred/b1 (replace:pump): verified", "confirmed": confirmed, "predicted_posterior": 0.97,
+                            "belief_top_combination": predicted, "belief_top_mass": 0.97, "reading_ratio": ratio})
+    row = next(line for line in _section(board.render(), "## Predictions").splitlines() if line.startswith("| pred/b1 |"))
+    clause = f", and the verifying readings favor its strongest rival over it, likelihood ratio {ratio:.3g}" if favored else ""
+    first = ", confirmed: the belief now puts 0.970 on the predicted combination" if confirmed else (
+        ", not confirmed: the belief now puts 0.970 on the predicted combination and 0.970 on its most probable combination "
+        "(cooler 100, valve 100, pump 0, accumulator 130)")
+    for text in (row, summary_turn(board, 6)):
+        assert first + clause in text
+        assert ("the verifying readings favor" in text) is favored
+    assert board.verifications["pred/b1"]["reading_ratio"] == ratio
+
+
 def test_consecutive_planning_requests_share_every_part_that_held_and_the_status_comes_last(tmp_path):
     """The board in the order of how often a part changes: the terms, the fix history and the
     failure modes first, then the evidence, whose heading carries no count, then the rest, and the status last. Over a run that
@@ -3917,6 +3976,109 @@ def test_the_controller_verifies_a_repair_on_its_first_verifying_reading(server)
     verified, _refuted = asyncio.run(loop_runner._verify_ready())
     assert [key for key, _v in verified] == ["pred/b1"]
     assert calls == (["verify"] if server else []) and (server or board.verifications["pred/b1"]["reading"] == [3, 1])
+
+
+def test_with_the_server_a_verdict_that_is_not_confirmed_is_asked_again_after_a_later_reading_and_the_latest_counts():
+    """verify_outcome confirms a repair on the belief now, so a later reading can confirm a repair that its first verifying reading
+    left unconfirmed. The controller asks again once a plan named a later reading, while the latest verdict is consistent and not
+    confirmed, and the latest verdict is the one that the status line reads; with no reading in between it makes no call, and a
+    confirmed verdict is not asked again."""
+    board = _modes_board(True)
+    del board.status["open_work_orders"]
+    board.diagnosis = {"diagnosis": {}, "evidence_ids": []}
+    board.add_order({"work_order": {"id": "wo-1", "component": "pump", "created_t": 1, "expected_close_t": None, "status": "open"}}, "pred/b1")
+    board.add_notifications([{"event": "work_order_closed", "id": "wo-1", "component": "pump", "t": 6}])
+    loop_runner = controller.CausalLoopRunner(llm=ScriptedPlanner(act_now), server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board, calls, answers = board, [], iter([False, True])
+
+    async def diag(kind, **fields):
+        calls.append(kind)
+        return {"prediction_id": fields.get("prediction_id"), "status": "verified", "consistent": True, "predicted_combination": board.healthy_set(),
+                "confirmed": next(answers)}
+
+    async def rank():
+        return None
+    loop_runner._diag, loop_runner._rank = diag, rank
+    board.record_read({"plan": 2, "step": 1, "sensor_group": "tier3", "t_first": 7, "t_last": 7})
+    asyncio.run(loop_runner._verify_ready())
+    assert calls == ["verify"] and board.verifications["pred/b1"]["confirmed"] is False and not board.all_verified()
+    asyncio.run(loop_runner._verify_ready())
+    assert calls == ["verify"]  # no reading since the verdict, so no call
+    board.record_read({"plan": 3, "step": 1, "sensor_group": "tier1", "t_first": 8, "t_last": 8})
+    verified, refuted = asyncio.run(loop_runner._verify_ready())
+    assert calls == ["verify", "verify"] and [key for key, _v in verified] == ["pred/b1"] and refuted == []
+    assert board.verifications["pred/b1"]["confirmed"] is True and board.all_verified()
+    board.record_read({"plan": 4, "step": 1, "sensor_group": "tier1", "t_first": 9, "t_last": 9})
+    asyncio.run(loop_runner._verify_ready())
+    assert calls == ["verify", "verify"]
+
+
+def test_only_the_repairs_of_the_latest_close_are_asked_again_while_not_confirmed():
+    """A later repair moves the belief off the predicted combination of an earlier one, which can then never be confirmed, and the
+    status line reads the verdicts of the latest close alone; so after a later reading only the unconfirmed verdict of the latest
+    close is asked again, and with no reading since the verdicts none is. Without the server none is."""
+    board = _modes_board(True)
+    del board.status["open_work_orders"]
+    for order_id, component, key, t in (("wo-1", "pump", "pred/b1", 6), ("wo-2", "cooler", "pred/b2", 9)):
+        board.add_order({"work_order": {"id": order_id, "component": component, "created_t": 1, "expected_close_t": None, "status": "open"}}, key)
+        board.add_notifications([{"event": "work_order_closed", "id": order_id, "component": component, "t": t}])
+    board.record_read({"plan": 2, "step": 1, "sensor_group": "tier3", "t_first": 10, "t_last": 10})
+    for key in ("pred/b1", "pred/b2"):
+        board.add_verification({"prediction_id": key, "status": "verified", "consistent": True, "confirmed": False})
+    assert board.unconfirmed_verifications() == []
+    board.record_read({"plan": 3, "step": 1, "sensor_group": "tier1", "t_first": 11, "t_last": 11})
+    assert board.unconfirmed_verifications() == ["pred/b2"]
+    board.server = False
+    assert board.unconfirmed_verifications() == []
+
+
+@pytest.mark.parametrize("key", ["", None])
+def test_an_order_that_cites_no_prediction_moves_the_latest_close_for_the_repeated_verification_as_for_the_status_line(key):
+    """The status line and the repeated verification take the latest close over the same orders, every order of the agent: a later
+    order that cites no prediction moves the belief off the predicted combination of an earlier repair, which is then not asked
+    again after a later reading, as it is not after a later repair that cites one. The controls: without that order, and with it
+    closing before the repair, the repair is the latest close and is asked again."""
+    def board_after(uncited_close):
+        board = _modes_board(True)
+        del board.status["open_work_orders"]
+        orders = [("wo-1", "pump", "pred/b1", 6)] + ([("wo-2", "cooler", key, uncited_close)] if uncited_close else [])
+        for order_id, component, cited, t in orders:
+            board.add_order({"work_order": {"id": order_id, "component": component, "created_t": 1, "expected_close_t": None, "status": "open"}}, cited)
+            board.add_notifications([{"event": "work_order_closed", "id": order_id, "component": component, "t": t}])
+        board.record_read({"plan": 2, "step": 1, "sensor_group": "tier3", "t_first": 10, "t_last": 10})
+        board.add_verification({"prediction_id": "pred/b1", "status": "verified", "consistent": True, "confirmed": False})
+        board.record_read({"plan": 3, "step": 1, "sensor_group": "tier1", "t_first": 11, "t_last": 11})
+        return board
+    assert board_after(None).unconfirmed_verifications() == ["pred/b1"]
+    assert board_after(3).unconfirmed_verifications() == ["pred/b1"]
+    later = board_after(9)
+    assert later.unconfirmed_verifications() == [] and not later.all_verified()
+
+
+def test_a_verdict_asked_again_that_finds_the_reading_inconsistent_refutes_the_plan_as_a_first_verdict_does():
+    """verify_outcome judges the first reading after the close that the released evidence holds, so a later read that releases an
+    earlier cycle after the close can change the verdict. An inconsistent verdict refutes whenever the controller asks, so the outcome
+    does not depend on when it asked."""
+    board = _modes_board(True)
+    del board.status["open_work_orders"]
+    board.diagnosis = {"diagnosis": {}, "evidence_ids": []}
+    board.add_order({"work_order": {"id": "wo-1", "component": "pump", "created_t": 1, "expected_close_t": None, "status": "open"}}, "pred/b1")
+    board.add_notifications([{"event": "work_order_closed", "id": "wo-1", "component": "pump", "t": 6}])
+    loop_runner = controller.CausalLoopRunner(llm=ScriptedPlanner(act_now), server_paths={RIG_SERVER: "unused", CAUSAL_SERVER: "unused"})
+    loop_runner.board, verdicts = board, iter([True, False])
+
+    async def diag(kind, **fields):
+        return {"prediction_id": fields.get("prediction_id"), "status": "verified", "consistent": next(verdicts), "predicted_combination": board.healthy_set(),
+                "confirmed": False}
+
+    async def rank():
+        return None
+    loop_runner._diag, loop_runner._rank = diag, rank
+    board.record_read({"plan": 2, "step": 1, "sensor_group": "tier3", "t_first": 7, "t_last": 7})
+    assert asyncio.run(loop_runner._verify_ready())[1] == []
+    board.record_read({"plan": 3, "step": 1, "sensor_group": "tier3", "t_first": 8, "t_last": 8})
+    _verified, refuted = asyncio.run(loop_runner._verify_ready())
+    assert [r["components"] for r in refuted] == [["pump"]] and board.refuted
 
 
 def test_time_and_extent_wait_for_the_profile_on_every_surface():

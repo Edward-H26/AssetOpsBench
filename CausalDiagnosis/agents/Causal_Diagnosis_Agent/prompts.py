@@ -16,7 +16,8 @@ so a turn is the system prompt followed by the user turn.
 """
 import re
 
-from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import durations_of, fmt, n_cycles, order_prices, read_prices, scored_combination_text, table
+from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board import (confirmation_text, durations_of, fmt, n_cycles, order_prices, read_prices,
+                                                                          scored_combination_text, table)
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan import ARMS
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan.plan_schema import COMMIT_KINDS, EVIDENCE_KINDS, LARGEST_INTEGER
 from CausalDiagnosis.agents.Causal_Diagnosis_Agent.situation_board.board import KIND_WORDS
@@ -99,7 +100,7 @@ SYSTEM_PROMPT = ROLE + " " + ROW_RULES + """
 - diagnose: args {"rank": <rank>}; expect {"top_rank": <DIAGNOSE_TOP_RANK>}. The controller submits the current combination of that candidate, scored at the cycle of the write, with the evidence you cite and the evidence the ranking names for it. A rank of your candidates submits that combination, the components it leaves out at their healthy level, with the evidence you cite and the channel <STATISTIC>s outside their normal ranges.
 - declare: args {"sensor_group": <group>, "cycles": <n, at least 1>}; no expectation. The advice names the separating test of the ranking or the confirm test of the branch you follow. It must follow a reading, which the controller cites with the evidence you cite and the evidence the ranking names, since a declaration that cites none is scored as a failure.
 - order: args {"component": <one component>, "prediction_id": <a prediction identifier from the branch table or the prediction list, or "estimate" to have the controller call estimate_intervention_effect for replace:<component> first>}; expect {"prediction_id": <the same>, "recovery_at_least": <probability>}. The controller places the order after a diagnosis or a declaration only, and an identifier the board does not know gets an estimate first. One component per order step: a step that joins several names is split into one order per component, which count against the step limit.
-- wait: args {"cycles": <n, at least 1; 0 is read as 1>}; expect {"no_new_alarm": true}. The controller waits event by event (wait_for_notification with the cycles as the timeout, so the first notification ends each wait) and records every notification<CHANGES>. Once the last order citing a prediction has closed, plan a read, best of a group whose channels indicate the repaired components: on the first reading at or after the close the controller verifies that prediction with verify_outcome. A plan whose verification finds the reading inconsistent with its prediction is refuted: the controller records its component set and marks it on the board, and the advice names the cheapest other previewed branch. A consistent verified verdict stands whatever the ranking after that reading shows.
+- wait: args {"cycles": <n, at least 1; 0 is read as 1>}; expect {"no_new_alarm": true}. The controller waits event by event (wait_for_notification with the cycles as the timeout, so the first notification ends each wait) and records every notification<CHANGES>. Once the last order citing a prediction has closed, plan a read, best of a group whose channels indicate the repaired components: on the first reading at or after the close the controller verifies that prediction with verify_outcome. A plan whose verification finds the reading inconsistent with its prediction is refuted: the controller records its component set and marks it on the board, and the advice names the cheapest other previewed branch. A consistent verified verdict stands whatever the ranking after that reading shows. The verdict also says whether the belief after that reading confirms the prediction, and names the belief's most probable combination with its mass when it does not; after a later reading the controller asks again, and the latest verdict counts. The status says that a finish step ends the episode only once the latest repair is confirmed, and a finish is never held back for it.
 """ + FINISH_STEP + """
 
 """ + EXPECTATIONS + """
@@ -338,7 +339,8 @@ def summary_turn(board, plan_length, note=None, surface=None):
             verified = f"verification {verdict['status']}, consistent {verdict['consistent']}, {verdict['message']}"
         else:
             verified = (f"verification {verdict['status']}, consistent {verdict['consistent']}, recovery predicted {fmt(verdict['recovery_predicted'])}, "
-                        f"posterior of the healthy combination after the repair {fmt(verdict['recovery_posterior'])}{scored_combination_text(verdict)}")
+                        f"posterior of the healthy combination after the repair {fmt(verdict['recovery_posterior'])}{scored_combination_text(verdict)}"
+                        f"{confirmation_text(verdict)}")
         writes.append(f"Work order {o['id']} on the {o['component']} created at cycle {o['created_t']}, {closed}, prediction {o['prediction_id'] or 'none'}, {verified}.")
     if not board.orders:
         writes.append("No work order was created.")

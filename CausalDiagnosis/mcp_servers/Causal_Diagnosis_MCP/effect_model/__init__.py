@@ -44,4 +44,4 @@ from .model_form import (
     folds_of_pool, form_window_likelihood, gaussian_log_density, held_out_window_dof, identifies_every_pair,
     model_forms, select_form, select_interactions, select_pool_pairs, window_block_likelihood,
     window_scatter_log_density)
-from .episode_fit import EffectModel, Resampler, fit_episode
+from .episode_fit import EffectModel, Resampler, fit_episode, group_tables

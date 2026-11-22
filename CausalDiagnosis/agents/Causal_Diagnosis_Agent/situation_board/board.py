@@ -37,6 +37,8 @@ READ_NOW = "read {group} now"
 WAIT_THEN_READ = "wait to cycle {first}, then read {group}"
 FORWARD_READ = "read {group} for {cycles}, whose window plays past the close"
 ALL_VERIFIED = "Every work order has closed and every repair is verified, the latest consistent: no wait or read is pending, and a finish step ends the episode."
+# the same line with the diagnostics server, whose latest verdicts must also be confirmed by the belief after the reading
+ALL_CONFIRMED = "Every work order has closed and every repair is verified, the latest confirmed: no wait or read is pending, and a finish step ends the episode."
 
 
 def call_text(kind, request):
@@ -638,7 +640,77 @@ class Board:
             "status": result.get("status"), "consistent": result.get("consistent"), "recovery_predicted": result.get("recovery_predicted"),
             "recovery_posterior": result.get("recovery_posterior"), "recovery_status": result.get("recovery_status"),
             "predicted_combination": result.get("predicted_combination"), "predicted_mass": result.get("predicted_mass"),
-            "message": result.get("message")}
+            "confirmed": result.get("confirmed"), "predicted_posterior": result.get("predicted_posterior"),
+            "belief_top_combination": result.get("belief_top_combination"), "belief_top_mass": result.get("belief_top_mass"),
+            "reading_ratio": result.get("reading_ratio"), "message": result.get("message"), "seen_reads": len(self.reads)}
+        self.retire_notes(("verification", result["prediction_id"]))
+
+    def set_differential(self, entries):
+        """The differential of the orientation, which takes off the note on a reply that could not be read."""
+        self.differential = entries
+        self.retire_notes("differential")
+
+    # ----- the calls the board holds, and the notes -----
+    def note_answered(self, kind, request):
+        """An answered request of an opening kind, by the keyword fields that its handler hands to the call, once."""
+        entry = [kind, copy.deepcopy(dict(request))]
+        if entry not in self.answered:
+            self.answered.append(entry)
+
+    def holds_answer(self, kind, request):
+        """Whether the board holds the answer of the kind for these keyword fields (note_answered)."""
+        return [kind, dict(request)] in self.answered
+
+    def note_call(self, kind, fields):
+        """A call that a step of a plan bound to a tool, counted by its kind and its keyword fields; the controller's own calls,
+        the change summary and the calls of the diagnostics server, are not counted."""
+        for entry in self.calls:
+            if entry[0] == kind and entry[1] == fields:
+                entry[2] += 1
+                return
+        self.calls.append([kind, copy.deepcopy(dict(fields)), 1])
+
+    def repeated(self):
+        """(kind, keyword fields, count) of every call of a step that was made more than once with the same arguments (note_call)."""
+        return [(kind, dict(fields), count) for kind, fields, count in self.calls if count > 1]
+
+    def add_note(self, text, tie=None, turn=None):
+        """A note of the controller, once while an equal note is on the board. tie names the state the note speaks of, whose
+        passing takes it off (retire_notes): "facts", "differential", "ranking", "candidates" or ("verification", prediction
+        identifier); a note given no tie and written while the facts are not on the board speaks of that state. A note of a plan gives its turn: an
+        earlier note whose text is the same once the turn number is left out gives way to it, and the later note states how
+        many notes with the same reasons it replaced (NOTE_REPEATED)."""
+        if text in self.notes:
+            return
+        ties = [tie] if tie is not None else ["facts"] if self.profile is None else []
+        if turn is not None:
+            reasons = ("plan", text.replace(f"turn {turn}", "turn", 1))
+            earlier = [n for n in self.notes if reasons in self.note_ties.get(n, ()) and ["notes", n] not in self.pinned]
+            count = sum(1 + self.note_repeats.get(n, 0) for n in earlier)
+            self.retire_notes(reasons)
+            ties.append(reasons)
+            if count:
+                text += core_texts.NOTE_REPEATED.format(count=count)
+                self.note_repeats[text] = count
+        self.notes.append(text)
+        if ties:
+            self.note_ties[text] = tuple(ties)
+
+    def retire_notes(self, passed):
+        """Take off every note tied to the state that passed, but a note that a summary of earlier turns pinned, since the summary
+        names it. The notes length of every turn mark drops by the removed notes it had counted, so that _turn_of and the order of
+        replaceable stay exact. Returns the count of the notes that left."""
+        gone = {i for i, n in enumerate(self.notes) if passed in self.note_ties.get(n, ()) and ["notes", n] not in self.pinned}
+        if not gone:
+            return 0
+        for i in gone:
+            self.note_ties.pop(self.notes[i], None)
+            self.note_repeats.pop(self.notes[i], None)
+        self.notes = [n for i, n in enumerate(self.notes) if i not in gone]
+        self.turn_marks = [(turn, dict(lengths, notes=lengths["notes"] - sum(1 for i in gone if i < lengths["notes"])))
+                           for turn, lengths in self.turn_marks]
+        self.retired_notes += len(gone)
+        return len(gone)
 
     # ----- lookups -----
     def candidates(self, own=None):
@@ -724,6 +796,31 @@ class Board:
             closes = [o["closed_t"] if o.get("closed_t") is not None else o["expected_close_t"] for o in orders]
             pending.append((prediction_id, max(closes)))
         return pending
+
+    def _repair_closes(self):
+        """{prediction identifier: cycle of the last close of its orders} over every order of the agent, an order that cites none under
+        the key it has: the closes of which the status line (all_verified) and the repeated verification (unconfirmed_verifications)
+        both take the latest, so that a later order moves it for both."""
+        closes = {}
+        for order in self.orders.values():
+            close = order["closed_t"] if order.get("closed_t") is not None else order["expected_close_t"]
+            if close is not None:
+                closes[order["prediction_id"]] = max(close, closes.get(order["prediction_id"], close))
+        return closes
+
+    def unconfirmed_verifications(self):
+        """[prediction identifier] of the repairs of the latest close, the verdicts the status line reads (all_verified), whose latest
+        verdict of the diagnostics server is verified and consistent but not confirmed by the belief after the reading, and for which a
+        plan named a reading after that verdict: the controller asks verify_outcome again, since the belief now holds the later reading,
+        and the latest verdict counts. An earlier repair is not asked again, since a later repair moved the belief off its predicted
+        combination, whether or not that repair cites a prediction. Such a verdict is final for the finish guard and the plan check,
+        which read pending_verifications, so it never holds a finish back. Empty without the server."""
+        if not self.server:
+            return []
+        closes = self._repair_closes()
+        last = max(closes.values(), default=None)
+        return [key for key, v in self.verifications.items() if closes.get(key) == last and str(v.get("status", "")).startswith("verified")
+                and v.get("consistent") is True and v.get("confirmed") is False and len(self.reads) > v.get("seen_reads", len(self.reads))]
 
     def open_orders(self):
         return [o for o in self.orders.values() if o["status"] != "closed"]
@@ -1031,6 +1128,104 @@ class Board:
             lines.append(self._notes_line())
         return "## Status\n" + "\n".join(lines)
 
+    def _order_lines(self):
+        """The lines of the status on the work orders where a clock runs, each from public facts of the board and only while they
+        hold: the open orders on schedule (_on_schedule_line); with no order open, a repair whose orders have closed and whose
+        verification is pending (_unverified_line); and every repair verified (all_verified). An open order rules out the other
+        two, and a pending verification the last."""
+        if not self.clock_runs or not self.orders:
+            return []
+        if self.open_orders():
+            line = self._on_schedule_line()
+        elif self.pending_verifications():
+            line = self._unverified_line()
+        else:
+            line = (ALL_CONFIRMED if self.server else ALL_VERIFIED) if self.all_verified() else ""
+        return [line] if line else []
+
+    def _on_schedule_line(self):
+        """The open orders whose close lies from the board's time on and before the horizon, with how time passes on the row by its
+        clock mode and what brings the close where a step does: a wait where one is served, else a read whose window plays the
+        cycles past the record (forward_read). The board's time is that of the latest answer, which the clock of a thinking row has
+        since left behind."""
+        due = [o for o in self.open_orders() if o.get("expected_close_t") is not None and self.time <= o["expected_close_t"] < self.horizon]
+        if not due:
+            return ""
+        mode = self.profile["clock_mode"]
+        clock = TIME_ON_ROW.format(mode=mode, moves=TIME_MOVES[mode])
+        means = "wait" if "wait" not in self.unserved else "read" if self.forward_read else None
+        if means:
+            clock += ", and " + CLOSE_MEANS[means].format(noun=self.noun, group=self.verification_group(self.repaired()))
+        orders = ", ".join(ORDER_CLOSES.format(id=o["id"], component=o["component"], close=o["expected_close_t"]) for o in due)
+        return ORDERS_ON_SCHEDULE.format(orders=orders, time=self.time, clock=clock)
+
+    def _unverified_line(self):
+        """The closed orders whose verification is pending and the read that verifies their repair, from the tail the finish guard
+        reads (verifying_tail): now once the board's time has reached the first cycle that verifies, else after a wait to that cycle,
+        or, where no wait is served, with a read whose window plays past the close. Empty when no such read fits the limits left."""
+        tail = self.verifying_tail()
+        if tail is None:
+            return ""
+        pending = self.pending_verifications()
+        keys = {key for key, _closed_t in pending}
+        names = [f"{o['id']} on the {o['component']}" for o in self.orders.values() if o["prediction_id"] in keys]
+        orders = f"Work order {names[0]}" if len(names) == 1 else f"Work orders {', '.join(names[:-1])} and {names[-1]}"
+        group = self.verification_group(self.repaired())
+        if self.time >= tail.first:
+            step = READ_NOW.format(group=group)
+        elif "wait" not in self.unserved:
+            step = WAIT_THEN_READ.format(first=tail.first, group=group)
+        else:
+            step = FORWARD_READ.format(group=group, cycles=text_formatting.n_cycles(max(1, tail.cycles // self.forward_read)))
+        return REPAIR_UNVERIFIED.format(orders=orders, close=max(closed_t for _key, closed_t in pending), next=step)
+
+    def all_verified(self):
+        """Whether every repair of the agent's orders has its verdict, the latest consistent: every component that the diagnosis names
+        faulty holds a closed order, each repair key that an order cites has a verdict whose status says verified, which only a
+        reading at or after the last close of its orders gives, and the verdicts of the latest close are consistent and, with the
+        diagnostics server, whose consistent means as predicted, predict the healthy combination and are confirmed by the belief
+        after the reading, so that a partial repair verified as predicted does not count. A refuted earlier repair does not count
+        against it, while a verdict that is not comparable, failed or names a refused order does. A verdict that is not confirmed
+        holds back only this line: its status is final, so the finish guard lets the finish through."""
+        closed = {o["component"] for o in self.orders.values() if o["status"] == "closed"}
+        if not set(self.faulty_set((self.diagnosis or {}).get("diagnosis") or {})) <= closed:
+            return False
+        repairs = self._repair_closes()
+        verdicts = {key: self.verifications.get(key) or {} for key in repairs}
+        if not all(str(verdict.get("status", "")).startswith("verified") for verdict in verdicts.values()):
+            return False
+        last = max(repairs.values())
+        latest = [verdicts[key] for key, close in repairs.items() if close == last]
+        return all(v.get("consistent") is True and (not self.server or (v.get("predicted_combination") == self.healthy_set() and v.get("confirmed") is True))
+                   for v in latest)
+
+    def _held_lines(self):
+        """The lines of the status on what the board holds, each under its condition: the answers that hold for the whole episode;
+        the answers of the surface where no time passes, which cannot change; where the surface states both ends of the recorded
+        window, how many recorded cycles of each sensor group the board holds, and that the record stays as it is where no time
+        passes; and the calls of a plan made more than once with the same arguments."""
+        from CausalDiagnosis.agents.Causal_Diagnosis_Agent.plan.plan_schema import EPISODE_KINDS, SURFACE_KINDS  # plan imports this module
+        lines = []
+        episode = [call_text(kind, request) for kind, request in self.answered if kind in EPISODE_KINDS]
+        if episode:
+            lines.append(core_texts.HELD_EPISODE.format(calls=", ".join(episode)))
+        surface = [call_text(kind, request) for kind, request in self.answered if kind in SURFACE_KINDS]
+        if surface and not self.clock_runs:
+            lines.append(core_texts.HELD_SURFACE.format(calls=", ".join(surface)))
+        first, last = self.status.get("recorded_from"), self.status.get("recorded_until")
+        if first is not None and last is not None:
+            lines.append(core_texts.HELD_HEAD)
+            for group in (self.profile or {}).get("sensor_groups") or {}:
+                recorded = set(range(first, last + 1)) - self.unrecorded(group)
+                lines.append(core_texts.HELD_SERIES.format(name=group, first=first, last=last, held=len(recorded & self.paid_cycles(group)),
+                                                           recorded=len(recorded), **KIND_WORDS))
+            if not self.clock_runs:
+                lines.append(core_texts.HELD_FIXED.format(**KIND_WORDS))
+        repeated = [core_texts.REPEATED_ITEM.format(call=call_text(kind, fields), count=count) for kind, fields, count in self.repeated()]
+        if repeated:
+            lines.append(core_texts.REPEATED.format(calls=", ".join(repeated)))
+        return lines
+
     def _render_fix_history(self):
         if not self.fix_history:
             return "## Fix history\nNo recorded repair before this episode."
@@ -1258,7 +1453,8 @@ class Board:
         for pid, p in self.predictions.items():
             v = self.verifications.get(pid)
             verdict = "not verified" if v is None else (f"{v['status']}; consistent {v['consistent']}; recovery predicted {text_formatting.fmt(v['recovery_predicted'])}, "
-                                                        f"posterior after the repair {text_formatting.fmt(v['recovery_posterior'])}{text_formatting.scored_combination_text(v)}")
+                                                        f"posterior after the repair {text_formatting.fmt(v['recovery_posterior'])}{text_formatting.scored_combination_text(v)}"
+                                                        f"{text_formatting.confirmation_text(v)}")
             rows.append((pid, p["action"], text_formatting.fmt(p.get("recovery")), p["source"], verdict))
         return "## Predictions\n" + text_formatting.table(["id", "action", "predicted recovery", "source", "verification"], rows)
 

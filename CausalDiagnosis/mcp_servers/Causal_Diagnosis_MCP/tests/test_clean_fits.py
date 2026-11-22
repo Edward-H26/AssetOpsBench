@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, build_blocks, default_facts_path, load_cycles
+from CausalDiagnosis.datasets.hyd_1.hyd_1_tables import COMPONENTS, HEALTHY, build_blocks, default_facts_path, load_cycles
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.env import HIDDEN_FIELDS
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP import tools as adapter
 from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP import effect_model as em
@@ -229,9 +229,10 @@ def test_the_notes_of_two_starts_are_one_text(world, models, tmp_path):
 
 @needs_facts
 def test_every_reader_of_a_mean_reads_the_fits_of_the_episode(world, models, tmp_path):
-    """The ranking's belief, the predicted summaries of E14, those of the most probable combination after the action,
-    the attribution of E4, the anomaly scores of E3 against the clean
-    prediction of the healthy combination and the recovery check after a repair all read the fits of the episode."""
+    """The predicted summaries of E14, those of the most probable combination after the action, the attribution of E4 and the
+    anomaly scores of E3 against the clean prediction of the healthy combination read the fits of the episode, and the ranking's
+    belief and the recovery check after a repair read the fits of the belief, which also leave out the block of the repaired
+    combination once a reading of it is released."""
     cycles, blocks = world
     episode_models = models.without(START)
     effect = episode_models.effect
@@ -239,7 +240,7 @@ def test_every_reader_of_a_mean_reads_the_fits_of_the_episode(world, models, tmp
     played.read("tier3")
     tools = CausalTools(episode_models, played.released_path)
     _flt, post = tools._belief(tools._released())
-    assert post.effect is effect
+    assert post.effect is tools._belief_backend.models.effect and np.array_equal(post.effect.mu_table, effect.mu_table)  # START's block alone served
     estimate = tools.estimate_intervention_effect("replace:accumulator")
     record = next(p for p in json.loads(played.released_path.with_name("predictions.json").read_text(encoding="utf-8"))
                   if p["id"] == estimate.prediction_id)
@@ -253,15 +254,17 @@ def test_every_reader_of_a_mean_reads_the_fits_of_the_episode(world, models, tmp
     top = tuple(ranking.candidates[0].combination[c] for c in COMPONENTS)
     shares = np.abs(effect.component_terms(top))
     explained = {item.component: item.explained_anomaly for item in ranking.attribution}
-    values, _anomaly, _combo = post.attribution(post.order()[0])
+    values, _anomaly, _combo = post.attribution(post.order()[0], effect)
     assert explained == {c: values[c]["explained_anomaly"] for c in COMPONENTS} and shares.shape == (len(COMPONENTS), len(models.space.fields))
     played.submit_diagnosis(dict(zip(COMPONENTS, START)))
     played.create_work_order("accumulator", prediction_id=estimate.prediction_id)
     played.advance(estimate.duration)
     played.read("tier3")
     verification = tools.verify_outcome(estimate.prediction_id)
-    _flt, now = tools._belief(tools._released())  # the recovery check reports the belief of the filter, whose fits are the episode's
-    assert now.effect is effect and verification.status == "verified"
+    _flt, now = tools._belief(tools._released())  # the recovery check reports the belief of the filter, whose fits leave the repaired block out
+    repaired = tuple(HEALTHY[c] if c == "accumulator" else level for c, level in zip(COMPONENTS, START))
+    assert now.effect is tools._belief_backend.models.effect and verification.status == "verified"
+    assert np.array_equal(now.effect.mu_table, models.without(START, [repaired]).effect.mu_table) and not np.array_equal(now.effect.mu_table, effect.mu_table)
     assert verification.recovery_posterior == float(now.probabilities[now.candidates.index(models.space.healthy_combination)])
 
 

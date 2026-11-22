@@ -102,8 +102,12 @@ def descriptions(words):
                            "read against the predicted combination, the most probable after the action, which the result names with its mass, its conformal p value and the "
                            "verdict at the declared error level, which over a calibration block drawn at random and a cycle drawn in it finds a reading "
                            "inconsistent at a rate of at most that level and promises no rate for one named combination, and the mass of the "
-                           "healthy combination in the belief now against the predicted recovery. "
-                           "prediction_id is the ID that estimate_intervention_effect returned, such as pred/1."),
+                           "healthy combination in the belief now against the predicted recovery. A repair is confirmed when the verdict is "
+                           "consistent, the belief now puts at least the declared confirmation mass on the predicted combination and the readings "
+                           "that verify the repair do not favor its strongest rival, their likelihood ratio for the predicted combination against it "
+                           "being at least the declared ratio, and the result names that ratio and the most probable combination of that belief "
+                           "with its mass. "
+                           "prediction_id is the ID that estimate_intervention_effect returned, such as pred/1." + LEVELS_LINE),
     }
 
 

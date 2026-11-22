@@ -354,18 +354,22 @@ def test_errors_and_the_server_without_an_episode(episode, tmp_path):
         CausalTools(episode_models(START), episode.released_path, ranking_model="oracle")
 
 
-def test_models_json_holds_the_blocks_the_folds_and_the_form_of_each_recorded_combination_in_format_8():
+def test_models_json_holds_the_blocks_the_folds_and_the_form_of_each_recorded_combination_in_format_9():
     """The fits of an episode are built at launch, so models.json stores what they read: the stable cycles of every recorded
     combination, the folds of the cross fit, the development blocks, which hold no start of the test set, and the form of every
     start with the blocks each choice left out, which the rule recomputes on the facts file, with where each part of the form
-    was chosen and the hash of the chosen forms. No fit mode, held out fault count or stored fit is left, and the two rule texts
+    was chosen and the hash of the chosen forms, and the grouping of every start, which the rule recomputes from the stored held out
+    scores, one row of which it computes again. No fit mode, held out fault count or stored fit is left, and the two rule texts
     of the file are the ones that the fit writes."""
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import covariance_grouping as cg
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import served_segments
+    from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline.offline_table import released
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP import effect_model as em
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.offline import fit_models as fit
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.asset_view import LIVE_WINDOW, development_blocks, folds_of, recorded_blocks, start_sets
 
     stored = json.loads(fit.MODELS_PATH.read_text(encoding="utf-8"))
-    assert stored["format"] == fit.MODELS_FORMAT == 8 and set(stored["ranking_models"]) == set(RANKING_MODELS)
+    assert stored["format"] == fit.MODELS_FORMAT == 9 and set(stored["ranking_models"]) == set(RANKING_MODELS)
     assert set(stored) == {"format", "generated", "facts_sha256", "records", "fit", "space", "ranking_models", "default_ranking_model", "folds",
                            "blocks", "selections", "form", "code"}
     assert set(stored["fit"]) == {"rule", "fitted", "cycles", "folds", "fold_seed", "resamples", "resample_seed"}
@@ -378,7 +382,7 @@ def test_models_json_holds_the_blocks_the_folds_and_the_form_of_each_recorded_co
     fold_of = folds_of(view, em.FOLDS, em.FOLD_SEED)
     assert {key: fold for key, fold in stored["folds"].items()} == {em.combo_key(h): fold_of[h] for h in blocks}
     space, form = load_models().space, stored["form"]
-    assert set(form) == {"rule", "window", "covariances", "block_effects", "development", "parts", "sha256"}
+    assert set(form) == {"rule", "window", "covariances", "block_effects", "development", "parts", "grouping", "sha256"}
     assert (form["window"], form["covariances"], form["block_effects"]) == (LIVE_WINDOW, list(em.COVARIANCE_ESTIMATORS), list(em.BLOCK_EFFECTS))
     assert (form["rule"], stored["fit"]["rule"]) == (fit.FORM_RULE, fit.RULE)
     development = [em.parse_combo(key) for key in form["development"]]
@@ -386,8 +390,16 @@ def test_models_json_holds_the_blocks_the_folds_and_the_form_of_each_recorded_co
     assert development == development_blocks(view, blocks) and set(starts) < set(development) and not set(test) & set(development)
     assert sorted([*development, *test]) == sorted(blocks)
     identified = em.model_form.development_identifies(space, development, fold_of)
-    assert form["parts"] == {"pairs": {"chosen": "development" if identified else "per_start", "development_identifies": identified},
-                             "covariance": {"chosen": "development"}, "block_effect": {"chosen": "registered", "value": DEFAULT_RANKING_MODEL}}
+    assert {k: v for k, v in form["parts"].items() if k != "grouping"} == {"pairs": {"chosen": "development" if identified else "per_start", "development_identifies": identified},
+                                                                      "covariance": {"chosen": "development"}, "block_effect": {"chosen": "registered", "value": DEFAULT_RANKING_MODEL}}
+    assert form["parts"]["grouping"]["chosen"] == "per_start" and set(form["parts"]["grouping"]["nested_gain"]) == {"starts", "mean_gain", "interval_95", "resamples", "seed"}
+    listed = cg.candidates(space)
+    assert form["grouping"]["weights"] == list(cg.GRID) and form["grouping"]["candidates"] == [None if c is None else [space.components[c[0]], c[1]] for c in listed]
+    scores = {em.parse_combo(key): row for key, row in form["grouping"]["scores"].items()}
+    assert sorted(scores) == sorted(development) and all(len(row) == len(listed) for row in scores.values())
+    first = development[0]
+    records = [np.array([[released(space.field_index, blocks[first][p], view.summary_fields)[f] for f in space.fields] for p in positions]) for positions in served_segments()]
+    assert cg.start_scores(load_models().recorded, load_models().pairs_without(first), load_models().covariance_without(first), first, records) == scores[first]
     assert form["sha256"] == fit.form_sha256(stored) != fit.form_sha256({**stored, "form": {**form, "development": form["development"][1:]}})
     assert not identified  # the worked instance: the rig's pairs are chosen once per start
 
@@ -406,6 +418,9 @@ def test_models_json_holds_the_blocks_the_folds_and_the_form_of_each_recorded_co
         assert {k: selection[k] for k in ("covariance", "fallback", "held_out_window_dof", "forms", "block_effects")} == json.loads(json.dumps(
             {k: chosen[k] for k in ("covariance", "fallback", "held_out_window_dof", "forms", "block_effects")}))
         assert selection["covariance_left_out"] == [em.combo_key(h) for h in own] and selection["report_pairs"] == named(chosen["pairs"])
+        index, _gain, _se = cg.choose(scores, [s for s in development if s != start])
+        candidate = listed[index]
+        assert (selection["grouping"]["component"], selection["grouping"]["weight"]) == ((None, None) if candidate is None else (space.components[candidate[0]], candidate[1]))
     assert stored["selections"][em.combo_key(START)]["covariance_left_out"] == [] and len(stored["selections"][em.combo_key((3, 73, 2, 90))]["covariance_left_out"]) == 1
 
 
@@ -716,8 +731,8 @@ def test_verify_outcome_judges_a_record_row_with_what_the_agent_was_told(tmp_pat
 
 
 def test_the_fits_of_an_episode_take_the_covariance_estimator_of_the_start_s_form():
-    """The fits of an episode read the covariance estimator from the form of their start in models.json, whichever registered
-    estimator that form holds."""
+    """The fits of an episode read the covariance estimator and the grouping from the form of their start in models.json,
+    whichever registered estimator that form holds; the pooled form of an estimator keeps its shape."""
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import COVARIANCE_ESTIMATORS, combo_key, fit_episode
 
     models = load_models()
@@ -726,21 +741,24 @@ def test_the_fits_of_an_episode_take_the_covariance_estimator_of_the_start_s_for
     for estimator in COVARIANCE_ESTIMATORS:
         raw = {**models.raw, "selections": {**models.raw["selections"], key: {**models.raw["selections"][key], "covariance": estimator}}}
         served = adapter.Models(raw).without(START)
-        direct = fit_episode(models.recorded, models.pairs_without(START), START, 0, 0, covariance=estimator)
+        direct = fit_episode(models.recorded, models.pairs_without(START), START, 0, 0, covariance=estimator, grouping=models.grouping_without(START))
         assert np.array_equal(served.effect.sigma_within, direct.effect.sigma_within) and np.array_equal(served.sigma, direct.sigma)
         assert np.array_equal(served.effect.mu_table, direct.effect.mu_table)
-        top = served.effect.sigma_within[0]
+        top = fit_episode(models.recorded, models.pairs_without(START), START, 0, 0, covariance=estimator).effect.sigma_within[0]
         assert (np.count_nonzero(top - np.diag(np.diag(top))) == 0) == (estimator == "diagonal")
 
 
 def test_the_notes_say_how_the_fits_leave_out_two_blocks_and_name_no_estimator():
-    """The two notes of every result that describe the fits: each combination is scored by a fit that leaves out two blocks, the
-    form was chosen before any episode, and no note names a covariance estimator, so the notes stay one text for every start."""
+    """The two notes of every result that describe the fits: each combination is scored by a fit that leaves out the start's block,
+    the blocks the released readings come from and its own or one second block, the form was chosen before any episode, and no
+    note names a covariance estimator, so the notes stay one text for every start."""
     from CausalDiagnosis.mcp_servers.Causal_Diagnosis_MCP.effect_model import COVARIANCE_ESTIMATORS
 
-    assert "leaves out two blocks" in adapter.A_RULE and "one second block" in adapter.A_RULE
-    assert "chosen before any episode by a registered rule that reads no recording of that block" in adapter.A_RULE
-    assert "the covariance estimator of the form of the model" in adapter.A_E1
+    assert "whose recordings the released readings hold" in adapter.A_RULE and "and its own, or one second block" in adapter.A_RULE
+    assert "chosen before any episode by a rule of the server that reads no recording of the start's block" in adapter.A_RULE
+    assert "the covariance estimator of the form of the model, one of the estimators that the server declares" in adapter.A_E1
+    # what holds of the estimators and the rule, which the server declares, and no registration before a fit
+    assert not [note for note in (adapter.A_RULE, adapter.A_E1) if "registered" in note]
     for note in (adapter.A_RULE, adapter.A_E1):
         assert not any(name in note for name in COVARIANCE_ESTIMATORS) and "Ledoit" not in note
 

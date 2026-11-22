@@ -33,7 +33,7 @@ from . import read_walk
 
 from .asset_rules import (
     band_verdict, channels_outside, durations_of, order_prices, profile_level, read_prices, visit_closes)
-from .text_formatting import combination_text, fmt, n_cycles, scored_combination_text, table
+from .text_formatting import combination_text, confirmation_text, fmt, n_cycles, scored_combination_text, table
 from .troubleshooting_plan_fields import branch_prediction_id, repair_steps
 from .board import Board, THINKING_CLOCKS
 from .read_walk import ReadWalk

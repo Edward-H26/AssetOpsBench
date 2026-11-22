@@ -137,14 +137,51 @@ class EpisodeFit:
     second: tuple
 
 
-def fit_episode(recorded, pairs, left_out, resamples, seed, covariance=covariance_estimators.DEFAULT_COVARIANCE, also_left_out=()):
+def _grouped(recorded, rows, fit, pool, second, component):
+    """Per hypothesis in grid order, the centred sample covariances of the recorded blocks of the pool at the hypothesis's level of
+    component (an index), without the block the fit of the hypothesis leaves out, its own or the second block (position second
+    in the pool) for a hypothesis without a block of its own: the within covariance of one cycle pools their cycles around their
+    own block means, the block covariance is that of their misfits against the fit without the member and without that block
+    (leave_two_out_misfits). Returns (within, block), arrays (combinations, d, d)."""
+    space = recorded.space
+    position = {h: j for j, h in enumerate(pool)}
+    cache = {}
+
+    def tables(j, level):
+        if (j, level) not in cache:
+            members = [p for p, h in enumerate(pool) if h[component] == level and p != j]
+            if len(members) < 2:
+                raise ValueError(f"the group of the {space.components[component]} at level {level} holds fewer than two recorded blocks "
+                                 "besides the one its fit leaves out, so it has no covariance")
+            within = recorded.cross[rows[members]].sum(axis=0) / (recorded.counts[rows[members]].sum() - len(members))
+            misfits = recorded_blocks.leave_two_out_misfits(fit, recorded.counts, j)  # rows follow the pool without j
+            block = np.cov(misfits[[p if p < j else p - 1 for p in members]].T)
+            cache[(j, level)] = (within, block)
+        return cache[(j, level)]
+    within, block = zip(*(tables(position.get(h, second), h[component]) for h in space.combinations))
+    return np.array(within), np.array(block)
+
+
+def group_tables(recorded, pairs, left_out, component, also_left_out=()):
+    """The grouped covariances of every hypothesis (_grouped) under the fits of an episode that started in left_out, with the
+    blocks of also_left_out left out as well."""
+    design = model_terms.design_matrix(recorded.space, recorded.combos, pairs)
+    rows = recorded.pool([left_out, *also_left_out])
+    fit = recorded_blocks.fit_pool(design, recorded.means, recorded.counts, rows)
+    pool = tuple(recorded.combos[i] for i in rows)
+    return _grouped(recorded, rows, fit, pool, pool.index(recorded_blocks.second_block(left_out, pool)), component)
+
+
+def fit_episode(recorded, pairs, left_out, resamples, seed, covariance=covariance_estimators.DEFAULT_COVARIANCE, also_left_out=(), grouping=None):
     """The fits of an episode that started in the combination left_out, whose block every fit leaves out, with the blocks of
     also_left_out, none by default. The pool is every other recorded block. Every hypothesis with a block in the pool is scored
     by the pool's fit without its own block, and every other hypothesis, the start and any combination without a recording, by
     the pool's fit without the second block (second_block), so each is scored by a fit that leaves out the same number of
     blocks. The within covariance of a hypothesis pools the same blocks as its mean, by the estimator covariance of the
     start's form, and its block covariance is the covariance of the leave one block out misfits among them, by
-    block_covariance_estimator of it."""
+    block_covariance_estimator of it. grouping, (component index, weight) or None for the pooled form, mixes into both
+    covariances of every hypothesis, at one minus the weight, the centred sample covariances of the blocks at its level of that
+    component without the same left out block (_grouped)."""
     space = recorded.space
     design = model_terms.design_matrix(space, recorded.combos, pairs)
     grid = model_terms.design_matrix(space, space.combinations, pairs)
@@ -179,6 +216,11 @@ def fit_episode(recorded, pairs, left_out, resamples, seed, covariance=covarianc
         mu_table[h] = loo[j]
         sigma_within[h] = within_without(j)
         sigma_block[h] = block_without(j)
+    if grouping is not None:
+        component, weight = grouping
+        group_within, group_block = _grouped(recorded, rows, fit, pool, b, component)
+        sigma_within = (1 - weight) * group_within + weight * sigma_within
+        sigma_block = (1 - weight) * group_block + weight * sigma_block
     position = {h: j for j, h in enumerate(pool)}
 
     def coefficients(combo):

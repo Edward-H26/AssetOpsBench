@@ -1,19 +1,27 @@
+from .intervention_effect import CONFIRMATION_MASS, CONFIRMATION_RATIO
+
 # one text for every episode: it names no estimator, since the estimator is part of the form of the start
 A_E1 = ("E1: the mean of each summary (the mean and the standard deviation of a channel over one recorded cycle) under a combination is "
         "an intercept plus one main effect per non healthy level of each component plus the pairwise interactions that raised the held "
         "out log likelihood, with the pooled within combination covariance of one cycle from the covariance estimator of the form of the "
-        "model, one of the estimators registered before any fit")
+        "model, one of the estimators that the server declares, mixed, where the form groups the covariances, with the centred sample "
+        "covariances of the recorded blocks at the combination's level of one component by the weight of the form")
 A_BLOCK = ("joint_block: the cycles of one recorded block share a latent offset from the model mean with the covariance of the leave one "
            "block out misfits of the fit that scores the combination, so repeated readings of one block add less than independent draws "
            "would; a combination entered again starts a fresh offset; the default ranking model")
 A_JOINT = "joint: every reading is an independent draw around the model mean, without the block offset"
-# one text for every episode, true whatever the start and silent on which blocks the fits leave out
-A_RULE = ("the fits of the episode: every combination is scored by a fit on the stable cycles of the recorded combinations that leaves "
-          "out two blocks, the block of the combination the episode started in and its own, or one second block where it has no block "
-          "of its own among the others, for its mean, its within covariance and its block covariance, so no fit has read the block the "
-          "episode started in and every combination is predicted from the same number of blocks; the form of the model, its "
-          "interactions and its covariance estimator, was chosen before any episode by a registered rule that reads no recording of "
-          "that block, and the conformal calibration is computed once on the blocks without the start's")
+# one text for every episode, true whatever the start and the blocks served, and silent on which blocks the fits leave out
+A_RULE = ("the fits of the episode: the filter scores every combination by a fit on the stable cycles of the recorded combinations that "
+          "leaves out the block of the combination the episode started in, the blocks of the combinations whose recordings the released "
+          "readings hold, in the order of their first reading for as long as the remaining blocks fit the model, and its own, or one second "
+          "block where it has no block of its own among the others, for its mean, its within covariance and its block covariance, so no fit "
+          "that weighs a reading has read a block the episode has served and every combination is predicted from the same number of blocks; "
+          "the anomaly scores, the attribution, the predicted summaries and the verdicts of E17 come from the fits without the start's block "
+          "alone, which stay the same for the whole episode, and the confirmation of a verdict reads the belief; "
+          "the form of the model, its interactions, its covariance estimator and the grouping of "
+          "its covariances, was chosen "
+          "before any episode by a rule of the server that reads no recording of the start's block, and the conformal calibration is "
+          "computed once on the blocks without the start's")
 A_URN = ("discriminant_urn: the v1 ranking model, one linear discriminant per sensor group and component read on the same summaries, "
          "fitted on the recorded blocks without the one the episode started in, repeated readings combined by a Polya urn around the "
          "confusion row of a cross fit on those blocks, every closed work order restoring its component; it has no transition model, so "
@@ -58,6 +66,15 @@ A_PREDICT_STEP = ("the predict step of E9, E21, E22 and the troubleshooting plan
                "where the row serves it without moving the clock, a read of a recorded cycle or a read without a declared duration, after "
                "the open work orders of a row without a clock, which settle before the next call that is not an order, and the belief "
                "after the rule cards of the current cycle where the read plays its cycle")
+A_CONFIRM = (f"confirmed: a verified repair is confirmed when its verdict is consistent, the belief now, which holds every released "
+             f"reading and closure and weighs the readings by the fits of the belief, puts at least {CONFIRMATION_MASS:g} on the predicted "
+             "combination, and the likelihood ratio of the readings that verify the repair for the predicted combination against its strongest "
+             "rival, the combination other than the predicted one with the most mass in the belief now, is at least "
+             f"{CONFIRMATION_RATIO:g}, the ratio being the posterior odds of the two in the belief now divided by their odds in the belief "
+             "of the same fits without those readings; the result names that ratio, which is undefined where a mass is zero and then "
+             "confirms nothing, and the most probable combination of the belief with its mass, an inconsistent verdict refutes the "
+             "prediction whatever the mass and the ratio, and a monitor prediction, a verdict on no reading after the repair and one that "
+             "another repair made not comparable carry no confirmation")
 UNIT_TEXT = {"money": "the test cost of E7, the read price plus its declared duration times the expected downtime rate",
              "call": "one call, since the rules price nothing on this row and every cost of E7 to E10 counts calls"}
 A_TIME = "time counts rig cycles from the start of the episode; refused calls release nothing and no cycle index of the recording is released"
@@ -73,7 +90,7 @@ A_BANDS = "the normal range of a channel mean is the public normal range of the 
 # open work order, on a work order before a diagnosis or on the end of the episode, stays as it is, since it tells what the
 # environment will refuse.
 FIXED_KEYS = {A_RULE: "fits", A_E1: "E1", A_DEDUPE: "dedupe", A_BLOCK: "joint_block", A_JOINT: "joint", A_URN: "discriminant_urn",
-              A_PREDICT_STEP: "predict_step", A_E3: "E3", A_E4: "E4", A_E6: "E6", A_E13: "E13", A_E14: "E14", A_E16: "E16", A_TIME: "time",
+              A_PREDICT_STEP: "predict_step", A_E3: "E3", A_E4: "E4", A_E6: "E6", A_E13: "E13", A_E14: "E14", A_E16: "E16", A_CONFIRM: "confirmed", A_TIME: "time",
               A_COMPACT: "compact", A_BANDS: "bands", A_SIX_DIGITS: "six_digits"}
 CALL_KEYS = (("E2: ", "E2"), ("the parameters of the rule cards come ", "rule_cards"), ("the filter carried ", "states"), ("E7 to E10", "E7_E10"),
              ("abstention_rule ", "abstention"), ("E21: ", "E21_E22"), ("candidates: the first ", "plans"), ("E15: ", "E15"),
