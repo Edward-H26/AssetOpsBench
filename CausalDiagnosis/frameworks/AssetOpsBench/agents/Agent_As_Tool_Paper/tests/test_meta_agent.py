@@ -22,6 +22,7 @@ from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.supervi
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import agent_builders, react_tool_adapter, sub_agent_registry  # noqa: E402
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import sub_agent_runtime, supervisor_runner  # noqa: E402
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import CompletionRoute, activated  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import text_completion_route as completion  # noqa: E402
 
 THOUGHT_STOP = ["\nAction", "\nObservation", "\nQuestion"]
 EXAMPLE_START = stub_servers.EXAMPLE_START  # the example start of the runs over the stand-in servers
@@ -228,10 +229,16 @@ def test_a_run_without_a_result_keeps_the_supervisors_counter(tmp_path, monkeypa
 
 
 def test_the_settings_name_the_step_limit_of_every_sub_agent():
-    served = supervisor_runner.run_settings(("iot", "fmsr", "wo", "task", "causal_diagnosis"))
-    assert served["sub_agent_max_steps"] == {"IoTAgent": 15, "TaskAgent": 10, "FMSRAgent": 10, "WOAgent": 20, "CausalDiagnosisAgent": 10}
+    """The paper's limits without the CausalDiagnosis MCP; with it the form of its rows, no limit of an agent's own, the room of
+    every request as max_tokens and the rule of the no_call steps."""
     bare = supervisor_runner.run_settings(("iot", "fmsr", "wo", "task"))
     assert list(bare["sub_agent_max_steps"]) == ["IoTAgent", "TaskAgent", "FMSRAgent", "WOAgent"] == bare["sub_agents"]
+    assert bare["sub_agent_max_steps"] == {"IoTAgent": 15, "TaskAgent": 10, "FMSRAgent": 10, "WOAgent": 20}
+    assert (bare["form"], bare["supervisor_max_steps"], bare["decoding"]["max_tokens"]) == ("paper_era", 10, 500) and "no_call_steps" not in bare
+    served = supervisor_runner.run_settings(("iot", "fmsr", "wo", "task", "causal_diagnosis"))
+    assert served["sub_agent_max_steps"] == dict.fromkeys(["IoTAgent", "TaskAgent", "FMSRAgent", "WOAgent", "CausalDiagnosisAgent"])
+    assert (served["form"], served["supervisor_max_steps"]) == (sub_agent_registry.MCP_FORM, None) != (bare["form"], bare["supervisor_max_steps"])
+    assert served["decoding"]["max_tokens"] == completion.REPLY_ROOM and served["no_call_steps"] == sub_agent_registry.NO_CALL_RULE
     # on the reproduction surface the four paper agents have a limit, and the stand-in rule agent and the JSON reader have none
     repro = supervisor_runner.run_settings(("iot", "utilities", "fmsr", "tsfm", "wo"), "repro")
     assert repro["sub_agent_max_steps"] == {"IoTAgent": 15, "TSFMAgent": 6, "FMSRAgent": 10, "WOAgent": 20}
@@ -310,7 +317,320 @@ def test_a_text_argument_written_as_no_value_or_as_a_list_goes_out_as_text():
             tool.run(engine_forms.engine_split(written))
 
 
-def test_one_supervisor_example_of_ours_chains_two_delegations_and_the_counts_stay():
+HISTORY_ROWS = 200  # the rows of the answer below, so that the answer alone outgrows the served context of its run
+
+
+def _sub_agent_run(answer, script, room=None):
+    """An IoTAgent built as the port builds a sub-agent, over one tool of the adapter that answers ``answer``, or that calls it when
+    it is a function of the arguments, run on a scripted endpoint. With room, the served context holds the agent's first prompt and room words more, so that a long answer outgrows
+    it and the engine's overflow handler cuts the scratchpad after the call (agents.py, ReactAgent.run)."""
+    schema = {"properties": {"site_name": {"type": "string"}, "limit": {"type": "integer", "default": 5}}, "required": ["site_name"]}
+    tool = react_tool_adapter.mcp_tool("history", "Return the telemetry of a site.", schema, answer if callable(answer) else lambda arguments: answer)
+    spec = sub_agent_registry.SubAgentSpec("IoTAgent", "", "", ("iot",), max_steps=3)
+
+    def build():
+        return agent_builders.build_sub_agent(spec, "read the history of MAIN", [tool], "granite-stand-in", "")
+
+    with ScriptedEndpoint(script) as ep:
+        if room is not None:
+            with activated(CompletionRoute(ep.base_url, "local", "granite-stand-in")):
+                ep.cards[0]["max_model_len"] = len(build()._build_agent_prompt().split()) + room
+        with activated(CompletionRoute(ep.base_url, "local", "granite-stand-in")):
+            agent = build()
+            agent.run()
+    return agent
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the answer as served"])
+def test_an_answer_over_many_lines_reaches_the_agent_on_one_line_so_the_overflow_handler_can_cut_it(monkeypatch, on_one_line):
+    """An answer that outgrows the served context, as a page of telemetry does. The overflow handler of the engine cuts only the
+    lines that open with Observation (agents/react/utils.py, truncate_scratchpad). On one line the answer is cut and the agent
+    goes on to its Finish. As served, over many lines, the handler cuts the one line that opens the answer, is still over the
+    context and raises IndexError, which ends the episode."""
+    rows = [{"timestamp": f"2025-04-02T00:{n // 60:02d}:{n % 60:02d}", "value": n} for n in range(HISTORY_ROWS)]
+    answer = json.dumps({"observations": rows}, indent=2)
+    script = [*step("I need the history.", "history", "site_name=MAIN"), *finish("The history is read"), REVIEW_OK]
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+        with pytest.raises(IndexError, match="pop from empty list"):
+            _sub_agent_run(answer, script, room=60)
+        return
+    agent = _sub_agent_run(answer, script, room=60)
+    [shown] = [entry["raw_observation_output"] for entry in agent.json_log if entry.get("raw_observation_output")]
+    assert "\n" not in shown and json.loads(shown) == json.loads(answer)
+    assert "\nObservation 1: [truncated excerpt]\nThought 2:" in agent.scratchpad and agent.answer == "The history is read"
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the answer as served"])
+def test_an_answer_with_a_receipt_line_reaches_the_agent_as_its_json_values_on_one_line(monkeypatch, on_one_line):
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+    body = json.dumps({"site_name": "MAIN", "observations": [{"timestamp": "2025-04-02T00:15:00", "value": 6.8}]}, indent=2)
+    receipt = json.dumps({"price": 0, "budget_left": 10, "steps_left": 3}, separators=(",", ":"))
+    tool = react_tool_adapter.mcp_tool("history", "", {"properties": {"site_name": {"type": "string"}}, "required": ["site_name"]},
+                                       lambda arguments: body + "\n" + receipt)
+    shown = tool.run({"site_name": "MAIN"})
+    one_line = json.dumps(json.loads(body)) + " " + json.dumps(json.loads(receipt))
+    assert shown == (one_line if on_one_line else body + "\n" + receipt)
+    # an answer that is no JSON keeps its text with its line breaks replaced
+    text = react_tool_adapter.mcp_tool("sites", "", {}, lambda arguments: "Error executing tool sites:\n  no database").run({})
+    assert (text == "Error executing tool sites:   no database") == on_one_line
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the refusal as pydantic writes it"])
+def test_a_refusal_of_the_argument_model_reaches_the_agent_on_one_line(monkeypatch, on_one_line):
+    """The engine writes the text of a refused call into the scratchpad as its observation, and pydantic writes a refusal over
+    several lines."""
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+    script = [*step("I need the history.", "history", "site_name=MAIN, limit=many"), *finish("No history"), REVIEW_OK]
+    agent = _sub_agent_run("{}", script)
+    [line] = [line for line in agent.scratchpad.split("\n") if line.startswith("Observation 1:")]
+    assert "validation error for history_inputs" in line
+    assert ("For further information visit" in line) == on_one_line
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the paper's indented text"])
+def test_the_failure_reply_of_a_sub_agent_tool_reaches_the_supervisor_on_one_line(monkeypatch, on_one_line):
+    if not on_one_line:
+        monkeypatch.setattr(agent_builders, "one_line", lambda text: text)
+    spec = sub_agent_registry.SubAgentSpec("RuleLogicAgent", "", "", kind="stub")
+    reply = agent_builders.SubAgentTool(name="RuleLogicAgent", description="", spec=spec)._run("a rule")
+    answer = json.loads(reply)
+    assert answer["status"] == "failure" and answer["message"] == agent_builders.FAILURE_MESSAGE
+    assert ("\n" not in reply) == on_one_line
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the answer as served"])
+def test_the_supervisors_sub_agent_reads_the_answer_of_a_server_on_one_line(tmp_path, monkeypatch, on_one_line):
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+    launchers = stub_servers.write_launchers(tmp_path / "servers", ("iot", "task"))
+    script = [*step("I need the assets of MAIN.", "IoTAgent", "request=list the assets of MAIN"),
+              *step("I need the assets tool.", "assets", "site_name=MAIN"), *finish("The assets are CHL-A100"), REVIEW_OK,
+              *finish("The assets are CHL-A100"), REVIEW_OK]
+    _, result, ep = run(launchers, script, tmp_path)
+    served = result.trajectory[0]["response"]
+    assert "\n" in served  # FastMCP indents the JSON of an answer, which the trajectory keeps as served
+    shown = json.dumps(json.loads(served)) if on_one_line else served
+    assert f"\nObservation 1: {shown}\nThought 2:" in ep.completions()[4]["prompt"]
+
+
+@pytest.mark.parametrize("unquoted", [True, False], ids=["layer by layer", "control: the quotes kept"])
+def test_a_text_argument_loses_its_outer_quotes_layer_by_layer(monkeypatch, unquoted):
+    if not unquoted:
+        monkeypatch.setattr(react_tool_adapter, "_unquoted", lambda value: value)
+    got = {}
+    schema = {"properties": {"work_type": {"type": "string"}, "evidence_ids": {"type": "string"}, "priority": {"type": "integer", "default": 3},
+                             "site_id": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": None}},
+              "required": ["work_type", "evidence_ids"]}
+    tool = react_tool_adapter.mcp_tool("generate_work_order", "", schema, lambda arguments: got.update(arguments) or "ok")
+
+    def sent(given):
+        got.clear()
+        tool.run(given)
+        return got
+
+    split = engine_forms.engine_split
+    # double and single quotes, two layers, the items of a list given to a text, an optional text, any tool's text
+    for given, key, expected in ((split('work_type="CM", evidence_ids=a'), "work_type", "CM"),
+                                 (split("work_type='PM', evidence_ids=a"), "work_type", "PM"),
+                                 (split('work_type=""CM"", evidence_ids=a'), "work_type", "CM"),
+                                 ({"work_type": '"EM"', "evidence_ids": ['"obs/1/a"', "'obs/2/b'"]}, "evidence_ids", "obs/1/a,obs/2/b"),
+                                 (split('work_type=CM, evidence_ids=a, site_id="MAIN"'), "site_id", "MAIN")):
+        assert (sent(given)[key] == expected) == unquoted, (given, key)
+    # a text without a matching outer pair passes unchanged, and the engine's forms for no value keep their reading
+    for given, key, expected in ((split('work_type="CM, evidence_ids=a'), "work_type", '"CM'),
+                                 (split('work_type=say "hi" now, evidence_ids=a'), "work_type", 'say "hi" now'),
+                                 (split('work_type=CM, evidence_ids=a, site_id=""'), "site_id", None),
+                                 (split('work_type=CM, evidence_ids=a, priority=2'), "priority", 2)):
+        assert sent(given)[key] == expected, given
+    # a plain string input reaches the first field as that field reads it
+    modes = react_tool_adapter.mcp_tool("get_failure_modes", "", {"properties": {"asset_class": {"type": "string"}}, "required": ["asset_class"]},
+                                        lambda arguments: got.update(arguments) or "ok")
+    got.clear()
+    modes.run('"chiller"')
+    assert (got["asset_class"] == "chiller") == unquoted
+
+
+@pytest.mark.parametrize("unquoted", [True, False], ids=["one pair off", "control: the quotes kept"])
+def test_a_work_order_written_with_quotes_passes_the_work_order_checks_of_the_metering_layer(monkeypatch, unquoted):
+    """The listed schema of AssetOpsBench's generate_work_order and the checks with which the metering layer refuses an order
+    before the engine sees it (metering_layer._validated and _order_problem)."""
+    from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import metering_layer as layer
+
+    if not unquoted:
+        monkeypatch.setattr(react_tool_adapter, "_unquoted", lambda value: value)
+    schema = layer.SERVERS["wo"].mcp._tool_manager.get_tool("generate_work_order").parameters
+    got = {}
+    tool = react_tool_adapter.mcp_tool("generate_work_order", "", schema, lambda arguments: got.update(arguments) or "{}")
+    tool.run(engine_forms.engine_split('description="inspect the pump", asset_num="hyd_1_pump", site_id="MAIN", priority=2, work_type="CM"'))
+    assert (got["asset_num"], got["site_id"]) == (("hyd_1_pump", "MAIN") if unquoted else ('"hyd_1_pump"', '"MAIN"'))
+    assert layer._order_problem(layer._validated("wo", "generate_work_order", got)) == (None if unquoted else "work_type")
+
+
+def _quotes_off_before_peeling(value):
+    """The control of the test below, _unquoted as it stood before the quotes were peeled layer by layer: one pair off when the
+    first and the last character are the same quote, or, when that quote also stands inside and the first and the last comma
+    item each carry a pair of their own, one pair off each item whose quote does not stand inside it."""
+    def item_off(item):
+        core = item.strip()
+        if len(core) >= 2 and core[0] == core[-1] and core[0] in "\"'" and core[0] not in core[1:-1]:
+            return item.replace(core, core[1:-1], 1)
+        return item
+
+    if isinstance(value, str):
+        stripped = value.strip()
+        if len(stripped) >= 2 and stripped[0] == stripped[-1] and stripped[0] in "\"'":
+            items = stripped.split(",")
+            if stripped[0] in stripped[1:-1] and all(item_off(item) != item for item in (items[0], items[-1])):
+                return ",".join(item_off(item) for item in items)
+            return stripped[1:-1]
+    return value
+
+
+# every text whose sent form the peeling changes, with that form: layers of either kind, a comma item peeled where the whole
+# text keeps its pair or has none, and a free text that opens with a quoted word
+PEELED = (('""CM""', "CM"), ("\"'CM'\"", "CM"), ("'\"CM\"'", "CM"), ('""""', ""), ('"obs/1/a", obs/2/b', "obs/1/a, obs/2/b"),
+          ('obs/1/a, "obs/2/b"', "obs/1/a, obs/2/b"), ("'obs/1/a', \"obs/2/b\"", "obs/1/a, obs/2/b"), ('"go", he said', "go, he said"),
+          ('"replace the seal, "urgent", then test"', '"replace the seal, urgent, then test"'), ('"pump" is "bad", "x"', '"pump" is "bad", x'),
+          ("\"replace 'seal', 'gasket'\"", "replace 'seal', gasket"))
+# every text that the peeling sends as written, since a quote of each of its layers also stands inside it in another way, and
+# that the rule before it changed
+AS_WRITTEN = ('"pump" is "bad"', "'the pump's seal'", '"replace the "seal", then test "pressure""', "'\"it's\"'", "\"'\"x'y\"'\"")
+# the texts that both rules send alike
+ALIKE = (('"CM"', "CM"), ("'CM'", "CM"), ("CM", "CM"), ('"the pump\'s seal"', "the pump's seal"), ("\"'it's'\"", "'it's'"), ('"a, b"', "a, b"),
+         ('"worn, then cracked"', "worn, then cracked"), ('"obs/1/a", "obs/2/b"', "obs/1/a, obs/2/b"), ('"obs/1/a", obs/2/b, "wo/3"', "obs/1/a, obs/2/b, wo/3"),
+         ('"a", "pump" is "bad", "x"', 'a, "pump" is "bad", x'), ('say "hi" now', 'say "hi" now'), ('"', '"'), ('"CM', '"CM'))
+
+
+@pytest.mark.parametrize("rule", ["peeled", "before"], ids=["layer by layer", "control: the rule before the peeling"])
+def test_a_text_and_each_comma_item_lose_their_quotes_layer_by_layer_unless_the_quote_stands_inside(monkeypatch, rule):
+    """The pairs of the same quote that wrap a text one inside the other go layer by layer, as many as leave none of their
+    quotes in what is left, so ""CM"" gives CM, and a pair whose quote also stands inside the text in another way stays, as in
+    "pump" is "bad". Each comma item of what is left loses its quotes by the same rule, so a comma text of several quoted items,
+    as a model can write evidence_ids on the rows with the CausalDiagnosis MCP, reaches the action server as its ids
+    (Environment_Actions_MCP evidence_list)."""
+    from CausalDiagnosis.mcp_servers.Environment_Actions_MCP.main import evidence_list
+
+    if rule == "before":
+        monkeypatch.setattr(react_tool_adapter, "_unquoted", _quotes_off_before_peeling)
+    got = {}
+    schema = {"properties": {"evidence_ids": {"type": "string"}, "cooler": {"type": "integer"},
+                             "diagnosis": {"anyOf": [{"type": "string"}, {"type": "null"}], "default": None}},
+              "required": ["evidence_ids", "cooler"]}
+    tool = react_tool_adapter.mcp_tool("submit_diagnosis", "", schema, lambda arguments: got.update(arguments) or "ok")
+
+    def sent(text):
+        """The text as a required and as an optional text argument of the JSON object form."""
+        got.clear()
+        tool.run({"evidence_ids": text, "cooler": 3, "diagnosis": text})
+        return got["evidence_ids"], got["diagnosis"]
+
+    for text, expected in (*PEELED, *((text, text) for text in AS_WRITTEN)):
+        assert (sent(text) == (expected, expected)) == (rule == "peeled"), text
+    for text, expected in ALIKE:
+        assert sent(text) == (expected, expected), text
+    # the engine's key=value form, the items of a list and the engine's form for no value
+    got.clear()
+    tool.run(engine_forms.engine_split('evidence_ids="obs/1/a", "obs/2/b", cooler=3'))
+    assert got["evidence_ids"] == "obs/1/a, obs/2/b" and evidence_list(got["evidence_ids"]) == ["obs/1/a", "obs/2/b"]
+    got.clear()
+    tool.run({"evidence_ids": ['""CM""', '"obs/1/a"', "'obs/2/b'"], "cooler": 3})
+    assert (got["evidence_ids"] == "CM,obs/1/a,obs/2/b") == (rule == "peeled")
+    assert sent('""') == ("", None)
+
+
+class _TransportFailure(Exception):
+    """A failure of the call itself, as a transport error of a session, not a refusal of the argument model."""
+
+
+def _raising(failure):
+    def call(arguments):
+        raise failure
+    return call
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the exception as raised"])
+def test_an_exception_of_the_call_reaches_the_engine_on_one_line_and_keeps_its_type(monkeypatch, on_one_line):
+    """The engine writes str() of an exception that a tool raises into the scratchpad (agents/react/agents.py, the call of a tool),
+    and in its JSON branch it reads a TypeError apart, so the text goes on one line and the type stays."""
+    import pydantic
+    from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import RunStopped
+
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "_failure_on_one_line", lambda failure: failure)
+    schema = {"properties": {"site_name": {"type": "string"}}, "required": ["site_name"]}
+
+    def raised(failure):
+        with pytest.raises(BaseException) as caught:
+            react_tool_adapter.mcp_tool("sites", "", schema, _raising(failure)).run({"site_name": "MAIN"})
+        return caught.value
+
+    for failure in (_TransportFailure("the session closed\n  while the answer was read"), TypeError("unexpected argument\n  site")):
+        text = str(failure)
+        got = raised(failure)
+        assert type(got) is type(failure) and (str(got) == react_tool_adapter.one_line(text) and "\n" not in str(got)) == on_one_line
+    # a class whose text comes from fields of its own goes on one line as a ValueError
+    with pytest.raises(pydantic.ValidationError) as refusal:
+        pydantic.TypeAdapter(int).validate_python("many")
+    assert "\n" in str(refusal.value)
+    got = raised(refusal.value)
+    assert (type(got) is ValueError and str(got) == react_tool_adapter.one_line(str(refusal.value))) == on_one_line
+    # an exception whose text is already one line, and the port's stop of a run, a BaseException, pass as raised
+    for failure in (KeyError("site"), _TransportFailure("closed"), RunStopped("episode_over")):
+        args = failure.args
+        assert raised(failure) is failure and failure.args == args
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the refusal as pydantic writes it"])
+def test_a_refusal_of_a_sub_agent_tools_argument_model_reaches_the_supervisor_on_one_line(tmp_path, monkeypatch, on_one_line):
+    """A sub-agent tool of the supervisor takes one argument, request, so an input under another key is refused by its argument
+    model before any sub-agent runs, and the engine writes the refusal into the supervisor's scratchpad."""
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+    launchers = stub_servers.write_launchers(tmp_path / "servers", ("iot", "task"))
+    script = [*step("I need the list of sites.", "IoTAgent", "question=list all the sites"), *finish("No sites"), REVIEW_OK]
+    runner, result, _ = run(launchers, script, tmp_path)
+    [line] = [line for line in runner.supervisor.scratchpad.split("\n") if line.startswith("Observation 1:")]
+    assert "validation error for IoTAgentInputs" in line and result.sub_agents == [] and result.answer == "No sites"
+    assert ("For further information visit" in line) == on_one_line
+
+
+ENGINE_FAILURE = "Execution failed while calling the Tool. Details: "  # the engine's text for an exception of a tool
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the exception as raised"])
+@pytest.mark.parametrize("written", ["site_name=MAIN", '{"site_name": "MAIN"}', "MAIN"], ids=["key=value", "JSON object", "plain string"])
+def test_an_exception_of_the_call_reaches_the_agents_scratchpad_on_one_line_in_every_input_form(monkeypatch, on_one_line, written):
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "_failure_on_one_line", lambda failure: failure)
+    text = "the session closed while the answer was read:\n  connection reset\n  by the server"
+    script = [*step("I need the history.", "history", written), *finish("No history"), REVIEW_OK]
+    agent = _sub_agent_run(_raising(_TransportFailure(text)), script)
+    [line] = [line for line in agent.scratchpad.split("\n") if line.startswith("Observation 1:")]
+    assert line.endswith(ENGINE_FAILURE + (react_tool_adapter.one_line(text) if on_one_line else text.split("\n")[0]))
+    assert (f"\n{line}\nThought 2:" in agent.scratchpad) == on_one_line and agent.answer == "No history"
+
+
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the exception as raised"])
+def test_a_long_exception_of_the_call_reaches_the_agent_on_one_line_so_the_overflow_handler_can_cut_it(monkeypatch, on_one_line):
+    """An exception whose text outgrows the served context, as a transport error that carries the page it was reading. On one
+    line the overflow handler cuts it as it cuts an answer (agents/react/utils.py, truncate_scratchpad) and the agent goes on to
+    its Finish. Over many lines the handler cuts the one line that opens it, is still over the context and raises IndexError."""
+    rows = [{"timestamp": f"2025-04-02T00:{n // 60:02d}:{n % 60:02d}", "value": n} for n in range(HISTORY_ROWS)]
+    failure = _TransportFailure("the session closed while the answer was read:\n" + json.dumps({"observations": rows}, indent=2))
+    script = [*step("I need the history.", "history", "site_name=MAIN"), *finish("No history"), REVIEW_OK]
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "_failure_on_one_line", lambda failure: failure)
+        with pytest.raises(IndexError, match="pop from empty list"):
+            _sub_agent_run(_raising(failure), script, room=60)
+        return
+    agent = _sub_agent_run(_raising(failure), script, room=60)
+    assert "\nObservation 1: [truncated excerpt]\nThought 2:" in agent.scratchpad and agent.answer == "No history"
+
+
+def test_one_supervisor_example_written_for_the_port_chains_two_delegations_and_the_counts_stay():
     import re
 
     from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import in_context_examples as examples
@@ -373,10 +693,12 @@ def test_the_route_closes_its_client_when_the_run_ends(tmp_path, monkeypatch):
 
 
 def test_the_port_hands_its_model_the_same_text_for_every_answer():
-    """Guard of the hunk that moves the reader of the end into CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_receipts. On a table of answers (no receipt, a receipt with
-    steps left, none left, the end event, the refusal after the end, an accepted finish and a refused one) a tool of the port hands
-    its model the answer text byte for byte where the episode goes on, and stops the run where the base stopped it. Its mutation
-    is a verdict that differs from the base on one answer."""
+    """The runtime reads the end of an episode with the reader of
+    CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_receipts. On a table of answers (no receipt, a receipt with
+    steps left, none left, the end event, the refusal after the end, an accepted finish and a refused one) the runtime hands the
+    tool of the port the answer text byte for byte where the episode goes on, which the tool puts on one line for its model
+    (react_tool_adapter.one_line), and stops the run on each answer that ends the episode, so a verdict that differs from the
+    table on one answer fails the test."""
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import metering_receipts as receipts
     body = json.dumps({"time": 2})
     receipt = {"steps_left": 3, "budget_left": 10}
@@ -511,3 +833,100 @@ def test_a_call_in_flight_waits_on_while_the_deadline_read_again_lies_ahead(monk
         loop.call_soon_threadsafe(loop.stop)
         thread.join(5)
         loop.close()
+
+
+
+# ----- the limits of a run with the CausalDiagnosis MCP -----
+
+# the runs over the stand-in servers with and without the CausalDiagnosis MCP, on the asset of the rig with a start that holds one
+# faulty component, which the work order examples of a run with the MCP name (sub_agent_registry.mcp_row)
+ROWS = {"with the MCP": ("iot", "causal_diagnosis"), "control: without it": ("iot",)}
+RIG_ASSET, RIG_START = "hyd_1", {"cooler": 3, "valve": 100, "pump": 0, "accumulator": 130}
+
+
+def run_on(servers, script, tmp_path, context_length=131072):
+    """A run of the stand-in servers of a row, with its no_call entries counted: (runner, result, endpoint, entries)."""
+    launchers = stub_servers.write_launchers(tmp_path / "servers", servers)
+    entries = []
+    with ScriptedEndpoint(script, context_length=context_length) as ep:
+        runner = MetaAgentRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",  # pragma: allowlist secret
+                                 example_start=RIG_START, example_asset=RIG_ASSET, on_idle=lambda: entries.append(1) and False)
+        result = asyncio.run(runner.run("What IoT sites are available?"))
+    return runner, result, ep, entries
+
+
+def words(text):
+    return len(text.split())  # the token count of the scripted endpoint
+
+
+@pytest.mark.parametrize("servers", ROWS.values(), ids=ROWS.keys())
+def test_on_a_run_with_the_mcp_every_request_asks_for_the_room_the_served_context_leaves_its_prompt(tmp_path, servers):
+    """The completion route reads an absent max_tokens as 16, so a request that caps no reply names the room: the served context
+    less the tokenize count of its prompt less 2, the most the engine generates (CompletionRoute.room_of). Without the MCP every
+    request carries the paper's 500. Each model call records what its request sent."""
+    runner, result, ep, _ = run_on(servers, list(SITES_RUN), tmp_path)
+    bodies = ep.completions()
+    assert result.end == "finish" and len(bodies) == len(runner.calls) == 10
+    expected = [131072 - words(b["prompt"]) - 2 for b in bodies] if "causal_diagnosis" in servers else [500] * len(bodies)
+    assert [b["max_tokens"] for b in bodies] == expected == [c["max_tokens"] for c in runner.calls]
+    tokenized = [b["prompt"] for path, b in ep.requests if path.endswith("/v1/tokenize")]
+    assert all(b["prompt"] in tokenized for b in bodies) == ("causal_diagnosis" in servers)
+
+
+def test_a_prompt_that_leaves_no_room_ends_the_run_as_context_without_a_request():
+    from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import CONTEXT_END, RunStopped
+
+    with ScriptedEndpoint([" ok\nAction"], context_length=6) as ep:
+        route = CompletionRoute(ep.base_url, "local", "granite-stand-in", reply_room=True)
+        assert route.room_of("a b c") == 1  # 6 less 3 less 2
+        with pytest.raises(RunStopped, match=CONTEXT_END):
+            route.generate("a b c d", stop=THOUGHT_STOP)
+        assert route.stop_reason == CONTEXT_END and ep.completions() == []
+        control = CompletionRoute(ep.base_url, "local", "granite-stand-in")  # without the room the request goes out with the paper's 500
+        control.generate("a b c d", stop=THOUGHT_STOP)
+        assert [b["max_tokens"] for b in ep.completions()] == [500]
+
+
+@pytest.mark.parametrize("servers", ROWS.values(), ids=ROWS.keys())
+def test_on_a_run_with_the_mcp_every_react_step_without_a_counted_call_takes_one_no_call_step(tmp_path, servers):
+    """The supervisor delegates to IoTAgent, which calls sites, a counted call, and writes Finish, and the supervisor writes
+    Finish. With the MCP the sub-agent's Finish takes a no_call step and so does the supervisor's, whose subtree took none, while
+    the supervisor step that delegated is charged nothing, since its subtree took steps: two entries. Without it the paper's rule
+    charges the supervisor's Finish alone: one entry. No agent has a step limit of its own with the MCP."""
+    runner, result, _, entries = run_on(servers, list(SITES_RUN), tmp_path)
+    mcp = "causal_diagnosis" in servers
+    assert result.end == "finish" and [r["tool"] for r in result.trajectory] == ["sites"]
+    assert entries == ([1, 1] if mcp else [1])
+    assert runner.supervisor.max_steps == (sub_agent_registry.NO_STEP_CAP if mcp else sub_agent_registry.SUPERVISOR_STEPS)
+    assert result.sub_agents[0]["metric"]["max_steps"] == (sub_agent_registry.NO_STEP_CAP if mcp else 15)
+
+
+def test_a_react_step_is_charged_once_however_often_its_agent_asks_to_stop():
+    """ReActXen asks stop_when before each step and once after its round: the charge reads the agent's step counter, so a step is
+    charged once, the step with a counted call is charged nothing, and after the episode ends nothing is charged."""
+    class Route:
+        stop_reason = None
+
+        def stop(self, reason):
+            self.stop_reason = self.stop_reason or reason
+
+        def stopped(self):
+            return self.stop_reason is not None
+
+    entries = []
+    runtime = sub_agent_runtime.Runtime(Route(), None, {"iot": [], sub_agent_registry.CAUSAL_SERVER: []}, None, None,
+                                        on_idle=lambda: entries.append(1) or len(entries) == 3)
+    charge = runtime.step_charge()
+    charge.agent = types.SimpleNamespace(step_n=1)
+    assert charge() is False and entries == []  # before the first step
+    runtime.trajectory.append({"response": "sites", "server": "iot"})
+    charge.agent.step_n = 2
+    assert charge() is False and charge() is False and entries == []  # step 1 made a counted call, asked twice
+    charge.agent.step_n = 3
+    assert charge() is False and charge() is False and entries == [1]  # step 2 made none, charged once
+    charge.agent.step_n = 5
+    charge.close()  # two steps since, the second ends the episode
+    assert entries == [1, 1, 1] and runtime.route.stop_reason == "episode_over" and runtime.acted_since((1, 0))
+    charge.agent.step_n = 6
+    assert charge() is True and entries == [1, 1, 1]
+    assert sub_agent_runtime.Runtime(Route(), None, {"iot": []}, None, None).step_charge() is None  # control: without the MCP no charge

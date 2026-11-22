@@ -158,7 +158,7 @@ def agent_settings(a, runner):
     limits = None
     if a.agent in agent_kinds.PAPER_ERA_AGENTS:
         paper = frameworks.code("AGENTS", a.agent)
-        settings = paper.request_settings(runner.temperature)
+        settings = paper.request_settings(runner.temperature, runner.servers)
         limits = paper.settings(runner.servers, runner.temperature)
     elif a.agent == "causal":
         from CausalDiagnosis.agents.Causal_Diagnosis_Agent.agent_options import CausalLoopOptions
@@ -214,7 +214,7 @@ def run_meta(a, runner, config, price_table, plan, judge_options, reasons=None):
         "code": ledger.code_record(a.agent), "on_origin": bool(ledger.git_lines(ROOT, "branch", "-r", "--contains", "HEAD")),
         "server_env": {name: os.environ.get(name) for name in SERVER_ENV_RECORDED}, "python": platform.python_version(), "mcp": _version("mcp"), "openai": _version("openai"),
         "asset_id": config.asset_id, "platform": ledger.platform_of(), "data": ledger.run_data.data_record(runner.facts_path, config.asset_id),
-        "serving": serving_of(a, judge_options), "lora_adapters": lora_adapters_of(a),
+        "serving": serving_of(a, judge_options), "served": runner.served, "lora_adapters": lora_adapters_of(a),
         "runs_in_flight": start_check.runs_in_flight(), "granted": granted(), "start_cap": getattr(a, "start_cap", None),
         "start_cap_seed": DEVELOPMENT_SEED if getattr(a, "start_cap", None) is not None else None,
         # the start state and the scenarios of a run of a selector, which a run without one does not carry

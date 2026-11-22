@@ -6,6 +6,7 @@ from CausalDiagnosis.experiments.episode_runners.run_configuration import ROW_PR
 from CausalDiagnosis.experiments.run_verification import run_ledger as ledger  # noqa: E402
 from CausalDiagnosis.experiments.table_definitions.training_variants import adapter_of, block_of, is_marker, numbers  # noqa: E402
 from CausalDiagnosis.utils import frameworks  # noqa: E402
+from CausalDiagnosis.utils.model_reply_room import card_context_length  # noqa: E402
 from . import agent_kinds, model_backends, reference_policy_episodes, run_record, play_one_episode
 
 
@@ -23,6 +24,14 @@ def require_context_count(backend):
     if missing:
         raise ContextNotCounted(f"the model backend {type(backend).__name__} cannot count the context of its endpoint (it has no "
                                 f"{' and no '.join(missing)}), so no request of the run could be checked against that context")
+
+
+def served_facts(base_url, model):
+    """run.json served for a run of a model agent, read once before the run folder: context_length, the context the endpoint
+    serves the model with, max_model_len of its card in the endpoint's model listing as the completion route reads it
+    (card_context_length), None when the endpoint names none or does not answer."""
+    cards = ledger.endpoint_models(base_url) if base_url else None
+    return {"context_length": card_context_length(cards, model) if cards else None}
 
 
 def store_settings(a):
@@ -108,6 +117,9 @@ def build_runner(a, config_name, config, price_table, cycles, blocks, facts_path
                                               ("--causal-ec2-reads", a.causal_ec2_reads)) if on]
         if needs_server:
             raise SystemExit(f"{', '.join(needs_server)} change what the CausalDiagnosis MCP advises and need it. Drop them or drop --no-diagnostics")
+    served_record = served_facts(a.base_url, served) if a.agent in agent_kinds.MODEL_AGENTS else None
+    if a.agent in agent_kinds.PAPER_ERA_AGENTS and (refusal := frameworks.code("AGENTS", a.agent).served_refusal(servers, served_record)):
+        raise SystemExit(refusal)
     agent_label = agent_kinds.agent_label_of(a.agent, a.model, causal)
     judge_options = judge_settings(a, agent_label)
     options = {"judge": judge_options, "grade": not a.no_grade, "ranking_model": a.ranking_model}
@@ -119,6 +131,7 @@ def build_runner(a, config_name, config, price_table, cycles, blocks, facts_path
                            task_block=block, served_model=served if a.agent in agent_kinds.MODEL_AGENTS else None,
                            temperature=temperature, adapter=adapter, task_block_record=block_record, models_path=models_path
 )
+    runner.served = served_record
     return runner, judge_options
 
 

@@ -19,12 +19,14 @@ def episode_over(tool, text, is_error):
     return ended(tool, body, receipt, is_error)
 
 
-def request_settings(temperature=None):
+def request_settings(temperature=None, servers=()):
     """What a run folder records of the requests of a port, the same for both ports, since they share the route and the
     runtime: the block decoding, what the completion route sends, and the block transport, how its client and the tool
-    sessions carry a request. temperature is None for the paper's value, or the temperature of a sampling run."""
+    sessions carry a request. temperature is None for the paper's value, or the temperature of a sampling run, and servers
+    are those of the run, whose max_tokens is the room of each request where they list the CausalDiagnosis MCP."""
     paper = completion.PAPER_DECODING
-    return {"decoding": {"route": "/v1/completions", "max_tokens": paper["max_tokens"], "min_tokens": paper["min_tokens"],
+    max_tokens = completion.REPLY_ROOM if sub_agent_registry.with_mcp(servers) else paper["max_tokens"]
+    return {"decoding": {"route": "/v1/completions", "max_tokens": max_tokens, "min_tokens": paper["min_tokens"],
                          "temperature": paper["temperature"] if temperature is None else temperature,
                          "stop": {kind: list(stop) for stop, kind in completion.KINDS.items()}, "no_stop_trim": paper["no_stop_trim"],
                          "extra_body": None},
@@ -38,19 +40,25 @@ def request_settings(temperature=None):
 class Runtime:
     """What the agents' thread reaches: the MCP sessions on the run's event loop, the route, the records."""
 
-    def __init__(self, route, sessions, definitions, loop, model, example_start=None, on_idle=None):
+    def __init__(self, route, sessions, definitions, loop, model, example_start=None, on_idle=None, example_asset=None):
         self.route, self.sessions, self.definitions, self.loop = route, sessions, definitions, loop
         self.model = model
         # the driver's no_call entry for an iteration whose subtree made no counted call; it returns whether
         # the environment ended the episode with it, and None runs no such entry
         self.on_idle = on_idle
-        self._answered_at_mark = 0
+        self._no_calls = 0  # the no_call steps the run took through on_idle
+        self._supervisor_mark = (0, 0)  # mark() at the supervisor's last step
+        # on a run with the CausalDiagnosis MCP every ReAct step of a sub-agent or a step agent that makes no counted call takes a
+        # no_call step (ReactStepCharge), and no agent has a step limit of its own (sub_agent_registry.step_cap)
+        self.charges_steps = sub_agent_registry.with_mcp(tuple(definitions or ()))
         self.example_start = example_start  # {component: level} of the registered example start, which the diagnosis example shows
+        self.example_asset = example_asset  # the asset of the run, whose site, field and profile the examples of a run with the MCP show
         self.trajectory: list[dict] = []
         self.sub_agents: list[dict] = []
         self.supervisor = None
         self._tools = {}
         self._examples = {}
+        self._row = None
 
     def turn(self):
         return self.supervisor.step_n if self.supervisor is not None else None
@@ -65,20 +73,36 @@ class Runtime:
         of the CausalDiagnosis MCP is no counted call, as in the controller of the causal agent."""
         return sum(1 for record in self.trajectory if record["response"] is not None and record["server"] != sub_agent_registry.CAUSAL_SERVER)
 
+    def mark(self):
+        """(counted calls, no_call steps) of the run so far, against which acted_since reads an iteration."""
+        return self.answered(), self._no_calls
+
+    def acted_since(self, mark):
+        """Whether the run took a step of the episode's step cap since mark: a counted call, or a no_call step that a ReAct step
+        of a sub-agent or a step agent took on a run with the CausalDiagnosis MCP, so that no iteration is charged twice."""
+        answered, no_calls = mark
+        return self.answered() > answered or self._no_calls > no_calls
+
     def iteration_end(self, acted):
         """The end of an outer iteration: one without a counted call goes to the driver's no_call entry, which takes the step
         of the row's step cap and plays the thinking it charges; when that ends the episode the run stops."""
-        if not acted and self.on_idle is not None and self.on_idle():
-            self.route.stop("episode_over")
+        if not acted and self.on_idle is not None:
+            self._no_calls += 1
+            if self.on_idle():
+                self.route.stop("episode_over")
 
     def supervisor_turn(self):
         """stop_when of the supervisor, read before each of its steps: the step before it ends an iteration, acted when its
-        sub-agent runs made a counted call, and the supervisor stops once the episode is over."""
+        sub-agent runs took a step of the episode's step cap (acted_since), and the supervisor stops once the episode is over."""
         if self.supervisor is not None and self.supervisor.step_n > 1:
-            answered = self.answered()
-            self.iteration_end(answered > self._answered_at_mark)
-            self._answered_at_mark = answered
+            self.iteration_end(self.acted_since(self._supervisor_mark))
+            self._supervisor_mark = self.mark()
         return self.episode_ended()
+
+    def step_charge(self):
+        """The stop_when of a sub-agent or a step agent with the charge of its ReAct steps on a run with the CausalDiagnosis MCP
+        (ReactStepCharge, whose close the caller calls after the agent's run), and None on every other run."""
+        return ReactStepCharge(self) if self.charges_steps else None
 
     def tools_of(self, spec):
         """The LangChain tools of a sub-agent, one per MCP tool of its servers, built once per run."""
@@ -91,16 +115,25 @@ class Runtime:
             self._tools[spec.name] = tools
         return self._tools[spec.name]
 
+    def mcp_row(self):
+        """The McpRow of the run, built once: what the examples written for the port show of the asset of a run whose servers list
+        the CausalDiagnosis MCP, None on every other run (sub_agent_registry.mcp_row)."""
+        if self._row is None:
+            self._row = (sub_agent_registry.mcp_row(tuple(self.definitions), self.example_asset, self.example_start),)
+        return self._row[0]
+
     def examples_of(self, spec):
         """The agent's own examples for the tools it has, written once per run: the diagnosis example from the tool's listed
-        schema and the example start of the run (hub._per_tool)."""
+        schema and the example start of the run (hub._per_tool), and on a run with the CausalDiagnosis MCP the asset of the run
+        in every example written for the port (mcp_row)."""
         if spec.name not in self._examples:
-            self._examples[spec.name] = spec.own_examples(self.tools_of(spec), self.example_start)
+            self._examples[spec.name] = spec.own_examples(self.tools_of(spec), self.example_start, self.mcp_row())
         return self._examples[spec.name]
 
     def prepare(self, specs):
         """The tools and the examples of every sub-agent of kind react, built before the first model call, so that a tool name
-        that the engine would misread or an example start that does not fit the tool contract stops the run with its reason
+        that the engine would misread, an example start that does not fit the tool contract or a run with the CausalDiagnosis MCP
+        that names no asset stops the run with its reason
         and is never answered to a supervisor as a failed delegation. Returns that refusal, a ValueError, or None. A runner
         raises it once its session block has ended: raised inside, where the MCP clients run in task groups, it would leave
         run() inside an exception group of the client, without its reason."""
@@ -161,10 +194,17 @@ class Runtime:
         outer, self._request = self._request, request
         try:
             with self.route.agent(spec.name):
-                agent = agent_builders.build_sub_agent(spec, request, tools, self.model, self.examples_of(spec), stop_when=self.episode_ended)
+                charge = self.step_charge()
+                agent = agent_builders.build_sub_agent(spec, request, tools, self.model, self.examples_of(spec),
+                                                       stop_when=charge if charge is not None else self.episode_ended,
+                                                       max_steps=sub_agent_registry.step_cap(spec.max_steps, tuple(self.definitions)))
                 if parent_agent:
                     agent.parent_agent = parent_agent
+                if charge is not None:
+                    charge.agent = agent
                 reaction = agent.run()
+                if charge is not None:
+                    charge.close()
         finally:
             self._request = outer
         answer = agent.answer if agent.answer.strip() else "Agent failed to generate final answer"
@@ -179,3 +219,25 @@ class Runtime:
                                 "react_steps": agent.per_round_info[-1]["step"] if agent.per_round_info else agent.step_n,
                                 "metric": agent.metric})
         return json.dumps(reply, indent=2)
+
+
+class ReactStepCharge:
+    """The stop_when of a sub-agent or a step agent on a run with the CausalDiagnosis MCP: one no_call step for each of its ReAct
+    steps that made no counted call (a call of the MCP, Finish, an invalid action), as a planning turn of the CausalDiagnosis agent
+    without one takes it. ReActXen asks stop_when before every step and once after its round, and the caller calls close after
+    the agent's run, so each step is charged once, read from the agent's step counter, which every step advances by one."""
+
+    def __init__(self, runtime):
+        self.runtime, self.agent = runtime, None
+        self._mark, self._steps = runtime.mark(), 1  # ReActXen counts steps from 1
+
+    def __call__(self):
+        self.close()
+        return self.runtime.episode_ended()
+
+    def close(self):
+        """Charges each step of the agent since the last charge that made no counted call, until the episode ends."""
+        while self.agent is not None and self._steps < self.agent.step_n and not self.runtime.episode_ended():
+            self._steps += 1
+            self.runtime.iteration_end(self.runtime.acted_since(self._mark))
+            self._mark = self.runtime.mark()

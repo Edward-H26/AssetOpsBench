@@ -16,20 +16,43 @@ CausalDiagnosis MCP and 23 without it. The FMSR agent's one example, whose paper
 five, since the paper's WO agent ran in code mode. One example per tool of the task tools and of the CausalDiagnosis MCP.
 
 Observations. In the examples written for the rig and in the IoT agent's adapted history example, every answer of an MCP
-tool is a JSON object in keys that the tool's answer has, with made-up values of a made-up world: the chiller CHL-A100
+tool is a JSON object in keys that the tool's answer has, for the CausalDiagnosis MCP the answer of its default level, at
+which both ports call it, with made-up values of a made-up world: the chiller CHL-A100
 with the parts compressor, condenser, evaporator and fan at SiteX, and Chiller 4 at MAIN, the paper's own names. Every
 Finish line states the values that answer its question, copied from its observation, and the supervisor examples written for this port
 show the reply that such a Finish line gives. The examples written for the reproduction keep their values and show the
 keys of the main-0.x servers (commit c6b96755), and the examples AssetOpsBench wrote keep their text apart from the renames above.
 
+On the rows with the CausalDiagnosis MCP. Where a run lists the CausalDiagnosis MCP, every example written for this port, in the
+tables of the sub-agents and in TASK_SUPERVISOR and CAUSAL_SUPERVISOR, shows the site of the asset of the run in place of SiteX and
+SiteY, and its identifiers of a reading in the form of a row of the history, obs/<timestamp>/<field>, cite a field of the asset's
+profile in place of Supply Temperature (on_mcp_row, McpRow). The work order examples of the WO agent also name the asset of the run,
+a component of it and the child asset on which a work order names that component, in place of the made-up chiller CHL-A100 and its
+compressor (orders_on_mcp_row). The profile examples, the TaskAgent's and TASK_SUPERVISOR's, show the profile of the asset of the
+run in place of the made-up chiller's, its type, components, child assets, sensor groups and the budget and horizon of its default
+configuration, and the diagnosis of TASK_SUPERVISOR names the levels of the example start, as the diagnosis example does
+(ROW_TEXTS). The TaskAgent's lookup_fix example shows the asset's repair manual of that component, the FMSR agent's example the
+failure modes that fmsr files under the asset's own class, or, where it files none there, under the first class with codes among
+those of that component and the other components, and the examples of the CausalDiagnosis MCP and CAUSAL_SUPERVISOR the asset, its
+components, its served fields, its start's and healthy levels and the MCP's price and duration of the replacement, with
+illustrative readings, normal range, probabilities and predicted effects (ROW_EXAMPLES). Their timestamps stay those of the made-up
+world, which no episode's clock reaches, so an identifier copied from them is never released evidence. The examples of
+AssetOpsBench and those adapted from them stay as they are on every row, and every example stays as it is on the rows without the
+MCP.
+
 Neutrality. Every value in an example written for this port belongs to the made-up world or is the example's own question. The diagnosis
 example is written at run time from the tool contract and the registered example start of the run, a development start
 and never a test start (diagnosis_example). No fixed text names a level, a channel, a reading or an evidence identifier
-of a registered asset, and none says when to read, diagnose, declare, order or finish. Each question asks for one action
+of a registered asset, and none says when to read, diagnose, declare, order or finish. On the rows with the CausalDiagnosis MCP
+the examples written for this port also name the site, one field and, in the profile examples, the profile of the asset of the run,
+written at run time from its profile, and the diagnosis of TASK_SUPERVISOR names the levels of the example start, as the diagnosis
+example does, while the ranking and the repair manual also state the healthy levels, which every profile answer states. Each question asks for one action
 and the example takes it, as the paper's examples do, and one supervisor example written for this port passes the answer of one
 sub-agent on to another. An example written for this port cites evidence in the forms that the surface gives.
 """
 import json
+import re
+from dataclasses import dataclass
 
 # ----- the paper's, byte for byte -----
 
@@ -413,7 +436,7 @@ CAUSAL_SUPERVISOR = """Question: Which evidence about CHL-A100 has been released
 Thought 1: I need the released evidence of every sensor group from CausalDiagnosisAgent.
 Action 1: CausalDiagnosisAgent
 Action Input 1: request=list the released evidence of every sensor group
-Observation 1: The released evidence of every sensor group is 2 items from 1 observation at cycle 3: obs/1/Supply Temperature_mean is 7.9, outside its normal range of 5.5 to 7.5, and obs/1/Return Temperature_mean is 12.4, within its normal range of 11.0 to 13.0.
+Observation 1: The released evidence of every sensor group is 1 observation of tier2 at cycle 3: obs/1/Supply Temperature_mean is 7.9, above its normal range of 5.5 to 7.5, and 1 other field of tier2 lies within its normal range.
 
 Question: Rank the candidate root causes of the readings of CHL-A100.
 Thought 1: I need the ranking of the candidate root causes from CausalDiagnosisAgent.
@@ -637,15 +660,15 @@ CAUSAL_TOOLS = {
 Thought 1: I need the released evidence of all sensor groups.
 Action 1: get_episode_evidence
 Action Input 1: sensor_group=all
-Observation 1: {"sensor_group": "all", "n_observations": 1, "items": [{"evidence_id": "obs/1/Supply Temperature_mean", "field": "Supply Temperature_mean", "value": 7.9, "t": 3, "normal_low": 5.5, "normal_high": 7.5, "in_normal_range": false}, {"evidence_id": "obs/1/Return Temperature_mean", "field": "Return Temperature_mean", "value": 12.4, "t": 3, "normal_low": 11.0, "normal_high": 13.0, "in_normal_range": true}], "evidence_ids": ["obs/1/Supply Temperature_mean", "obs/1/Return Temperature_mean"]}
+Observation 1: {"evidence_ids": ["obs/1/Supply Temperature_mean"], "sensor_group": "all", "n_observations": 1, "readings": [{"n": 1, "t": 3, "sensor_group": "tier2"}], "fields": [{"field": "Supply Temperature_mean", "normal_low": 5.5, "normal_high": 7.5, "values": ["7.9 high"]}], "not_listed": {"tier2": 1}}
 Thought 2: I now have the released evidence.
 Action 2: Finish
-Action Input 2: The released evidence of every sensor group is 2 items from 1 observation at cycle 3: obs/1/Supply Temperature_mean is 7.9, outside its normal range of 5.5 to 7.5, and obs/1/Return Temperature_mean is 12.4, within its normal range of 11.0 to 13.0.""",
+Action Input 2: The released evidence of every sensor group is 1 observation of tier2 at cycle 3: obs/1/Supply Temperature_mean is 7.9, above its normal range of 5.5 to 7.5, and 1 other field of tier2 lies within its normal range.""",
     'rank_root_causes': """Question: rank the three most likely root causes
 Thought 1: I need the ranking of the three most likely root causes.
 Action 1: rank_root_causes
 Action Input 1: top_k=3
-Observation 1: {"candidates": [{"rank": 1, "combination": {"compressor": 2, "condenser": 0, "evaporator": 0, "fan": 0}, "probability": 0.62}, {"rank": 2, "combination": {"compressor": 1, "condenser": 0, "evaporator": 0, "fan": 0}, "probability": 0.21}, {"rank": 3, "combination": {"compressor": 2, "condenser": 0, "evaporator": 0, "fan": 3}, "probability": 0.09}], "current_fault_probability": {"compressor": 0.93, "condenser": 0.02, "evaporator": 0.01, "fan": 0.11}, "read_first": false, "evidence_ids": ["obs/1/Supply Temperature_mean", "obs/1/Return Temperature_mean"]}
+Observation 1: {"evidence_ids": ["obs/1/Supply Temperature_mean", "obs/1/Return Temperature_mean"], "candidates": [{"rank": 1, "combination": {"compressor": 2, "condenser": 0, "evaporator": 0, "fan": 0}, "probability": 0.62}, {"rank": 2, "combination": {"compressor": 1, "condenser": 0, "evaporator": 0, "fan": 0}, "probability": 0.21}, {"rank": 3, "combination": {"compressor": 2, "condenser": 0, "evaporator": 0, "fan": 3}, "probability": 0.09}], "current_fault_probability": {"compressor": 0.93, "condenser": 0.02, "evaporator": 0.01, "fan": 0.11}, "read_first": false}
 Thought 2: I now have the ranking.
 Action 2: Finish
 Action Input 2: The three most likely root causes are, by rank: compressor 2, condenser 0, evaporator 0, fan 0 with probability 0.62, then compressor 1, condenser 0, evaporator 0, fan 0 with probability 0.21, then compressor 2, condenser 0, evaporator 0, fan 3 with probability 0.09. The ranking does not say read first.""",
@@ -666,3 +689,320 @@ Thought 2: I now have the verification.
 Action 2: Finish
 Action Input 2: Prediction pred/1 of the action replace:compressor is verified against the reading after the repair: the outcome is consistent with the prediction, the belief after the reading confirms it against its strongest rival and the recovery posterior is 0.97.""",
 }
+
+
+# ----- on the rows with the CausalDiagnosis MCP -----
+# the made-up sites and the made-up field of the examples written for this port, which a run with the CausalDiagnosis MCP shows as
+# the asset's own (on_mcp_row)
+MADE_UP_SITES = ("SiteX", "SiteY")
+MADE_UP_FIELD = "Supply Temperature"
+# an identifier of a reading of the made-up field in the form of a row of the history, obs/<timestamp>/<field>
+MADE_UP_ROW_IDENTIFIER = re.compile(r"(obs/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)" + re.escape(MADE_UP_FIELD) + r"(?!\w)")
+# the site list of TASK_SUPERVISOR, which copies IBM's example of the sites with its three made-up sites: the list, the thought and
+# the summary that name it
+SITE_LIST = ('["SiteX", "SiteY", "SiteZ"]', "The sites are SiteX, SiteY and SiteZ. I need to end the task with them",
+             "the sites are SiteX, SiteY and SiteZ")
+
+
+# the made-up asset and part of the work order examples, which a run with the CausalDiagnosis MCP shows as the asset of the run and
+# one of its components, with the child asset on which a work order names that component (orders_on_mcp_row)
+MADE_UP_ASSET, MADE_UP_PART = "CHL-A100", "compressor"
+
+
+@dataclass(frozen=True)
+class McpRow:
+    """What the examples written for this port show of the asset of a run that lists the CausalDiagnosis MCP: its site, the field of
+    its profile that their identifiers of a reading cite, for the work order examples the asset, one of its components and the
+    child asset on which a work order names that component, for the profile examples the asset's type, components, child assets,
+    sensor groups with their fields and the budget and horizon of its default configuration, and for the diagnosis of
+    TASK_SUPERVISOR the levels of the example start of the run, in the order of the components."""
+    site: str
+    field: str
+    asset: str
+    component: str
+    child: str
+    asset_type: str
+    components: tuple
+    children: tuple
+    sensor_groups: tuple  # (group, (field, ...)) in the order of the configuration
+    budget: int
+    horizon: int
+    levels: tuple  # (component, level)
+    healthy: tuple  # (component, healthy level), which every profile answer states
+    second_field: str  # the field of the second channel of the first sensor group, the second reading of the ranking example
+    statistic: str  # the plain statistic, under which the CausalDiagnosis MCP names a served value <field>_<statistic>
+    manual: str  # the JSON of lookup_fix's answer for the component under the default configuration, without the emergency option
+    asset_class: str  # the class of the FMSR example: the asset's own, or a component's where fmsr files no code under the asset's
+    failure_modes: tuple  # the codes of that class
+
+
+# the made-up chiller of the profile examples and the levels of the made-up diagnosis of TASK_SUPERVISOR, written as a McpRow so that
+# a run with the CausalDiagnosis MCP replaces each text written from it by the same text written from the asset of the run
+MADE_UP_ROW = McpRow(site="SiteX", field=MADE_UP_FIELD, asset=MADE_UP_ASSET, component=MADE_UP_PART, child=f"{MADE_UP_ASSET}_{MADE_UP_PART}",
+                     asset_type="CHILLER", components=("compressor", "condenser", "evaporator", "fan"),
+                     children=tuple(f"{MADE_UP_ASSET}_{c}" for c in ("compressor", "condenser", "evaporator", "fan")),
+                     sensor_groups=(("tier1", (MADE_UP_FIELD,)), ("tier2", (MADE_UP_FIELD, "Return Temperature"))), budget=100, horizon=40,
+                     levels=(("compressor", 2), ("condenser", 1), ("evaporator", 1), ("fan", 3)), healthy=(), second_field="Return Temperature",
+                     statistic="mean", manual="{}", asset_class="chiller", failure_modes=())
+
+
+def _listed(items):
+    """Names as the examples list them: commas, and "and" before the last; "none" for no name."""
+    items = list(items)
+    return "none" if not items else items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def profile_answer(row):
+    """The answer of get_asset_profile in the keys that the TaskAgent's example of it shows."""
+    return json.dumps({"asset_id": row.asset, "asset": {"asset_id": row.asset, "asset_type": row.asset_type, "site": row.site,
+                                                         "children": dict(zip(row.components, row.children))},
+                       "components": list(row.components), "sensor_groups": {group: list(fields) for group, fields in row.sensor_groups},
+                       "budget": row.budget, "horizon": row.horizon})
+
+
+def profile_finish(row):
+    """The Finish line of the TaskAgent's example of get_asset_profile."""
+    groups = _listed(f"{group} with {_listed(fields)}" for group, fields in row.sensor_groups)
+    return (f"The asset profile of {row.asset}, a {row.asset_type} at site {row.site}: the components are {_listed(row.components)}, "
+            f"with the child assets {_listed(row.children)}. The sensor groups are {groups}. The budget is {row.budget} and the horizon "
+            f"is {row.horizon}.")
+
+
+def profile_summary(row):
+    """The TaskAgent's reply with the asset profile in TASK_SUPERVISOR."""
+    return (f"The asset profile of {row.asset}, a {row.asset_type} at site {row.site}: the components are {_listed(row.components)}, "
+            f"the budget is {row.budget} and the horizon is {row.horizon}.")
+
+
+def diagnosis_named(row):
+    """The levels of the diagnosis of TASK_SUPERVISOR, named as the diagnosis example of the task tools names them."""
+    return ", ".join(f"{component} {level}" for component, level in row.levels)
+
+
+# The examples of the CausalDiagnosis MCP, the TaskAgent's lookup_fix and the FMSR agent's, written for the asset of a run with the
+# CausalDiagnosis MCP. Names, fields, levels, the repair manual and the failure modes are the asset's; the readings and their normal
+# range, the probabilities, the predicted addressing and recovery and the recovery posterior are illustrative values, the made-up
+# examples' own, since no example can show what the model of an episode will answer.
+ILLUSTRATIVE_READING = ("7.9", 5.5, 7.5)  # the value of the reading and the normal range of its field
+ILLUSTRATIVE_RANKING = (0.62, 0.21, 0.09)  # the probabilities of the three candidates of the ranking
+ILLUSTRATIVE_RERANKING = (0.91, 0.06)  # the probabilities of the two candidates of the ranking after the last reading
+ILLUSTRATIVE_FAULT = (0.93, 0.71, 0.52, 0.34)  # the current fault probability of the faulty components of the start, in order
+ILLUSTRATIVE_HEALTHY_FAULT = 0.02  # the current fault probability of a component at its healthy level in the start
+ILLUSTRATIVE_EFFECT = (0.95, 0.81, 0.97)  # addresses_fault and recovery of the prediction, and the recovery posterior of its verification
+
+
+def _cycles(n):
+    return f"{n} cycle" if n == 1 else f"{n} cycles"
+
+
+def _number(value):
+    return int(value) if float(value).is_integer() else value
+
+
+def _candidates(row):
+    """The candidates of the ranking example: the example start, then the start with each of its first two faulty components at its
+    healthy level, so that every level shown is a level of the start or a healthy level."""
+    start, healthy = dict(row.levels), dict(row.healthy)
+    faulty = [c for c in row.components if start[c] != healthy[c]]
+    return [start, *({**start, c: healthy[c]} for c in faulty[:2])]
+
+
+def _named(combination, row):
+    return ", ".join(f"{c} {combination[c]}" for c in row.components)
+
+
+def _readings(row):
+    group = row.sensor_groups[1][0] if len(row.sensor_groups) > 1 else row.sensor_groups[0][0]
+    return group, f"{row.field}_{row.statistic}", f"{row.second_field}_{row.statistic}"
+
+
+def evidence_summary(row):
+    group, first, _second = _readings(row)
+    value, low, high = ILLUSTRATIVE_READING
+    return (f"The released evidence of every sensor group is 1 observation of {group} at cycle 3: obs/1/{first} is {value}, above its "
+            f"normal range of {low} to {high}, and 1 other field of {group} lies within its normal range.")
+
+
+def ranking_summary(row, probabilities, words):
+    shown = [f"{_named(c, row)} with probability {p}" for c, p in zip(_candidates(row), probabilities)]
+    return f"The {words} are, by rank: " + ", then ".join(shown) + "."
+
+
+def _effect(row):
+    manual = json.loads(row.manual)
+    standard = manual["standard"]
+    price = _number(standard["part"] + standard["repair_charge"] + standard["visit_charge"])  # the price of the MCP (causal_tools)
+    return f"replace:{row.component}", price, standard["lead_time"] + standard["repair_downtime"]
+
+
+def estimate_summary(row):
+    action, price, duration = _effect(row)
+    addresses, recovery, _posterior = ILLUSTRATIVE_EFFECT
+    return (f"The predicted effect of replacing the {row.component} is prediction pred/1: the action addresses a fault with probability "
+            f"{addresses}, the predicted recovery is {recovery}, the price is {price} and the duration is {_cycles(duration)}.")
+
+
+def verify_summary(row):
+    action, _price, _duration = _effect(row)
+    return (f"Prediction pred/1 of the action {action} is verified against the reading after the repair: the outcome is consistent with "
+            f"the prediction, the belief after the reading confirms it against its strongest rival and the recovery posterior is {ILLUSTRATIVE_EFFECT[2]}.")
+
+
+def evidence_example(row):
+    group, first, _second = _readings(row)
+    value, low, high = ILLUSTRATIVE_READING
+    answer = {"evidence_ids": [f"obs/1/{first}"], "sensor_group": "all", "n_observations": 1, "readings": [{"n": 1, "t": 3, "sensor_group": group}],
+              "fields": [{"field": first, "normal_low": low, "normal_high": high, "values": [f"{value} high"]}], "not_listed": {group: 1}}
+    return f"""Question: list the evidence released so far for every sensor group
+Thought 1: I need the released evidence of all sensor groups.
+Action 1: get_episode_evidence
+Action Input 1: sensor_group=all
+Observation 1: {json.dumps(answer)}
+Thought 2: I now have the released evidence.
+Action 2: Finish
+Action Input 2: {evidence_summary(row)}"""
+
+
+def ranking_example(row):
+    _group, first, second = _readings(row)
+    candidates, start, healthy = _candidates(row), dict(row.levels), dict(row.healthy)
+    faulty = iter(ILLUSTRATIVE_FAULT)
+    current = {c: next(faulty, ILLUSTRATIVE_FAULT[-1]) if start[c] != healthy[c] else ILLUSTRATIVE_HEALTHY_FAULT for c in row.components}
+    answer = {"evidence_ids": [f"obs/1/{first}", f"obs/1/{second}"],
+              "candidates": [{"rank": i + 1, "combination": c, "probability": p} for i, (c, p) in enumerate(zip(candidates, ILLUSTRATIVE_RANKING))],
+              "current_fault_probability": current, "read_first": False}
+    words = f"{'three' if len(candidates) == 3 else len(candidates)} most likely root causes"
+    return f"""Question: rank the {words}
+Thought 1: I need the ranking of the {words}.
+Action 1: rank_root_causes
+Action Input 1: top_k={len(candidates)}
+Observation 1: {json.dumps(answer)}
+Thought 2: I now have the ranking.
+Action 2: Finish
+Action Input 2: {ranking_summary(row, ILLUSTRATIVE_RANKING, words)} The ranking does not say read first."""
+
+
+def estimate_example(row):
+    action, price, duration = _effect(row)
+    addresses, recovery, _posterior = ILLUSTRATIVE_EFFECT
+    answer = {"prediction_id": "pred/1", "action": action, "addresses_fault": addresses, "recovery": recovery, "price": price, "duration": duration}
+    return f"""Question: estimate the effect of the action {action}
+Thought 1: I need the predicted effect of replacing the {row.component}.
+Action 1: estimate_intervention_effect
+Action Input 1: action={action}
+Observation 1: {json.dumps(answer)}
+Thought 2: I now have the prediction.
+Action 2: Finish
+Action Input 2: {estimate_summary(row)} pred/1 is the prediction ID to cite in the work order and to pass to verify_outcome."""
+
+
+def verify_example(row):
+    action, _price, _duration = _effect(row)
+    answer = {"prediction_id": "pred/1", "action": action, "status": "verified", "consistent": True, "confirmed": True, "recovery_posterior": ILLUSTRATIVE_EFFECT[2]}
+    return f"""Question: verify the outcome of prediction pred/1
+Thought 1: I need to verify prediction pred/1 against the reading after the repair.
+Action 1: verify_outcome
+Action Input 1: prediction_id=pred/1
+Observation 1: {json.dumps(answer)}
+Thought 2: I now have the verification.
+Action 2: Finish
+Action Input 2: {verify_summary(row)}"""
+
+
+def causal_supervisor(row):
+    words = f"{'three' if len(_candidates(row)) == 3 else len(_candidates(row))} most likely root causes"
+    return f"""Question: Which evidence about {row.asset} has been released so far?
+Thought 1: I need the released evidence of every sensor group from CausalDiagnosisAgent.
+Action 1: CausalDiagnosisAgent
+Action Input 1: request=list the released evidence of every sensor group
+Observation 1: {evidence_summary(row)}
+
+Question: Rank the candidate root causes of the readings of {row.asset}.
+Thought 1: I need the ranking of the candidate root causes from CausalDiagnosisAgent.
+Action 1: CausalDiagnosisAgent
+Action Input 1: request=rank the {words}
+Observation 1: {ranking_summary(row, ILLUSTRATIVE_RANKING, words)} The ranking does not say read first.
+
+Question: Estimate the effect of replacing the {row.component} of {row.asset}.
+Thought 1: I need the predicted effect of the replacement from CausalDiagnosisAgent.
+Action 1: CausalDiagnosisAgent
+Action Input 1: request=estimate the effect of the action {_effect(row)[0]}
+Observation 1: {estimate_summary(row)}
+
+Question: Check whether the repair of {row.asset} did what prediction pred/1 said.
+Thought 1: I need the verification of prediction pred/1 from CausalDiagnosisAgent.
+Action 1: CausalDiagnosisAgent
+Action Input 1: request=verify the outcome of prediction pred/1
+Observation 1: {verify_summary(row)}
+
+Question: How likely is each candidate root cause of {row.asset} after the last reading?
+Thought 1: I need a new ranking of the candidate root causes from CausalDiagnosisAgent.
+Action 1: CausalDiagnosisAgent
+Action Input 1: request=rank the candidate root causes
+Observation 1: {ranking_summary(row, ILLUSTRATIVE_RERANKING, "candidate root causes")}"""
+
+
+def lookup_fix_example(row):
+    manual = json.loads(row.manual)
+    s = manual["standard"]
+    needs = manual["dependencies"]
+    dependencies = "it has no dependencies" if not needs else f"it needs {_listed(needs)} at the healthy level"
+    return f"""Question: look up the standard fix of the {row.component}
+Thought 1: I need the repair manual of the {row.component}.
+Action 1: lookup_fix
+Action Input 1: component={row.component}
+Observation 1: {json.dumps(manual)}
+Thought 2: I now have the repair manual of the {row.component}.
+Action 2: Finish
+Action Input 2: The standard fix of the {row.component} is {s["fix"]}, at a price of {s["price"]} (part {s["part"]} plus repair charge {s["repair_charge"]}), with a visit charge of {s["visit_charge"]}, a lead time of {_cycles(s["lead_time"])} and a repair downtime of {_cycles(s["repair_downtime"])}. Its priority is {manual["priority"]} and {dependencies}. {manual["effect"]}"""
+
+
+def fmsr_example(row):
+    answer = {"asset_class": row.asset_class, "failure_modes": list(row.failure_modes)}
+    return f"""Question: List all failure modes of the {row.asset_class} class of {row.asset}.
+Thought 1: I need the failure modes that fmsr files under the {row.asset_class} class.
+Action 1: get_failure_modes
+Action Input 1: asset_class={row.asset_class}
+Observation 1: {json.dumps(answer)}
+Thought 2: I now have the failure modes of the {row.asset_class} class.
+Action 2: Finish
+Action Input 2: The failure modes of the {row.asset_class} class of {row.asset} are {_listed(row.failure_modes)}."""
+
+
+# every example written for this port that a run with the CausalDiagnosis MCP shows whole as written for the asset of the run, with the
+# function that writes it, applied first in on_mcp_row
+ROW_EXAMPLES = ((TASK_TOOLS["lookup_fix"], lookup_fix_example), (CAUSAL_TOOLS["get_episode_evidence"], evidence_example),
+                (CAUSAL_TOOLS["rank_root_causes"], ranking_example), (CAUSAL_TOOLS["estimate_intervention_effect"], estimate_example),
+                (CAUSAL_TOOLS["verify_outcome"], verify_example), (CAUSAL_SUPERVISOR, causal_supervisor), (FMSR_RIG[0], fmsr_example))
+
+
+# every text written from a McpRow that an example written for this port holds, in the order on_mcp_row replaces them
+ROW_TEXTS = (profile_answer, profile_finish, profile_summary, diagnosis_named, lambda row: f"the task on asset {row.asset}?",
+             lambda row: f"read the asset profile of {row.asset}")
+
+
+def on_mcp_row(text, row):
+    """An example written for this port as a run with the CausalDiagnosis MCP shows it: the profile examples and the diagnosis of
+    TASK_SUPERVISOR written from the asset of the run (ROW_TEXTS), the site list of TASK_SUPERVISOR as the one site of the asset,
+    the asset's site in place of every made-up site, and the asset's field in every identifier of a reading of the made-up field."""
+    for made_up, written in ROW_EXAMPLES:
+        text = text.replace(made_up, written(row))
+    for written in ROW_TEXTS:
+        text = text.replace(written(MADE_UP_ROW), written(row))
+    listed, thought, summary = SITE_LIST
+    for old, new in ((listed, json.dumps([row.site])), (thought, f"The site is {row.site}. I need to end the task with it"),
+                     (summary, f"the site is {row.site}")):
+        text = text.replace(old, new)
+    for site in MADE_UP_SITES:
+        text = text.replace(site, row.site)
+    return MADE_UP_ROW_IDENTIFIER.sub(lambda match: match.group(1) + row.field, text)
+
+
+def orders_on_mcp_row(text, row):
+    """A work order example of WO_RIG as a run with the CausalDiagnosis MCP shows it: on_mcp_row, with the order on the child asset
+    of the row's component of the asset of the run in place of the made-up chiller's compressor, so that a call copied from it
+    names an asset that the metering layer maps to a component (MeterConfig.component_of). The made-up names are replaced in one
+    pass, the longest first, so that no name written for the asset is read again, also where the asset's name holds a made-up one."""
+    names = {f"{MADE_UP_ASSET}_{MADE_UP_PART}": row.child, MADE_UP_ASSET: row.asset, MADE_UP_PART: row.component}
+    text = re.sub("|".join(map(re.escape, sorted(names, key=len, reverse=True))), lambda match: names[match.group(0)], text)
+    return on_mcp_row(text, row)

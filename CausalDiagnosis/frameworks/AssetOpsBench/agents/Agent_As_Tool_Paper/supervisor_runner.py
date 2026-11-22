@@ -7,7 +7,7 @@ from pathlib import Path
 from observability import persist_trajectory
 from CausalDiagnosis.agents.utils.mcp_sessions import open_sessions
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import agent_builders, sub_agent_registry
-from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import CONTEXT_END, PAPER_DECODING, CompletionRoute, RunStopped, activated
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import CONTEXT_END, PAPER_DECODING, REPLY_ROOM, CompletionRoute, RunStopped, activated
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.ReActXen.agents.react.agents import ReflexionStrategy
 from . import sub_agent_runtime
 
@@ -28,12 +28,17 @@ class MetaAgentResult:
 
 
 def run_settings(server_names, surface="rig", temperature=None):
-    """The settings a run folder records for the port on these servers, known before any episode starts."""
-    specs = sub_agent_registry.registration(tuple(server_names), surface)
-    return {"form": "paper_era", "engine": "ReActXen da40e4b, vendored", "supervisor_max_steps": sub_agent_registry.SUPERVISOR_STEPS,
+    """The settings a run folder records for the port on these servers, known before any episode starts: the paper's form, or on
+    a run with the CausalDiagnosis MCP the form with its limits (sub_agent_registry.MCP_FORM), no step limit of an agent's own,
+    the room of each request as max_tokens and the rule of its no_call steps."""
+    servers = tuple(server_names)
+    specs, mcp = sub_agent_registry.registration(servers, surface), sub_agent_registry.with_mcp(servers)
+    return {"form": sub_agent_registry.MCP_FORM if mcp else sub_agent_registry.PAPER_FORM, "engine": "ReActXen da40e4b, vendored",
+            "supervisor_max_steps": sub_agent_registry.recorded_cap(sub_agent_registry.SUPERVISOR_STEPS, servers),
             "reflections": sub_agent_registry.REFLECTIONS, "surface": surface, "sub_agents": [s.name for s in specs],
-            "sub_agent_max_steps": {s.name: s.max_steps for s in specs if s.kind == "react"},
-            "decoding": dict(PAPER_DECODING, temperature=0.0 if temperature is None else temperature)}
+            "sub_agent_max_steps": {s.name: sub_agent_registry.recorded_cap(s.max_steps, servers) for s in specs if s.kind == "react"},
+            "decoding": dict(PAPER_DECODING, temperature=0.0 if temperature is None else temperature, **({"max_tokens": REPLY_ROOM} if mcp else {})),
+            **({"no_call_steps": sub_agent_registry.NO_CALL_RULE} if mcp else {})}
 
 
 class MetaAgentRunner:
@@ -50,19 +55,22 @@ class MetaAgentRunner:
         on_idle: the driver's no_call entry for a supervisor step whose subtree made no counted call (Runtime.iteration_end).
         example_start: ``{component: level}``, the registered example start that the diagnosis example of the task tools
             shows, which a run whose servers list the diagnosis tool needs (examples.diagnosis_example).
+        example_asset: the asset of the run, whose site, field and profile the examples written for the port show on a run whose servers
+            list the CausalDiagnosis MCP, which such a run needs (sub_agent_registry.mcp_row).
 
     ``calls`` holds one record per model call and ``trajectory`` one per MCP call, both filled while the run goes, so a
     run that raised leaves them for the driver.
     """
 
     def __init__(self, server_paths, base_url, api_key, model, surface="rig", temperature=None, log_path=None, example_start=None,
-                 on_idle=None):
+                 on_idle=None, example_asset=None):
         self._server_paths, self._model, self._surface = dict(server_paths), model, surface
         self._log_path = Path(log_path) if log_path else None
-        self._example_start = example_start
+        self._example_start, self._example_asset = example_start, example_asset
         self.on_idle = on_idle
         self.specs = sub_agent_registry.registration(tuple(self._server_paths), surface)
-        self.route = CompletionRoute(base_url, api_key, model, temperature=temperature)
+        self.route = CompletionRoute(base_url, api_key, model, temperature=temperature,
+                                     reply_room=sub_agent_registry.with_mcp(tuple(self._server_paths)))
         self.calls = self.route.calls
         self.trajectory: list[dict] = []
         self.supervisor = None  # kept with its counter, so that a run without a result still has its step count
@@ -83,7 +91,7 @@ class MetaAgentRunner:
         async with open_sessions(self._server_paths) as sessions:
             definitions = sessions.tools
             runtime = sub_agent_runtime.Runtime(self.route, sessions, definitions, asyncio.get_running_loop(), self._model,
-                              example_start=self._example_start, on_idle=self.on_idle)
+                              example_start=self._example_start, on_idle=self.on_idle, example_asset=self._example_asset)
             refusal = runtime.prepare(self.specs)
             if refusal is None:
                 self.trajectory = runtime.trajectory

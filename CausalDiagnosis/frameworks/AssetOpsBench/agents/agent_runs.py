@@ -63,18 +63,20 @@ def plan_execute_settings(servers, temperature=None):
     return run_settings(servers, "rig", temperature)
 
 
-def run_agent_as_tool(launchers, question, run_id, ep_dir, base_url, api_key, model, temperature=None, example_start=None):
+def run_agent_as_tool(launchers, question, run_id, ep_dir, base_url, api_key, model, temperature=None, example_start=None,
+                      example_asset=None):
     """One run of the paper-era Agent-As-Tool over the driver's launchers, ReActXen's printout in react_log.txt. A run that raised, or
     that ended on an error inside the agents (an API error that outlasts the client's retries), records the error as
     Plan-Execute does, and the model calls and tool calls made before it stay with the runner. A sampling run passes its
-    temperature, every other run none, which keeps the paper's 0.0. example_start is the run's example start, {component: level}.
+    temperature, every other run none, which keeps the paper's 0.0. example_start is the run's example start, {component: level},
+    and example_asset the asset of the run, whose site, field and profile the examples of a run with the CausalDiagnosis MCP show.
     A supervisor step whose subtree made no counted call takes the episode's no_call step through CausalDiagnosis.agents.utils.idle_hook, as a turn without a
     call does for every design."""
     set_run_context(run_id=run_id, scenario_id=ep_dir.name)
     os.environ["AGENT_TRAJECTORY_DIR"] = str(ep_dir)
     runner = agent_as_tool_runner_class()(server_paths=dict(launchers), base_url=base_url, api_key=api_key, model=model,
                                           temperature=temperature, log_path=ep_dir / "react_log.txt", example_start=example_start,
-                                          on_idle=idle.no_call)
+                                          on_idle=idle.no_call, example_asset=example_asset)
     return (*run_limited(lambda: runner.run(question)), runner)
 
 
@@ -100,18 +102,20 @@ def record_agent_as_tool(ep_dir, result, calls, trajectory):
     }
 
 
-def run_plan_execute_paper(launchers, question, run_id, ep_dir, base_url, api_key, model, temperature=None, example_start=None):
+def run_plan_execute_paper(launchers, question, run_id, ep_dir, base_url, api_key, model, temperature=None, example_start=None,
+                           example_asset=None):
     """One run of the paper-era Plan-Execute over the driver's launchers, ReActXen's printout of the step agents in react_log.txt. A run
     that raised, or that ended on an error inside the workflow, records the error as Agent-As-Tool does, and is not retried
     (CausalDiagnosis/frameworks/AssetOpsBench/agents/Plan_Execute_Paper/runner.py). A sampling run passes its temperature, every other run none, which keeps 0.0.
-    example_start is the run's example start, {component: level}. A planning round, which calls no tool of the row, and a pass of the
+    example_start is the run's example start, {component: level}, and example_asset the asset of the run, as for Agent-As-Tool.
+    A planning round, which calls no tool of the row, and a pass of the
     step agents without a counted call take the episode's no_call step through CausalDiagnosis.agents.utils.idle_hook, as a turn without a call does for every
     design."""
     set_run_context(run_id=run_id, scenario_id=ep_dir.name)
     os.environ["AGENT_TRAJECTORY_DIR"] = str(ep_dir)
     runner = plan_execute_runner_class()(server_paths=dict(launchers), base_url=base_url, api_key=api_key, model=model,
                                          temperature=temperature, log_path=ep_dir / "react_log.txt", example_start=example_start,
-                                         on_idle=idle.no_call)
+                                         on_idle=idle.no_call, example_asset=example_asset)
     return (*run_limited(lambda: runner.run(question)), runner)
 
 
@@ -157,24 +161,39 @@ class PaperAgent:
     def settings(self, servers, temperature=None):
         return self._settings(servers, temperature)
 
-    def request_settings(self, temperature=None):
-        """The decoding and transport blocks of run.json, the one completion route both paper-era agents take."""
+    def request_settings(self, temperature=None, servers=()):
+        """The decoding and transport blocks of run.json, the one completion route both paper-era agents take, on the servers of the run."""
         from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.sub_agent_runtime import request_settings
-        return request_settings(temperature=temperature)
+        return request_settings(temperature=temperature, servers=servers)
 
     def example_start(self, config, blocks):
         return diagnosis_example(config, blocks)
 
+    def served_refusal(self, servers, served):
+        """Why a run on these servers cannot play on the endpoint that served (runner_setup.served_facts) describes, or None: a
+        run with the CausalDiagnosis MCP needs a served context of at least SERVED_CONTEXT_MIN tokens, and one the endpoint does
+        not name is refused as well."""
+        from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.sub_agent_registry import SERVED_CONTEXT_MIN, with_mcp
+
+        length = (served or {}).get("context_length")
+        if not with_mcp(servers) or (length is not None and length >= SERVED_CONTEXT_MIN):
+            return None
+        shown = "names no context length" if length is None else f"serves a context of {length} tokens"
+        return (f"--agent {self.name} with the CausalDiagnosis MCP needs a served context of at least {SERVED_CONTEXT_MIN} tokens, and "
+                f"the endpoint {shown}")
+
 
 def play_agent_as_tool(runner, launchers, task, run_id, ep_dir):
     result, error, _, agent = run_agent_as_tool(launchers, task, run_id, ep_dir, runner.base_url, os.environ.get("API_KEY", ""),
-                                                runner.served_model, runner.temperature, runner.diagnosis_example["levels"])
+                                                runner.served_model, runner.temperature, runner.diagnosis_example["levels"],
+                                                runner.config.asset_id)
     return result, error, record_agent_as_tool(ep_dir, result, agent.calls, agent.trajectory), agent.calls, agent.trajectory
 
 
 def play_plan_execute(runner, launchers, task, run_id, ep_dir):
     result, error, _, agent = run_plan_execute_paper(launchers, task, run_id, ep_dir, runner.base_url, os.environ.get("API_KEY", ""),
-                                                     runner.served_model, runner.temperature, runner.diagnosis_example["levels"])
+                                                     runner.served_model, runner.temperature, runner.diagnosis_example["levels"],
+                                                     runner.config.asset_id)
     return result, error, record_plan_execute_paper(ep_dir, result, agent), agent.calls, agent.trajectory
 
 

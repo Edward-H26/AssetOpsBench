@@ -250,3 +250,29 @@ def test_the_meter_takes_the_site_the_class_keys_and_the_statistics_from_the_ass
     assert config.component_of("tiny_1_belt", "test") == config.component_of("tiny_1_belt", "TEST") == "belt"
     assert config.component_of("tiny_1_belt", "MAIN") is None
     assert config.engine_field("T1_Temperature_C_1Hz") == "T1_Temperature_C_1Hz_mean" and config.engine_field("T1_Temperature_C_1Hz_std") == "T1_Temperature_C_1Hz_std"
+
+
+@pytest.mark.parametrize("row", ["base", "priced"])
+@pytest.mark.parametrize("site, asset, refused", [("SiteX", "hyd_1_pump", "unknown site SiteX: the site of the asset is MAIN"),
+                                                  ("MAIN", "hyd_1_turbine", "unknown component")],
+                         ids=["another site", "control: the episode's site and an asset it does not have"])
+async def test_an_order_at_another_site_is_refused_with_the_site_and_counts_its_step(row, site, asset, refused):
+    """An order at another site than the episode's reaches the engine as an action on no component, which the engine refuses
+    as an unknown component; the agent reads the site as the cause, on every row, and the refused call takes its step as before.
+    The control: an order at the episode's site on an asset it does not have keeps the engine's refusal."""
+    meter, engine, store, sessions = make(row)
+    with bound(store, NAMES):
+        engine.step({"type": "submit_diagnosis", "diagnosis": {}})
+        steps = len(sessions.actions)
+        reply = await meter.call("wo", "generate_work_order", {"description": "repair", "asset_num": asset, "site_id": site})
+        assert harness.answer(reply, row) == {"error": refused} and refused.endswith(meter.config.site) == (site != "MAIN")
+        assert sessions.actions[-1][0]["type"] == "create_work_order" and len(sessions.actions) == steps + 1
+        assert store.all_docs(NAMES.workorder) == []
+
+
+async def test_an_order_at_another_site_keeps_a_refusal_of_another_cause(base):
+    """Only the engine's unknown component is read as the wrong site: an order before a diagnosis at another site keeps the
+    engine's reason."""
+    meter, engine, store, sessions = base
+    reply = await meter.call("wo", "generate_work_order", {"description": "replace", "asset_num": "hyd_1_cooler", "site_id": "SiteX"})
+    assert json.loads(reply.text) == {"error": engine_stub.ORDER_BEFORE_WRITE_REASON}

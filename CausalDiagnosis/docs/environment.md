@@ -379,6 +379,7 @@ An integer argument is read by its value, whatever JSON type writes it. An int t
 | `timeout must be a positive integer, or empty for the cycles left before the horizon` | a `timeout` of `wait_for_notification` that is neither empty nor writes an integer at or above 1 |
 | `cycle must be an integer between 0 and the current time` | a `cycle` of `summarize_changes_since` that writes no integer in that range |
 | `unknown component` | a `component` outside the four, in `get_failure_modes`, `lookup_fix` or `create_work_order`, an empty one in `lookup_fix` included |
+| `unknown site <site_id>: the site of the asset is <site>` | on the AssetOpsBench rows, a `generate_work_order` at a `site_id` that is not the site of the asset, compared in upper case, which the metering layer passes to the engine as an order on no component: the engine's log keeps `unknown component`, and the answer and the call's entry in `tool_calls` name the site (`MeterConfig.site_refusal` in `metering_layer.py`) |
 | `a diagnosis or a declaration was already submitted` | a second diagnosis or declaration of either kind |
 | `each component must be given one condition level` | a `diagnosis` that is not a dict with exactly the four components |
 | `a component's level must be one of its condition levels` | a level that writes no integer among the levels of its component |

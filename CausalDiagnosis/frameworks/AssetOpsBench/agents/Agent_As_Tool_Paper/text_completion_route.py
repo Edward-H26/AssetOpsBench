@@ -25,8 +25,11 @@ from contextlib import contextmanager
 import httpx
 
 from CausalDiagnosis.utils.model_request_retry import RETRY_DELAY_S, STATUSES, current_deadline, post_with_retries
+from CausalDiagnosis.utils.model_reply_room import ENGINE_MARGIN, ContextEnd, ReplyRoom, card_context_length
 
 PAPER_DECODING = {"temperature": 0.0, "max_tokens": 500, "min_tokens": 1, "no_stop_trim": True}
+# the max_tokens of a route with reply_room as run.json records it, a value computed for each request
+REPLY_ROOM = "the served context less the tokenize count of the prompt less 2"
 # the route retries as every model client of the benchmark does (CausalDiagnosis.utils.model_request_retry): no count of attempts, the registered wait of
 # watsonx's ModelInference(delay_time=2), and 429 beside the paper's 502 and 503
 RETRY_STATUS = STATUSES
@@ -62,10 +65,12 @@ class CompletionRoute:
     """One endpoint, one served model and the records of one run.
 
     temperature, when given, replaces the temperature of every call (a sampling run for training data), where the paper's
-    agents pass 0.0 on every call."""
+    agents pass 0.0 on every call. reply_room, on a run with the CausalDiagnosis MCP, replaces the max_tokens of every call by
+    the room the served context leaves its prompt (room_of)."""
 
-    def __init__(self, base_url, api_key, model, temperature=None, client=None, deadline=None):
+    def __init__(self, base_url, api_key, model, temperature=None, client=None, deadline=None, reply_room=False):
         self.base_url, self.model, self.temperature = base_url.rstrip("/"), model, temperature
+        self.reply_room = reply_room
         self.deadline = deadline  # the monotonic deadline of the row's wall limit, else the one the driver names (CausalDiagnosis.utils.model_request_retry)
         # no time limit of the client's own: every request is bounded by the row's deadline (CausalDiagnosis.utils.model_request_retry.post_with_retries)
         self._client = client or httpx.Client(timeout=None, headers={"Authorization": f"Bearer {api_key}"})
@@ -120,6 +125,8 @@ class CompletionRoute:
         self.check()
         stop = list(stop or [])
         temperature = self.temperature if self.temperature is not None else temperature
+        if self.reply_room:
+            max_tokens = self.room_of(prompt)
         body = {"model": self.model, "prompt": prompt, "temperature": temperature, "max_tokens": max_tokens,
                 "min_tokens": PAPER_DECODING["min_tokens"], "stop": stop, "no_stop_trim": PAPER_DECODING["no_stop_trim"]}
         if seed is not None:
@@ -151,6 +158,20 @@ class CompletionRoute:
         return {"generated_text": choice["text"], "generated_token_count": record["output_tokens"],
                 "input_token_count": record["input_tokens"], "stop_reason": stop_reason}
 
+    def room_of(self, prompt):
+        """The max_tokens of a request that caps no reply on the completion route, which reads an absent max_tokens as 16 tokens:
+        the served context less the tokenize count of the prompt less ENGINE_MARGIN, the most the engine generates, which also
+        keeps the request clear of the engine's refusal of a prompt and a reply that reach the context. A prompt that leaves no
+        room ends the run with the end context, as the engine's refusal of it does."""
+        try:
+            room = ReplyRoom(self.context_length(), self.count_tokens).max_tokens(prompt) - ENGINE_MARGIN
+        except ContextEnd:
+            room = 0
+        if room < 1:
+            self.stop(CONTEXT_END)
+            raise RunStopped(CONTEXT_END)
+        return room
+
     def count_tokens(self, text):
         self.check()
         # /v1/tokenize reports the tokenizer's model_max_length (2^63 - 1 for granite), not the served context, so the
@@ -167,14 +188,14 @@ class CompletionRoute:
     def context_length(self):
         """The context length the server serves the model with, from /v1/models: the card of the model, else that of its
         base model, since SGLang lists the adapter of a base:adapter name as a card of its own without a context length
-        and splits the name at its first colon (serving_base._parse_model_parameter)."""
+        and splits the name at its first colon (serving_base._parse_model_parameter), by the rule the driver records
+        (CausalDiagnosis.utils.model_reply_room.card_context_length)."""
         if self._context_length is None:
             cards = self._request("GET", "models", model_reply=False).json().get("data") or []
-            names = (self.model, self.model.split(":", 1)[0])
-            card = next((c for name in names for c in cards if c.get("id") == name), cards[0] if cards else {})
-            if not card.get("max_model_len"):
+            length = card_context_length(cards, self.model)
+            if length is None:
                 raise RouteSetupError(f"{self.base_url}/models names no context length for {self.model}")
-            self._context_length = int(card["max_model_len"])
+            self._context_length = length
         return self._context_length
 
     def close(self):

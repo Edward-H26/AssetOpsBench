@@ -137,7 +137,8 @@ class FakePlanExecute:
 
     seen = {}
 
-    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None):
+    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None,
+                 example_asset=None):
         FakePlanExecute.seen = {"model": model, "temperature": temperature, "servers": sorted(server_paths)}
         self.calls, self.trajectory = [], []
 
@@ -150,12 +151,21 @@ class FakePlanExecute:
         return None  # this stand-in builds no workflow, so the driver writes no record of one
 
 
+def _served(monkeypatch):
+    """The stand-in endpoint of a port's run names the least served context of a row with the CausalDiagnosis MCP, which refuses
+    an endpoint that names none before any run folder (runner_setup.served_facts)."""
+    from CausalDiagnosis.experiments.episode_runners.run_episodes import runner_setup
+    from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.sub_agent_registry import SERVED_CONTEXT_MIN
+    monkeypatch.setattr(runner_setup, "served_facts", lambda base_url, model: {"context_length": SERVED_CONTEXT_MIN, "cache_report": None})
+
+
 def test_plan_execute_gets_the_block_and_run_json_records_the_variant(tmp_path, monkeypatch):
     root = tmp_path / "training"
     _block(root, "plan_execute", training.AS_RELEASED)
     monkeypatch.setenv("HYD_TRAINING", str(root))
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setattr(agent_runs, "plan_execute_runner_class", lambda: FakePlanExecute)
+    _served(monkeypatch)
     _first_test_episode(monkeypatch)
     run_episodes.main(["--config", "base", "--agent", "plan_execute", "--model", MODEL, "--base-url", "http://127.0.0.1:9/v1", "--seeds", "1",
                        "--starts", "sampled", "--training-variant", "gepa", "--training-fold", "1", "--out", str(tmp_path / "runs")])
@@ -202,7 +212,8 @@ class FakeAgentAsTool:
 
     seen = {}
 
-    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None):
+    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None,
+                 example_asset=None):
         FakeAgentAsTool.seen = {"model": model, "temperature": temperature}
         self.calls, self.trajectory = [], []
 
@@ -221,6 +232,7 @@ def test_a_fine_tuned_variant_sends_the_adapter_name_and_records_its_weights(tmp
     monkeypatch.setenv("HYD_TRAINING", str(root))
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setattr(agent_runs, "agent_as_tool_runner_class", lambda: FakeAgentAsTool)
+    _served(monkeypatch)
     _first_test_episode(monkeypatch)
     run_episodes.main(["--config", "base", "--agent", "agent_as_tool", "--model", MODEL, "--base-url", "http://127.0.0.1:9/v1", "--seeds", "1",
                        "--starts", "sampled", "--training-variant", variant, "--training-fold", str(fold), "--out", str(tmp_path / "runs")])
@@ -342,6 +354,7 @@ def test_the_training_starts_play_the_training_seeds_at_the_sampling_temperature
     monkeypatch.setattr(start_states, "training_seeds", lambda env, split, sample, fold, master_seed, pool: seeds_of(env, split, sample, fold, master_seed, pool)[:2])
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setattr(agent_runs, "plan_execute_runner_class", lambda: FakePlanExecute)
+    _served(monkeypatch)
     run_episodes.main(["--config", "base", "--agent", "plan_execute", "--model", MODEL, "--base-url", "http://127.0.0.1:9/v1", "--starts", "training",
                        "--training-sample", "2", "--training-fold", "2", "--training-split", training.DEVELOPMENT, "--out", str(tmp_path / "runs")])
     run_dir = _run_dir(tmp_path / "runs")

@@ -65,6 +65,9 @@ class Row:
 
 ROWS = {row.name: row for row in (Row("base", False, False), Row("priced", True, False), Row("real_time", True, True),
                                  Row("advanced_real_time", True, True), Row("repair_rules", True, True), Row("deterioration", True, True))}
+# the engine's refusal of an action on a component that the asset does not have, which an order at another site than the episode's
+# reaches, since the layer maps a child asset to its component at the episode's site alone (MeterConfig.component_of)
+UNKNOWN_COMPONENT = "unknown component"
 
 
 @dataclass(frozen=True)
@@ -95,9 +98,16 @@ class MeterConfig:
 
     def component_of(self, asset_num, site_id):
         """The rig component of a child asset at the episode's site, the site compared in upper case on both sides."""
-        if str(site_id).upper() != self.site.upper():
+        if self.site_refusal(site_id) is not None:
             return None
         return next((c for c in self.components if self.child_asset(c) == asset_num), None)
+
+    def site_refusal(self, site_id):
+        """The refusal of an order at a site that is not the episode's, compared as component_of compares it, in the words of the
+        iot server's refusal of an unknown site with the episode's own site, or None at the episode's site."""
+        if str(site_id).upper() == self.site.upper():
+            return None
+        return f"unknown site {site_id}: the site of the asset is {self.site}"
 
     def profile_view(self, profile):
         """The asset profile as an agent on the AssetOpsBench rows reads it: the child asset of every component beside the
@@ -313,6 +323,9 @@ class Meter:
         envelope, refusal = await self._step(session, action, sync=False)
         if refusal:
             await self._producer.sync(session.engine)
+            if refusal == UNKNOWN_COMPONENT and component is None:
+                # the engine refuses the order at another site as an unknown component, and the agent reads its cause, the site
+                refusal = self.config.site_refusal(parsed["site_id"]) or refusal
             return self._close(session, "wo", "generate_work_order", arguments, before, envelope, None, 0, {}, refusal)
         order = envelope["result"]["work_order"]
         with self._cycle_clock(order["created_t"]):

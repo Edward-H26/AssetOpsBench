@@ -401,21 +401,26 @@ def test_a_harness_finish_after_a_later_tool_call_charges_nothing(tmp_path, monk
     assert state["actions"][-1]["type"] == "finish" and state["think_seconds"][-1] == 0.0
 
 
-def test_the_settings_blocks_have_the_same_keys_for_the_three_agents_and_are_the_values_of_their_accessors(monkeypatch):
+@pytest.mark.parametrize("diagnostics", [True, False], ids=["with_mcp", "control_without_mcp"])
+def test_the_settings_blocks_have_the_same_keys_for_the_three_agents_and_are_the_values_of_their_accessors(monkeypatch, diagnostics):
     """The blocks decoding and transport of each agent are what the accessor of its route
-    returns, and the three agents write the same keys in both."""
+    returns on the servers of the run, and the three agents write the same keys in both. The ports' max_tokens is the
+    room of each request on a run with the CausalDiagnosis MCP and the paper's 500 without it."""
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import request_settings as controller_settings
     from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.sub_agent_runtime import request_settings as port_settings
+    from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import REPLY_ROOM
     monkeypatch.setenv("API_KEY", "stand-in-key")
     backend = run_episodes.RecordingBackend(run_episodes.model_backends.router_backend(run_episodes.DEFAULT_MODEL))
-    runner = SimpleNamespace(temperature=None, servers=run_episodes.registered_servers(None, True), backend=backend, causal_options={})
+    runner = SimpleNamespace(temperature=None, servers=run_episodes.registered_servers(None, diagnostics), backend=backend, causal_options={})
     blocks = {agent: run_episodes.agent_settings(SimpleNamespace(agent=agent), runner) for agent in ("causal", "agent_as_tool", "plan_execute")}
-    expected = {"causal": controller_settings(backend), "agent_as_tool": port_settings(), "plan_execute": port_settings()}
+    ports = port_settings(servers=runner.servers)
+    expected = {"causal": controller_settings(backend), "agent_as_tool": ports, "plan_execute": ports}
     for agent, block in blocks.items():
         assert (block["decoding"], block["transport"]) == (expected[agent]["decoding"], expected[agent]["transport"]), agent
         assert block["limits"]
     assert len({tuple(sorted(b["decoding"])) for b in blocks.values()}) == 1
     assert len({tuple(sorted(b["transport"])) for b in blocks.values()}) == 1
+    assert ports["decoding"]["max_tokens"] == (REPLY_ROOM if diagnostics else 500)
 
 
 def test_a_cut_with_a_dead_endpoint_is_replayed(tmp_path, monkeypatch):

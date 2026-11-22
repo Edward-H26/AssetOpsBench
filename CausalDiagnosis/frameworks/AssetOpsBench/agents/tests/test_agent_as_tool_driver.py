@@ -26,7 +26,8 @@ from CausalDiagnosis.frameworks.AssetOpsBench.agents import agent_runs  # noqa: 
 
 PORT_TESTS = PACKAGE / "frameworks" / "AssetOpsBench" / "agents" / "Agent_As_Tool_Paper" / "tests"
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.tests.scripted_endpoint import REVIEW_OK, ScriptedEndpoint, finish, step  # noqa: E402
-from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import react_tool_adapter  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import react_tool_adapter, sub_agent_registry  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import REPLY_ROOM  # noqa: E402
 
 END_TASK = react_tool_adapter.agent_name("finish")  # the name under which the agents see the task tool finish
 
@@ -38,8 +39,9 @@ def _rows(run_dir):
         return list(csv.DictReader(f))
 
 
-def _play(tmp_path, monkeypatch, script, args, config=None):
-    """One episode of the port on a row. config, when given, is a preset with some fields replaced, under the preset's name."""
+def _play(tmp_path, monkeypatch, script, args, config=None, context_length=131072):
+    """One episode of the port on a row. config, when given, is a preset with some fields replaced, under the preset's name, and
+    context_length the context the stand-in endpoint serves."""
     monkeypatch.setenv("API_KEY", "stand-in-key")
     monkeypatch.setenv("NO_PROXY", "127.0.0.1,localhost")
     if config:
@@ -49,7 +51,7 @@ def _play(tmp_path, monkeypatch, script, args, config=None):
         path = tmp_path / f"{name}.json"
         path.write_text(json.dumps(preset), encoding="utf-8")
         args = ["--config", str(path), *args]
-    with ScriptedEndpoint(script, model=MODEL) as ep:
+    with ScriptedEndpoint(script, model=MODEL, context_length=context_length) as ep:
         run_episodes.main([*args, "--agent", "agent_as_tool", "--model", MODEL, "--base-url", ep.base_url, "--seeds", "1", "--no-grade",
                            "--out", str(tmp_path / "out")])
     run_dir = next(p for p in (tmp_path / "out").iterdir() if p.is_dir())
@@ -87,7 +89,7 @@ def test_the_port_plays_the_base_row_and_is_recorded_with_the_columns_the_tables
     run_dir, rows, meta, ep = _play(tmp_path, monkeypatch, script, ["--config", "base"])
     assert meta["agent"] == "agent_as_tool" and meta["agent_label"] == f"agent_as_tool_{MODEL}" and meta["servers"][-1] == "causal_diagnosis"
     block = meta["agent_as_tool"]
-    assert block["form"] == "paper_era" and block["supervisor_max_steps"] == 10 and block["reflections"] == 1
+    assert block["form"] == sub_agent_registry.MCP_FORM and block["supervisor_max_steps"] is None and block["reflections"] == 1
     assert block["sub_agents"] == ["IoTAgent", "TaskAgent", "FMSRAgent", "WOAgent", "CausalDiagnosisAgent"]
     # the example start of the run, a development start drawn by the registered seed, and the TaskAgent's prompt shows its levels
     example = block["diagnosis_example"]

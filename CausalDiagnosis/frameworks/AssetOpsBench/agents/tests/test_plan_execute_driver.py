@@ -33,9 +33,11 @@ from CausalDiagnosis.frameworks.AssetOpsBench.agents.Plan_Execute_Paper.tests.te
 from CausalDiagnosis.evaluation.result_tables import tables_from_runs as aggregate  # noqa: E402
 from CausalDiagnosis.training import gepa_prompt_optimization as gepa_online  # noqa: E402
 from CausalDiagnosis.training import rejection_sampling_examples as rft_data  # noqa: E402
-from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import react_tool_adapter  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import react_tool_adapter, sub_agent_registry  # noqa: E402
 from CausalDiagnosis.experiments.episode_runners.tests.pinned_clock import pinned_preset  # noqa: E402
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.tests.test_agent_as_tool_driver import _no_calls, _without_entry  # noqa: E402
+from CausalDiagnosis.experiments.episode_runners.run_configuration import load_config  # noqa: E402
+from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_receipts import split_receipt  # noqa: E402
 
 MODEL = "granite-stand-in"
 END_TASK = react_tool_adapter.agent_name("finish")  # the name under which the agents see the task tool finish
@@ -100,10 +102,13 @@ def test_the_port_plays_the_base_row_and_records_what_the_tables_the_training_an
 
 def test_a_planning_round_takes_the_no_call_step_of_the_driver(tmp_path, monkeypatch):
     """The planning round calls no tool of the row, so it ends an iteration without a counted call, which takes the episode's
-    no_call step through the entry the driver hands the runner, one step of the row's step cap, as for every design. The control is
-    the same play with the runner built without that entry, which takes none."""
-    run_dir, rows, _, _ = _play(tmp_path / "entry", monkeypatch, SCRIPT, ["--config", "base"])
+    no_call step through the entry the driver hands the runner, one step of the row's step cap, as for every design. On the row
+    with the CausalDiagnosis MCP the Finish of the IoT step agent, a ReAct step without a counted call, takes one more. The control
+    is the same play with the runner built without that entry, which takes none."""
+    run_dir, rows, _, _ = _play(tmp_path / "bare", monkeypatch, SCRIPT, ["--config", "base", "--no-diagnostics"])
     assert rows[0]["error"] == "" and rows[0]["end_reason"] == "finish" and _no_calls(run_dir) == 1, rows[0]
+    run_dir, rows, _, _ = _play(tmp_path / "entry", monkeypatch, SCRIPT, ["--config", "base"])
+    assert rows[0]["error"] == "" and rows[0]["end_reason"] == "finish" and _no_calls(run_dir) == 2, rows[0]
     runner_class = agent_runs.plan_execute_runner_class()
     monkeypatch.setattr(agent_runs, "plan_execute_runner_class", lambda: _without_entry(runner_class))
     run_dir, rows, _, _ = _play(tmp_path / "control", monkeypatch, SCRIPT, ["--config", "base"])
@@ -115,13 +120,17 @@ def test_without_the_diagnostics_server_the_planner_has_no_causal_diagnosis_agen
     script = [finish_only, VALID, *step("I need to end the task.", END_TASK, "summary=nothing found")]
     _, rows, meta, ep = _play(tmp_path, monkeypatch, script, ["--config", "base", "--no-diagnostics"])
     assert "CausalDiagnosisAgent" not in meta["plan_execute"]["agents"]
+    block = meta["plan_execute"]
+    assert (block["form"], block["step_agent_max_steps"], block["decoding"]["max_tokens"]) == ("paper_era", 6, 500) and "no_call_steps" not in block
+    assert all(b["max_tokens"] == 500 for b in ep.completions())
     assert "CausalDiagnosisAgent" not in ep.completions()[0]["prompt"] and rows[0]["end_reason"] == "finish" and rows[0]["plan_steps"] == "1"
 
 
 class RaisingRunner:
     """A runner that planned, made one tool call and raised, as an API error that outlasts the client's retries would."""
 
-    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None):
+    def __init__(self, server_paths, base_url, api_key, model, temperature=None, log_path=None, example_start=None, on_idle=None,
+                 example_asset=None):
         self.calls = [{"prompt": "plan", "reply": "## Step 1", "agent": "planner"}]
         self.trajectory = [{"step": 1, "turn": 1, "agent": "IoTAgent", "task": "List the IoT sites.", "server": "iot", "tool": "sites",
                             "tool_args": {}, "response": "MAIN", "error": None, "duration_ms": 3.0}]  # the record shape of the runtime
@@ -246,7 +255,10 @@ def test_each_port_plays_an_order_through_a_visit_on_the_repair_rules_row(tmp_pa
     # a call that the wrapper refuses never reaches the trajectory, and the row accepted every call that did
     assert [(t["agent"], t["server"], t["tool"]) for t in trajectory] == REPAIR_CALLS
     assert [t["error"] for t in trajectory] == [None] * len(REPAIR_CALLS)
-    assert "Work order wo-1 on the cooler closed." in trajectory[7]["response"]  # the fourth wait brings the close of the order
+    # on this row, with the CausalDiagnosis MCP, the Finish of the WO agent is a ReAct step without a counted call and takes a no_call
+    # step, one cycle of the pinned clock, so the third wait brings the close of the order and the fourth times out
+    closes = [i for i, t in enumerate(trajectory) if "Work order wo-1 on the cooler closed." in t["response"]]
+    assert closes == [6] and [t["tool"] for t in trajectory[4:8]] == ["wait_for_notification"] * 4, closes
     _stopped_at_the_end(ep_dir, agent, ep, script)
     row = rows[0]
     assert row["agent"] == f"{agent}_{MODEL}" and row["error"] == "" and row["end_reason"] == "finish" and row["refusals"] == "0", row
@@ -255,15 +267,17 @@ def test_each_port_plays_an_order_through_a_visit_on_the_repair_rules_row(tmp_pa
 
 @pytest.mark.parametrize("agent", PORTS)
 def test_each_port_stops_when_the_failure_event_ends_the_episode(tmp_path, monkeypatch, agent):
-    # the planning round of Plan-Execute is an iteration without a counted call and takes the no_call step, one cycle of the
-    # pinned clock, so its run meets the failure one wait earlier
-    tasks = FAILURE if agent == "agent_as_tool" else [FAILURE[0], (*FAILURE[1][:3], _waits(6, 4), None)]
+    # each no_call step is one cycle of the pinned clock, and a run meets the failure one wait earlier for each: the planning round of
+    # Plan-Execute, an iteration without a counted call, and, on this row with the CausalDiagnosis MCP, the Finish of the TaskAgent
+    # after its first five waits, a ReAct step without a counted call
+    no_calls = (agent == "plan_execute") + 1
+    tasks = [FAILURE[0], (*FAILURE[1][:3], _waits(6, 5 - no_calls), None)]
     script = _script(agent, tasks)
     run_dir, rows, _, ep = _play(tmp_path, monkeypatch, script, ["--config", pinned_preset(tmp_path, "deterioration")], agent)
     ep_dir = run_dir / "seed000000"
     trajectory = read_json(ep_dir / "trajectory.json")
     waits = sum(len(steps) for _request, _sub_agent, _planned, steps, _answer in tasks)
-    assert [t["tool"] for t in trajectory] == ["wait_for_notification"] * waits and _no_calls(run_dir) == (agent == "plan_execute")
+    assert [t["tool"] for t in trajectory] == ["wait_for_notification"] * waits and _no_calls(run_dir) == no_calls
     receipt = json.loads(trajectory[-1]["response"].rsplit("\n", 1)[1])  # the receipt of the last wait shows the end of the episode
     assert [(n["event"], n.get("reason")) for n in receipt["notifications"] if n["event"] == "end"] == [("end", "failure")]
     _stopped_at_the_end(ep_dir, agent, ep, script)
@@ -298,3 +312,62 @@ def test_a_start_with_no_fault_is_a_valid_run_of_the_port(tmp_path, monkeypatch,
     _stopped_at_the_end(ep_dir, agent, ep, script)
     row = rows[0]
     assert row["error"] == "" and row["end_reason"] == "finish" and row["n_faulty"] == "0" and row["refusals"] == "0", row
+
+
+# ----- a notice inside the no_call step of an IBM agent: the repair rules row with the token clock, one cycle per full
+# think_seconds_per_cycle of generated tokens, where only the long thought of the WO agent's Finish fills cycles
+
+TOKEN_ROW = "repair_rules_token_clock"
+ORDERED = "Work order wo-1 is created"  # the answer of the WO agent, whose Finish thinks long
+
+
+def _order_then_read(agent, think_words):
+    """The replies of a port that diagnoses, orders the cooler, reads the asset profile and ends the task, the Finish of the WO
+    agent with a thought of think_words words, which the token clock charges as so many generated tokens."""
+    tasks = [("submit the diagnosis cooler 3, valve 100, pump 0, accumulator 130 with no evidence", "TaskAgent", "TaskAgent",
+              [("I submit the diagnosis.", "submit_diagnosis", "cooler=3, valve=100, pump=0, accumulator=130, evidence_ids=None")],
+              "The diagnosis is submitted"),
+             ("create a work order to replace the cooler on its child asset hyd_1_cooler at site MAIN", "WOAgent", "Work Order Management",
+              [("I create the work order.", "generate_work_order", "description=replace the cooler, asset_num=hyd_1_cooler, site_id=MAIN")],
+              ORDERED),
+             ("read the asset profile", "TaskAgent", "TaskAgent", [("I need the profile.", "get_asset_profile", "{}")], "The asset is hyd_1"),
+             ("end the task with the summary the cooler was replaced", "TaskAgent", "TaskAgent",
+              [("I need to end the task.", END_TASK, "summary=the cooler was replaced")], None)]
+    script = _script(agent, tasks)
+    at = script.index(finish(ORDERED)[1])
+    script[at - 1] = finish(ORDERED, " ".join(["weighing"] * think_words))[0]
+    return script
+
+
+def _closes(response):
+    """The closes of work orders that the receipt of a recorded answer carries, as (id, cycle)."""
+    receipt = split_receipt(response)[1] or {}
+    return [(n.get("id"), n.get("t")) for n in receipt.get("notifications", []) if n.get("event") == "work_order_closed"]
+
+
+@pytest.mark.parametrize("diagnostics", [True, False], ids=["with_mcp", "control_without_mcp"])
+@pytest.mark.parametrize("agent", PORTS)
+def test_a_close_inside_the_no_call_step_of_an_ibm_agent_reaches_its_next_call(tmp_path, monkeypatch, agent, diagnostics):
+    """With the CausalDiagnosis MCP the Finish of the WO agent is a ReAct step without a counted call and takes a no_call step,
+    whose thinking runs past the close of the order just made. A no_call step answers no agent, so the close stays pending and
+    the next counted call, the TaskAgent's read of the profile, carries it with its cycle, and no later call carries it again.
+    The control without the MCP: the paper's rule charges that thinking to the read itself, which carries the close too, and no
+    no_call step holds it."""
+    _name, config = load_config(TOKEN_ROW)
+    per_cycle = config.think_seconds_per_cycle / config.seconds_per_token  # the generated tokens of one cycle of thinking
+    durations = config.durations
+    think = int((durations["lead_time"]["cooler"] + durations["repair_downtime"]["cooler"] + 2) * per_cycle)
+    script = _order_then_read(agent, think)
+    run_dir, rows, _, ep = _play(tmp_path, monkeypatch, script, ["--config", TOKEN_ROW, *([] if diagnostics else ["--no-diagnostics"])], agent)
+    ep_dir = run_dir / "seed000000"
+    assert rows[0]["error"] == "" and rows[0]["end_reason"] == "finish", rows[0]
+    log = read_json(ep_dir / "hidden" / "log.json")
+    close = next(e for e in log if e.get("event") == "work_order_closed")
+    trajectory = read_json(ep_dir / "trajectory.json")
+    tools = [t["tool"] for t in trajectory]
+    assert tools == ["submit_diagnosis", "generate_work_order", "get_asset_profile", "finish"], tools
+    assert _closes(trajectory[2]["response"]) == [(close["id"], close["t_end"])], trajectory[2]["response"][-600:]
+    assert _closes(trajectory[3]["response"]) == []
+    stepped = [e for e in log if e.get("step") is not None and e.get("event") != "end"]
+    held = [e for e in stepped if e["event"] == "no_call" and max((s["t_end"] for s in stepped if s["step"] < e["step"]), default=-1) < close["t_end"] <= e["t_end"]]
+    assert len(held) == int(diagnostics), held

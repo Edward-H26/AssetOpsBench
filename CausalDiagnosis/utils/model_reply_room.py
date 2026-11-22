@@ -66,6 +66,15 @@ class ReplyRoom:
                            f"(context {self.context_length}, prompt {prompt_tokens})")
 
 
+def card_context_length(cards: list, model: str) -> int | None:
+    """max_model_len of the card of the model in an endpoint's model listing, else of the card of its base model, since SGLang lists
+    the adapter of a name base:adapter as a card of its own without a context length and splits the name at its first colon,
+    else of the first card; None when that card names none."""
+    names = (model, model.split(":", 1)[0])
+    card = next((c for name in names for c in cards if c.get("id") == name), cards[0] if cards else {})
+    return int(card["max_model_len"]) if card.get("max_model_len") else None
+
+
 def served_context(base_url: str, api_key: str, model: str, get=None) -> int:
     """max_model_len of the model in the endpoint's listing (GET {base_url}/models), the context the engine checks."""
     get = get or _http("get")

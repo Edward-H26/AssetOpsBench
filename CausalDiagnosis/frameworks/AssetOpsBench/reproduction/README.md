@@ -89,6 +89,19 @@ and work order ids (88), multi-agent tasks the end-to-end ids (32), the split of
   steps are the executed plan steps, which is how this reproduction reads the steps that the paper prints for this design,
   and the summarization step is not counted. The length of the plan that ran is kept as `plan_steps`, compared with
   Table 12 of AssetOpsBench.
+- Both ports normalize what passes between the model and a tool and leave the vendored ReActXen as IBM releases it. Every
+  tool answer, every refusal of a tool's argument model and the text of every exception that a call of an MCP tool raises
+  reach an agent on one line, each JSON value without indentation and one space apart and any other text with its line
+  breaks replaced by spaces, since ReActXen truncates an overlong scratchpad only by its lines that open with Observation
+  and raises once an answer over many lines keeps it over its limit. The trajectory keeps every answer as the server sent
+  it. A string argument loses its outer quotes, which ReActXen keeps from a key=value input such as `work_type="CM"`,
+  layer by layer, as `""CM""` gives `CM`, but keeps a pair whose quote also stands inside the text, as `"pump" is "bad"`
+  passes as written, and each comma item then loses its own quotes by the same rule, so
+  `evidence_ids="obs/1/a", "obs/2/b"` reaches the server as `obs/1/a, obs/2/b`
+  (`CausalDiagnosis/frameworks/AssetOpsBench/agents/Agent_As_Tool_Paper/react_tool_adapter.py`). The reproduction lists
+  no CausalDiagnosis MCP, so both ports play it with IBM's code, prompts, examples and limits, as on every row of the gym
+  without the MCP, while the rows of the gym with the MCP change the examples written for the port, the reply cap, the
+  step limits and the served context (`CausalDiagnosis/docs/experiments.md`).
 - Both ports run against the six MCP servers of `main-0.x`, under the names of `DEFAULT_SERVER_PATHS`. `--agents` names
   either port or both, and both play by default.
 - A stdio MCP server inherits only HOME, LOGNAME, PATH, SHELL, TERM and USER from its client. Each server therefore starts
@@ -158,7 +171,7 @@ PATH=$PWD/.venv/bin:$PATH python -m CausalDiagnosis.frameworks.AssetOpsBench.rep
 On the cluster, after section 0 of `CausalDiagnosis/cluster_jobs/README.md` (the clone of the fork under the project folder, with the cluster
 scripts in its `CausalDiagnosis/cluster_jobs` folder and those of this framework in `CausalDiagnosis/frameworks/AssetOpsBench/cluster_jobs`), a pilot mode run of twenty episodes goes inside a new serving job that serves granite and
 the stand-in judge on one H100. `WORK` is the project folder on the cluster, `FORK` the clone and `J` the folder of
-the judge model, as sections 2 and 6 of that README name them:
+the judge model:
 
 ```bash
 WORK=/insomnia001/home/$USER/causal_diagnosis

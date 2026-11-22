@@ -13,6 +13,10 @@ description (tests/multi_agent/run.py and tools/*.py of the archive), and by the
 examples, the Question lines of its few-shots, as ReactReflectAgent derives them. Each step runs ReactReflectAgent with
 the keywords of AgentHive's wrapper (STEP_AGENT_OPTIONS).
 
+On a run whose servers list the CausalDiagnosis MCP both designs run with the limits of the CausalDiagnosis agent: no step agent
+has a step limit of its own, every ReAct step without a counted call takes a no_call step, and no request caps its reply
+(sub_agent_registry.with_mcp). Every other run keeps the paper's limits.
+
 Three departures from the archive, each on purpose. One reflection round per step agent (REFLECTIONS). A run that raises
 is not retried: the archived runner retries a whole scenario up to seven times, which would replay an episode of the
 environment on a changed state, so a raised run is recorded as the episode's error, as for the Agent-As-Tool port. The run
@@ -44,7 +48,7 @@ from observability import persist_trajectory
 
 from CausalDiagnosis.agents.utils.mcp_sessions import open_sessions
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper import sub_agent_registry
-from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import PAPER_DECODING, CompletionRoute, RunStopped, activated
+from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.text_completion_route import PAPER_DECODING, REPLY_ROOM, CompletionRoute, RunStopped, activated
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Agent_As_Tool_Paper.sub_agent_runtime import Runtime
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.Plan_Execute_Paper import workflow
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.ReActXen.agents.react.agents import ReactReflectAgent
@@ -100,12 +104,22 @@ def plan_agent(spec):
     return spec.name, spec.description
 
 
+def step_agent_options(servers):
+    """The keywords of a step agent on a run on these servers: AgentHive's, without its step limit on a run with the
+    CausalDiagnosis MCP (sub_agent_registry.step_cap)."""
+    return {**STEP_AGENT_OPTIONS, "max_steps": sub_agent_registry.step_cap(STEP_AGENT_STEPS, servers)}
+
+
 def run_settings(server_names, surface="rig", temperature=None):
-    """The settings a run folder records for the port on these servers, known before any episode starts."""
-    specs = [s for s in sub_agent_registry.registration(tuple(server_names), surface) if s.kind == "react"]
-    return {"form": "paper_era", "engine": "AgentHive 27552e9 on ReActXen da40e4b, vendored", "plans": workflow.PLANS,
-            "step_agent_max_steps": STEP_AGENT_STEPS, "reflections": REFLECTIONS, "surface": surface,
-            "agents": [plan_agent(s)[0] for s in specs], "decoding": dict(PAPER_DECODING, temperature=0.0 if temperature is None else temperature)}
+    """The settings a run folder records for the port on these servers, known before any episode starts: the paper's form, or on
+    a run with the CausalDiagnosis MCP the form with its limits, as for Agent-As-Tool (supervisor_runner.run_settings)."""
+    servers = tuple(server_names)
+    specs, mcp = [s for s in sub_agent_registry.registration(servers, surface) if s.kind == "react"], sub_agent_registry.with_mcp(servers)
+    return {"form": sub_agent_registry.MCP_FORM if mcp else sub_agent_registry.PAPER_FORM, "engine": "AgentHive 27552e9 on ReActXen da40e4b, vendored",
+            "plans": workflow.PLANS, "step_agent_max_steps": sub_agent_registry.recorded_cap(STEP_AGENT_STEPS, servers), "reflections": REFLECTIONS,
+            "surface": surface, "agents": [plan_agent(s)[0] for s in specs],
+            "decoding": dict(PAPER_DECODING, temperature=0.0 if temperature is None else temperature, **({"max_tokens": REPLY_ROOM} if mcp else {})),
+            **({"no_call_steps": sub_agent_registry.NO_CALL_RULE} if mcp else {})}
 
 
 class PlanExecutePaperRunner:
@@ -114,13 +128,15 @@ class PlanExecutePaperRunner:
     ``calls`` holds one record per model call and ``trajectory`` one per MCP call, both filled while the run goes."""
 
     def __init__(self, server_paths, base_url, api_key, model, surface="rig", temperature=None, log_path=None, example_start=None,
-                 on_idle=None):
+                 on_idle=None, example_asset=None):
         self._server_paths, self._model, self._surface = dict(server_paths), model, surface
         self._log_path = Path(log_path) if log_path else None
         self.on_idle = on_idle  # the driver's no_call entry, called after each planning round, which calls no tool of the rig
         self._example_start = example_start  # the registered example start, which the diagnosis example of the task tools shows
+        self._example_asset = example_asset  # the asset of the run, which the examples of a run with the CausalDiagnosis MCP show
         self.specs = [s for s in sub_agent_registry.registration(tuple(self._server_paths), surface) if s.kind == "react"]
-        self.route = CompletionRoute(base_url, api_key, model, temperature=temperature)
+        self.route = CompletionRoute(base_url, api_key, model, temperature=temperature,
+                                     reply_room=sub_agent_registry.with_mcp(tuple(self._server_paths)))
         self.calls = self.route.calls
         self.trajectory: list[dict] = []
         self.flow = None  # the workflow of the run, kept so that a run without a result leaves its plans, history and count
@@ -149,7 +165,7 @@ class PlanExecutePaperRunner:
         async with open_sessions(self._server_paths) as sessions:
             definitions = sessions.tools
             runtime = Runtime(self.route, sessions, definitions, asyncio.get_running_loop(), self._model,
-                              example_start=self._example_start, on_idle=self.on_idle)
+                              example_start=self._example_start, on_idle=self.on_idle, example_asset=self._example_asset)
             refusal = runtime.prepare(self.specs)
             if refusal is None:
                 self.trajectory = runtime.trajectory
@@ -180,11 +196,17 @@ class PlanExecutePaperRunner:
                 outer, runtime._request = runtime._request, user_input
                 try:
                     with self.route.agent(spec.name):
+                        charge = runtime.step_charge()
                         agent = ReactReflectAgent(question=user_input, key="", cbm_tools=tools,
                                                   react_llm_model_id=self._model, reflect_llm_model_id=self._model,
-                                                  react_example=runtime.examples_of(spec), stop_when=runtime.episode_ended,
-                                                  **STEP_AGENT_OPTIONS)
+                                                  react_example=runtime.examples_of(spec),
+                                                  stop_when=charge if charge is not None else runtime.episode_ended,
+                                                  **step_agent_options(tuple(self._server_paths)))
+                        if charge is not None:
+                            charge.agent = agent
                         agent.run()
+                        if charge is not None:
+                            charge.close()
                 finally:
                     runtime._request = outer
                 step_agents.append({"agent": spec.name, "request": user_input, "answer": agent.answer,
@@ -207,10 +229,11 @@ class PlanExecutePaperRunner:
                                                  round_ended=lambda: runtime.iteration_end(False))
             try:
                 flow.make_plan()
-                planned = runtime.answered()
+                planned = runtime.mark()
                 flow.execute()
-                # the pass of the step agents with the summary is one iteration of its own, charged when it made no counted call
-                runtime.iteration_end(runtime.answered() > planned)
+                # the pass of the step agents with the summary is one iteration of its own, charged when nothing in it took a step
+                # of the step cap: no counted call, and on a run with the CausalDiagnosis MCP no no_call step of a step agent
+                runtime.iteration_end(runtime.acted_since(planned))
                 end = self.route.stop_reason or "finish"
             except RunStopped as stop:
                 end = str(stop.args[0]) if stop.args else "cancelled"

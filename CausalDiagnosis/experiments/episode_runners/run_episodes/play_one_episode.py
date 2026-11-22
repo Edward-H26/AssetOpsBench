@@ -69,6 +69,7 @@ class EpisodeRunner:
         # the reasons of the start check, which main() and the loops of GEPA set from registration() before run.json, and which
         # run_meta records as the stamp
         self.unregistered = None
+        self.served = None  # run.json served, what the model endpoint serves, which build_runner reads (runner_setup.served_facts)
 
     def start(self, ep_dir, seed, episode_config):
         """The episode folder with its state file, released evidence, launchers, store and question, and in the generated_tokens

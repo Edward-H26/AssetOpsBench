@@ -9,6 +9,7 @@ from CausalDiagnosis.frameworks.AssetOpsBench.agents.ReActXen.tools.jsonreader.j
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.ReActXen.tools.jsonreader.jsonwrapper import JSONWrapperFunctions
 from CausalDiagnosis.frameworks.AssetOpsBench.agents.ReActXen.utils.tool_description import get_tool_description
 from . import sub_agent_registry
+from .react_tool_adapter import OneLineRefusal, one_line
 
 
 _log = logging.getLogger(__name__)
@@ -24,8 +25,9 @@ def _inputs(spec):
     return create_model(f"{spec.name}Inputs", request=(str, Field(description=spec.request)))
 
 
-class SubAgentTool(BaseTool):
-    """A paper-era agent tool: one request in, the wrapper's JSON reply out, JSON encoded once more."""
+class SubAgentTool(OneLineRefusal, BaseTool):
+    """A paper-era agent tool: one request in, the wrapper's JSON reply out, JSON encoded once more. A refusal of its argument
+    model reaches the supervisor on one line (OneLineRefusal)."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str
@@ -44,7 +46,8 @@ class SubAgentTool(BaseTool):
             return json.dumps(self.runtime.run_sub_agent(self.spec, request, self.parent_agent, self.parent_model_id))
         except Exception as exc:  # the paper's tools answer a failure instead of raising (IoTAgent._run in IoTTool.py)
             _log.warning("%s failed: %s", self.name, exc)
-            return json.dumps({"status": "failure", "error": str(exc), "message": FAILURE_MESSAGE}, indent=2)
+            # the paper's text of the failure, on one line as every answer of a tool of the port (react_tool_adapter.one_line)
+            return one_line(json.dumps({"status": "failure", "error": str(exc), "message": FAILURE_MESSAGE}, indent=2))
 
 
 def supervisor_tools(specs, runtime):
@@ -62,20 +65,25 @@ def supervisor_tools(specs, runtime):
 def build_supervisor(question, specs, runtime, model, stop_when=None):
     """getAgent of src/tmp/meta_agent/utils.py with the arguments MetaAgent.run passes: AgentHub's agents and tools, the
     merged examples, 10 steps, one round, Agent-Ask off and the debug printout on. stop_when stops the supervisor at its
-    first step after the environment ended the episode."""
+    first step after the environment ended the episode. On a run with the CausalDiagnosis MCP the merged examples show the asset of
+    the run (Runtime.mcp_row) and the supervisor has no step limit of its own (sub_agent_registry.step_cap)."""
     tools = supervisor_tools(specs, runtime)
-    return ReactReflectAgent(question=question, key="", cbm_tools=tools, tool_desc=get_tool_description(tools), max_steps=sub_agent_registry.SUPERVISOR_STEPS,
-                             react_llm_model_id=model, reflect_llm_model_id=model, react_example=sub_agent_registry.merged_examples(specs),
+    servers = tuple(runtime.definitions) if runtime is not None else ()
+    return ReactReflectAgent(question=question, key="", cbm_tools=tools, tool_desc=get_tool_description(tools),
+                             max_steps=sub_agent_registry.step_cap(sub_agent_registry.SUPERVISOR_STEPS, servers),
+                             react_llm_model_id=model, reflect_llm_model_id=model, react_example=sub_agent_registry.merged_examples(specs, runtime.mcp_row() if runtime is not None else None),
                              num_reflect_iteration=sub_agent_registry.REFLECTIONS, handle_context_length_overflow=True, apply_loop_detection_check=True,
                              log_structured_messages=True, early_stop=True, enable_agent_ask=False, debug=True, stop_when=stop_when)
 
 
-def build_sub_agent(spec, request, tools, model, own_examples, stop_when=None):
+def build_sub_agent(spec, request, tools, model, own_examples, stop_when=None, max_steps=None):
     """The paper's wrappers call their agent function with the request, the parent's model, reflect_step 1 and Agent-Ask on,
     and the agent functions are getAgent with the agent's tools, examples and step limit. own_examples is the text of the
-    agent's examples for these tools (Runtime.examples_of). The engine renders its prompt template once per process, for the
+    agent's examples for these tools (Runtime.examples_of), and max_steps the step limit of the run when it is not the agent's
+    own (sub_agent_registry.step_cap). The engine renders its prompt template once per process, for the
     supervisor, so the line that Agent-Ask adds to a prompt reaches no sub-agent, as in the source."""
-    return ReactReflectAgent(question=request, key="", cbm_tools=tools, tool_desc=get_tool_description(tools), max_steps=spec.max_steps,
+    return ReactReflectAgent(question=request, key="", cbm_tools=tools, tool_desc=get_tool_description(tools),
+                             max_steps=spec.max_steps if max_steps is None else max_steps,
                              react_llm_model_id=model, reflect_llm_model_id=model, react_example=own_examples,
                              num_reflect_iteration=1, handle_context_length_overflow=True, apply_loop_detection_check=True,
                              log_structured_messages=True, early_stop=True, enable_agent_ask=True, debug=False, stop_when=stop_when)

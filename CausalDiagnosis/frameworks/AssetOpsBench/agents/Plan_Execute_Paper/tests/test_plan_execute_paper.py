@@ -93,6 +93,20 @@ def test_a_valid_plan_runs_its_step_on_the_agent_and_the_summary_answers(tmp_pat
     assert prompts[-1]["prompt"].endswith("Question:\nWhat IoT sites are available?\n\nContext:\nThe sites are MAIN\n\n\nAnswer:\n")
 
 
+@pytest.mark.parametrize("on_one_line", [True, False], ids=["one line", "control: the answer as served"])
+def test_a_step_agent_reads_the_answer_of_a_server_on_one_line(tmp_path, monkeypatch, on_one_line):
+    if not on_one_line:
+        monkeypatch.setattr(react_tool_adapter, "one_line", lambda text: text)
+    launchers = stub_servers.write_launchers(tmp_path / "servers", ("iot", "task"))
+    script = [plan(("List the assets of MAIN.", "IoT Data Download", "None")), VALID,
+              *agent_step("I need the assets of MAIN.", "assets", "site_name=MAIN", "The assets are CHL-A100"), "CHL-A100"]
+    _, result, ep = run(launchers, script, tmp_path)
+    served = result.trajectory[0]["response"]
+    assert "\n" in served  # FastMCP indents the JSON of an answer, which the trajectory keeps as served
+    shown = json.dumps(json.loads(served)) if on_one_line else served
+    assert f"\nObservation 1: {shown}\nThought 2:" in ep.completions()[4]["prompt"]
+
+
 def test_an_invalid_plan_goes_back_to_the_planner_with_the_reason_and_the_suggestion(tmp_path):
     launchers = stub_servers.write_launchers(tmp_path / "servers", ("iot", "task"))
     first = plan(("List the sites.", "IoT Data Download", "None"))
@@ -173,8 +187,10 @@ def test_the_agents_and_their_examples_are_those_of_the_agent_as_tool_port():
     settings = run_settings(("iot", "fmsr", "wo", "task", "causal_diagnosis"))
     assert settings["agents"] == ["IoT Data Download", "TaskAgent", "Failure Mode and Sensor Relevancy Expert for Industrial Asset",
                                   "Work Order Management", "CausalDiagnosisAgent"]
-    assert settings["plans"] == 5 and settings["step_agent_max_steps"] == 6 and settings["form"] == "paper_era"
-    assert "causal_diagnosis" not in str(run_settings(("iot", "fmsr", "wo", "task"))["agents"])
+    assert settings["plans"] == 5 and settings["step_agent_max_steps"] is None and settings["form"] == sub_agent_registry.MCP_FORM
+    bare = run_settings(("iot", "fmsr", "wo", "task"))
+    assert "causal_diagnosis" not in str(bare["agents"])
+    assert (bare["plans"], bare["step_agent_max_steps"], bare["form"], bare["decoding"]["max_tokens"]) == (5, 6, "paper_era", 500)
 
 
 class RecordingAgent:
@@ -433,3 +449,40 @@ def test_the_pass_of_the_step_agents_without_a_counted_call_takes_one_step(monke
     result = runner._play("Which sites?", runtime)
     assert len(entries) == entries_made
     assert result.end == ("episode_over" if over else "finish") and runtime.route.stop_reason == ("episode_over" if over else None)
+
+
+
+# ----- the limits of a run with the CausalDiagnosis MCP -----
+
+ROWS = {"with the MCP": ("iot", "causal_diagnosis"), "control: without it": ("iot",)}
+RIG_ASSET, RIG_START = "hyd_1", {"cooler": 3, "valve": 100, "pump": 0, "accumulator": 130}  # a start with one faulty component
+
+
+def run_on(servers, script, tmp_path):
+    """A run over the stand-in servers of a row with its no_call entries counted: (runner, result, endpoint, entries)."""
+    launchers = stub_servers.write_launchers(tmp_path / "servers", servers)
+    entries = []
+    with ScriptedEndpoint(script) as ep:
+        runner = PlanExecutePaperRunner(launchers, base_url=ep.base_url, api_key="local", model="granite-stand-in", log_path=tmp_path / "react_log.txt",  # pragma: allowlist secret
+                                        example_start=RIG_START, example_asset=RIG_ASSET, on_idle=lambda: entries.append(1) and False)
+        result = asyncio.run(runner.run("What IoT sites are available?"))
+    return runner, result, ep, entries
+
+
+@pytest.mark.parametrize("servers", ROWS.values(), ids=ROWS.keys())
+def test_on_a_run_with_the_mcp_the_step_agents_have_no_step_limit_and_every_step_without_a_counted_call_is_charged(tmp_path, servers, monkeypatch):
+    """One planning round, one step agent that calls sites, a counted call, and writes Finish, and the summary. With the MCP the
+    round and the step agent's Finish take a no_call step each, and the pass with the summary none, since it took steps; every
+    request asks for the room the served context leaves its prompt, and the step agent has no step limit of its own. Without it the
+    round alone is charged, every request carries 500 and the step agent keeps AgentHive's six steps."""
+    built = []
+    real = runner_module.ReactReflectAgent
+    monkeypatch.setattr(runner_module, "ReactReflectAgent", lambda **keywords: built.append(keywords["max_steps"]) or real(**keywords))
+    script = [plan(("List the IoT sites.", "IoT Data Download", "None")), VALID, *agent_step("I need the sites.", "sites", "{}", "The sites are MAIN"), "MAIN"]
+    runner, result, ep, entries = run_on(servers, script, tmp_path)
+    mcp = "causal_diagnosis" in servers
+    assert result.error is None and result.end == "finish" and [r["tool"] for r in result.trajectory] == ["sites"]
+    assert entries == ([1, 1] if mcp else [1])
+    assert built == [sub_agent_registry.NO_STEP_CAP if mcp else runner_module.STEP_AGENT_STEPS]
+    bodies = ep.completions()
+    assert [b["max_tokens"] for b in bodies] == ([131072 - len(b["prompt"].split()) - 2 for b in bodies] if mcp else [500] * len(bodies))
