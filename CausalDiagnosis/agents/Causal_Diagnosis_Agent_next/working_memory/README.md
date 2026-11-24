@@ -34,10 +34,12 @@ are reported through `retire_notes(passed)`.
 
 The controller supplies request-fit callbacks and the earlier-turn summarizer
 to `compact`, and drops recalled rows when its actual context cannot hold them.
-It transfers an unexpected answer-reader `guard` to the call record and adds
-the called tool's name to the refusal. The loop's end-to-end mapped tests wait
-for the controller and kind implementations; passing board fixtures does not
-establish a runnable general agent or a dataset port.
+The reused native controller transfers an unexpected answer-reader `guard` to
+the call record and adds the called tool's name to the refusal. Descriptive QA
+development episodes exercise this controller over isolated MCP sessions.
+Complete mapped episodes still need the remaining kind, binding, advice and
+controller integrations. These development controls do not establish a formally
+registered dataset port or a served-model evaluation.
 
 ## Checks and controls
 

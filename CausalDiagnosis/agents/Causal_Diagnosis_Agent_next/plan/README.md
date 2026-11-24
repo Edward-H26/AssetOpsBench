@@ -19,21 +19,21 @@ forms. The live board, ledger, facts and model plan stay unchanged.
 
 ## Work sequence
 
-1. Preserve the prior implementation on its existing branch and start from the
-   merged interface freeze.
+1. Preserve prior history and start from the merged interface freeze. Keep
+   dataset adapters and agent foundations together on the active working branch.
 2. Port the typed readers, parser, reply schemas and copied-ledger check.
 3. Exercise defaults, candidate ranks, evidence fills, standing clauses and
    step-versus-plan refusals against the frozen declarations.
 4. Port answer normalization and working memory, then run both acceptance suites.
-5. Integrate the prompt and controller when their implementations are available,
-   re-express the remaining mapped tests and run the episode gates.
+5. Reuse the native controller and prompt for the descriptive QA development
+   adapter. Re-express the remaining mapped tests and run the episode gates as
+   bindings, fills, advice modules and kind implementations are integrated.
 
 ## Integration still required
 
-The advice package's frozen `expectation_forms` entry point must delegate to
-`plan.expectations.expectation_forms`, or provide equivalent callable readers
-with a `schema` attribute. Module forms join the answer forms and event forms
-without reading facts.
+The advice package's frozen `expectation_forms` entry point delegates to
+`plan.expectations.expectation_forms`. Module forms join the answer forms and
+event forms without reading facts. Advice-enabled execution remains unsupported.
 
 The prompt must print the active clauses in `messages.RULE_SENTENCES` and explain
 typed-reader refusals. A cross-package test must compare every emitted reason
@@ -43,8 +43,10 @@ The controller must apply the notes returned by `inspect_plan`, use only its
 executable prefix, and recheck standing and step legality before a live call.
 It supplies controller fills and judges standing expectations against retained
 observations or the responsible module. It records a parser fault in the plan
-record and never dispatches a refusal. The controller and driver remain separate
-integration dependencies; their frozen stubs cannot run an episode.
+record and never dispatches a refusal. The reused controller supports the native
+no-advice QA development path and explicitly rejects bindings and controller
+fills. Formal driver registration, standing-expectation judgment and complete
+recorded-kind episodes remain integration work.
 
 Kind implementations must supply the public `Ledger` and `Walk` interfaces.
 The doubles in `tests/fakes.py` verify the check without replacing a real kind.

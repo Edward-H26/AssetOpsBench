@@ -71,10 +71,17 @@ class Module(Protocol):
 
 def modules_for(table, options):
     """One module per advice kind for which the table lists a tool and a module exists."""
-    raise NotImplementedError
+    from ..agent_options import SWITCHES
+    if table.of_role("advice"):
+        raise NotImplementedError("advice modules are not implemented for the general runner")
+    for switch in SWITCHES:
+        if switch.owner != "core" and getattr(options, switch.name) != switch.default:
+            raise ValueError(f"{switch.name} requires the {switch.owner} advice module")
+    return []
 
 
 def expectation_forms(table, modules):
     """{tool: {expectation key: reader}}, built once per turn: for every row the key of its answer form, no_event where the
     declaration lists events, and the keys of every module's forms(row)."""
-    raise NotImplementedError
+    from ..plan.expectations import expectation_forms as build_forms
+    return build_forms(table, modules)
