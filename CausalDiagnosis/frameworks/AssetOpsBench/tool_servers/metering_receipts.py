@@ -7,18 +7,7 @@ and, on the rows with a clock, the cycle and the notifications. An answer shows 
 ways: the refusal every server answers after the end, an accepted finish, and a receipt with no step left or with the end event
 among its notifications.
 """
-from CausalDiagnosis.agents.utils.tool_answers import EPISODE_OVER, json_object
-
-
-def split_receipt(text):
-    """(body, receipt) of an answer: the receipt is the JSON object of the last line when it holds steps_left, and None for an
-    answer without one, whose body is then the whole text."""
-    parts = (text or "").rstrip("\n").rsplit("\n", 1)
-    if len(parts) == 2:
-        receipt = json_object(parts[1])
-        if receipt is not None and "steps_left" in receipt:
-            return parts[0], receipt
-    return text, None
+from CausalDiagnosis.agents.utils.tool_answers import EPISODE_OVER, json_object, split_receipt
 
 
 def ended(tool, body, receipt, is_error):
