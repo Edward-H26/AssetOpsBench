@@ -148,7 +148,7 @@ class RigSurface(Surface):
         raise KeyError(f"{kind} has a tool on the hydraulic rig")
 
 
-TIME_TOOL, WAIT_TOOL = "get_current_time", "wait_for_notification"  # the time tools of the task server, served on the level with the CausalDiagnosis MCP
+TIME_TOOL, WAIT_TOOL = "get_current_time", "wait_for_notification"  # shared environment time tools, selected by scenario layers independently of diagnostic advice
 # the step kinds a level or a layer may leave out, by the tool that serves each; every other kind is served on every row: read
 # (history), diagnose (submit_diagnosis), order (generate_work_order), finish, profile, failure_modes, fix_history and extent
 OPTIONAL_KIND_TOOLS = {"declare": DECLARE_TOOL, "wait": WAIT_TOOL, "time": TIME_TOOL}

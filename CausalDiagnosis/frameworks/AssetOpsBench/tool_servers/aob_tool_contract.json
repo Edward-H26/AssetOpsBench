@@ -7,7 +7,7 @@
     "iot": "AssetOpsBench's IoT server over the asset registry and the telemetry of the episode",
     "fmsr": "AssetOpsBench's failure mode server over the failure mode documents of the episode",
     "wo": "AssetOpsBench's work order server over the work orders of the episode and the failure code catalog",
-    "task": "the actions of the rig's action server that AssetOpsBench's tools do not carry: on a row with the tools of CausalDiagnosis the asset profile, the change summary, one diagnosis or one declaration, finish, from the real time clock row the two time tools, and from the repair rules row the repair manual lookup_fix, which has no AssetOpsBench counterpart; on a row without the tools of CausalDiagnosis the asset profile, the diagnosis and finish"
+    "task": "the shared environment actions that AssetOpsBench's tools do not carry: the asset profile, change summary, diagnosis, insufficient-evidence declaration and finish; time tools on clock rows and repair manual lookup_fix on repair-rules rows. These capabilities are identical with or without the separate CausalDiagnosis MCP advice server."
   },
   "actions": {
     "read_recorded": {"class": "read", "rule": "a read of a window of recorded cycles, which history and latest_reading become"},

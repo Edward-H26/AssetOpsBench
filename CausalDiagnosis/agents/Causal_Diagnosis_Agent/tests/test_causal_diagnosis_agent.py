@@ -1934,7 +1934,7 @@ def _assert_aob_surface(ep_dir, row, clock, server=True):
     orders = [t for t in trajectory if t["tool"] == "generate_work_order"]
     assert orders and all(t["tool_args"]["asset_num"] in profile["asset"]["children"].values() and t["tool_args"]["work_type"] == "CM"
                           and bool(t["tool_args"]["aob_source"]["prediction_id"]) is server for t in orders)
-    if clock and server:  # the time tools are served on the clock rows at the level with the CausalDiagnosis MCP only
+    if clock:  # time tools belong to the environment, with or without diagnostic advice
         assert ("task", "get_current_time") in tools and ("task", "wait_for_notification") in tools
     else:
         assert ("task", "get_current_time") not in tools and ("task", "wait_for_notification") not in tools
@@ -2329,46 +2329,43 @@ def test_without_the_server_a_repair_the_bands_refute_is_recorded_and_the_next_p
     assert row["causal_calls"] == 0 and _tools(ep_dir, CAUSAL_SERVER) == []
 
 
-def test_without_the_server_the_agent_plays_the_assetopsbench_clock_row_without_our_tools_on_the_bands(tmp_path):
-    """The same agent without the diagnostics server on AssetOpsBench's servers of the advanced real-time row at the level without
-    the CausalDiagnosis MCP, which serves no wait: no diagnostics call and no wait, the orders go through generate_work_order with an empty
-    prediction, and one history read whose window plays the cycles to the close verifies the repair."""
+def test_without_diagnostic_advice_the_agent_waits_and_verifies_on_the_shared_advanced_clock(tmp_path):
+    """No diagnostic call or prediction, but the same clock queries, event waits and repair verification remain available."""
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.recorded_history_env import RecordedRigEnv
 
     def truth():
         state = episode.load_state(tmp_path / "seed000003" / "episode.json")
         return dict(zip(COMPONENTS, episode.replay({**state, "actions": [], "think_cycles": []}, env_class=RecordedRigEnv).hidden))
-    plans = bands_plans(forward=2 * LONGEST_REPAIR + 1)  # a window past the present that reaches the close of a visit of two orders
+    plans = bands_plans(wait=2 * LONGEST_REPAIR + 1)
     ep_dir, row, _backend = _aob_run(tmp_path, "advanced_real_time", ScriptedPlanner(lambda prompt, call: plans(prompt, call, truth)), {}, seed=3,
                                      server=False)
     _assert_episode_files(ep_dir, row, server=False)
     trajectory, verdict = _assert_aob_surface(ep_dir, row, clock=True, server=False)
     assert CAUSAL_SERVER not in {t["server"] for t in trajectory} and row["causal_calls"] == 0
-    assert not {"wait_for_notification", "get_current_time", "declare_insufficient_evidence"} & {t["tool"] for t in trajectory}
+    assert {"wait_for_notification", "get_current_time"} <= {t["tool"] for t in trajectory}
     board = read_json(ep_dir / "plans.json")["board"]
     assert board["verifications"] and all(v["status"] == "verified by the normal ranges" for v in board["verifications"].values())
     assert verdict["pass"] is True
 
 
-def test_without_the_server_the_agent_plays_the_assetopsbench_real_time_row_without_our_tools_and_finishes_unverified(tmp_path):
-    """The real-time row at the level without the CausalDiagnosis MCP serves no wait, and its reads play no cycle, so after the diagnosis and the
-    orders no step reaches the close: the agent finishes without a wait and without a verifying read, and the closing summary turn
-    carries the note of the unverified finish; the verifier still scores the episode from its writes."""
+def test_without_diagnostic_advice_the_agent_can_wait_for_a_repair_on_the_shared_real_time_row(tmp_path):
+    """Even when reads take no time, the shared wait tool reaches completion and a subsequent reading verifies the repair."""
     from CausalDiagnosis.agents.Causal_Diagnosis_Agent.controller import NO_WAY_TO_THE_CLOSE
     from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.recorded_history_env import RecordedRigEnv
 
     def truth():
         state = episode.load_state(tmp_path / "seed000003" / "episode.json")
         return dict(zip(COMPONENTS, episode.replay({**state, "actions": [], "think_cycles": []}, env_class=RecordedRigEnv).hidden))
-    plans = bands_plans(wait=0)
+    plans = bands_plans(wait=1)
     ep_dir, row, backend = _aob_run(tmp_path, "real_time", ScriptedPlanner(lambda prompt, call: plans(prompt, call, truth)), {}, seed=3, server=False)
     _assert_episode_files(ep_dir, row, server=False)
     trajectory, verdict = _assert_aob_surface(ep_dir, row, clock=True, server=False)
     tools = [t["tool"] for t in trajectory]
     assert "submit_diagnosis" in tools and "generate_work_order" in tools and tools[-1] == "finish"
-    assert not {"wait_for_notification", "get_current_time", "declare_insufficient_evidence", "summarize_changes_since"} & set(tools)
-    assert read_json(ep_dir / "plans.json")["board"]["verifications"] == {}
-    assert NO_WAY_TO_THE_CLOSE in backend.calls[-1]["prompt"] and verdict["verified"]
+    assert {"wait_for_notification", "get_current_time"} <= set(tools)
+    assert read_json(ep_dir / "plans.json")["board"]["verifications"]
+    assert NO_WAY_TO_THE_CLOSE not in backend.calls[-1]["prompt"] and verdict["verified"] and verdict["pass"]
+    assert row["causal_calls"] == 0 and _tools(ep_dir, CAUSAL_SERVER) == []
 
 
 def test_the_driver_plays_the_causal_agent_without_the_server_and_refuses_the_switches_that_need_it(tmp_path, monkeypatch):

@@ -23,9 +23,7 @@ CONTRACT_FORMAT = 1
 AOB_SERVERS = ("iot", "fmsr", "wo")
 TASK_SERVER = "task"
 ROWS = layers.LADDER  # one row of the environment table per big layer
-# what a row without the CausalDiagnosis MCP (no diagnostics server) serves of the tools this project adds: the profile, which every agent design opens with, and the
-# three answer tools; the time tools, the manual, the change summary and the diagnostics tools belong to the rows with the CausalDiagnosis MCP
-FRAMEWORK_LEVEL_ACTIONS = ("get_asset_profile", "submit_diagnosis", "declare_insufficient_evidence", "finish")
+# Environment capabilities depend on the scenario layers, never on whether diagnostic advice is registered.
 # the name under which these rows serve the actions of this project's action server, and the actions their own tools carry to the engine
 # (the declaration of the framework holds both after the move)
 ACTION_SERVER_NAME = TASK_SERVER
@@ -68,11 +66,8 @@ def tools_of(server, row=ROWS[-1]):
 def tools_for(server, config):
     """The names a server lists for a configuration: the tools of the base and those of every big layer whose tools
     CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers.lists_tools lists, in the order of the file, which on every ladder preset are the tools of
-    its row. The task server of a row without the CausalDiagnosis MCP (diagnostics_server off) lists FRAMEWORK_LEVEL_ACTIONS alone."""
-    names = tuple(name for name, entry in entries(server).items() if layers.lists_tools(entry["row"], config))
-    if server == TASK_SERVER and not config.diagnostics_server:
-        return tuple(name for name in names if name in FRAMEWORK_LEVEL_ACTIONS)
-    return names
+    its row. CausalDiagnosis MCP only adds its own server; it removes no environment tool."""
+    return tuple(name for name, entry in entries(server).items() if layers.lists_tools(entry["row"], config))
 
 
 def child_asset(asset_id, component):

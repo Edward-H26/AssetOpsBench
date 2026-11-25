@@ -25,7 +25,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import (D
                                             repair_cards, repair_sentences, repair_step, scoring_sentence, time_sentence, time_values)
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import listed as _listed
 
-BRIEFING_VERSION = "aob-v1.18"
+BRIEFING_VERSION = "aob-v1.19"
 EVIDENCE_FORMS = ("obs/<timestamp>/<field> for a value of a telemetry row, with the timestamp and the field as the row shows them",
                   "wo/<wonum> for a work order", "fmea/<source>/<code> for a failure mode")
 ALARM_FORM = "alarm/<cycle>/<channel> for the alarm of a notification"
@@ -41,8 +41,7 @@ def fix_history_sentence(noun):
 
 
 def _serves(config, tool):
-    """Whether the task server of the configuration lists the tool, which on a row without the CausalDiagnosis MCP it does not for the
-    time tools, the manual and the change summary; the three answer tools are served at both levels."""
+    """Whether the scenario layers list this environment tool, independently of the separate diagnostic advice server."""
     return tool in layer_contract.tools_for(TASK_SERVER, config)
 
 

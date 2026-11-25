@@ -1,7 +1,5 @@
-"""The two tool levels of the AssetOpsBench rows: on every preset of the five grid files, a row without the CausalDiagnosis MCP
-(diagnostics_server off) serves the profile and the three answer tools this project adds (the diagnosis, the declaration and finish) beside AssetOpsBench's
-tools, and a row with them serves every uncovered action of this project's action server by the layer rule with the change summary; the profile's tool table
-lists exactly what the row serves; the rig's own action server lists all twelve actions whatever the flag."""
+"""Every preset serves the same environment tools with or without CausalDiagnosis MCP advice.
+The profile lists the actual tools; only the separate diagnostic server changes."""
 import re
 from pathlib import Path
 
@@ -11,7 +9,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers import laye
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.recorded_history_env import RecordedRigEnv
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment import tool_contract as contract
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers import aob_tool_contract as layer_contract
-from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_tool_contract import AOB_SERVERS, COVERS, FRAMEWORK_LEVEL_ACTIONS, TASK_SERVER
+from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.aob_tool_contract import AOB_SERVERS, COVERS, TASK_SERVER
 from CausalDiagnosis.frameworks.AssetOpsBench.tool_servers.metering_layer import DEFINITIONS_ONLY
 from CausalDiagnosis.mcp_servers.Environment_Actions_MCP.main import build_server
 
@@ -24,9 +22,7 @@ DIAGNOSTICS_TOOLS = set(contract.tools_of(contract.DIAGNOSTICS_SERVER))
 
 
 def expected_task_tools(config):
-    """The task server's tools at the two tool levels, written out here apart from the code under test."""
-    if not config.diagnostics_server:
-        return {"get_asset_profile", "submit_diagnosis", "declare_insufficient_evidence", "finish"}
+    """The environment's tools depend only on the enabled layers."""
     tools = {"get_asset_profile", "summarize_changes_since", "submit_diagnosis", "declare_insufficient_evidence", "finish"}
     if config.time_tools:
         tools |= {"get_current_time", "wait_for_notification"}
@@ -61,8 +57,7 @@ def test_the_profile_of_the_rows_lists_what_the_row_serves(world, preset, ours):
     assert names == [row["name"] for row in layer_contract.public_table(config)]
 
 
-def test_the_framework_level_actions_are_answers_and_the_profile():
-    assert FRAMEWORK_LEVEL_ACTIONS == ("get_asset_profile", "submit_diagnosis", "declare_insufficient_evidence", "finish")
+def test_the_framework_actions_cover_the_same_physical_operations():
     assert set(COVERS) == {"read_sensors", "get_failure_modes", "create_work_order", "get_fix_history"}
     assert layer_contract.ACTION_SERVER_NAME == TASK_SERVER
 
@@ -70,3 +65,16 @@ def test_the_framework_level_actions_are_answers_and_the_profile():
 async def test_the_rig_action_server_lists_all_twelve_actions():
     names = [t.name for t in await build_server(DEFINITIONS_ONLY, record=False).list_tools()]
     assert names == list(contract.tools_of(contract.ACTION_SERVER))
+
+
+@pytest.mark.parametrize("preset", PRESETS)
+def test_diagnostic_advice_changes_only_the_diagnostic_server(preset):
+    """The ablation preserves environment tools, their public prices and durations on every grid preset."""
+    off = preset_config(preset, diagnostics_server=False)
+    on = preset_config(preset, diagnostics_server=True)
+    for server in (*AOB_SERVERS, TASK_SERVER):
+        assert layer_contract.tools_for(server, off) == layer_contract.tools_for(server, on)
+    before = layer_contract.public_table(off)
+    after = layer_contract.public_table(on)
+    assert before == [row for row in after if row["server"] != contract.DIAGNOSTICS_SERVER]
+    assert {row["name"] for row in after if row["server"] == contract.DIAGNOSTICS_SERVER} == DIAGNOSTICS_TOOLS
