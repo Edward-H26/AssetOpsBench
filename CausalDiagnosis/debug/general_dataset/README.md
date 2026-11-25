@@ -1,5 +1,12 @@
 # Dataset generalization development
 
+The registered declared-episode entry and its current integration boundaries
+are documented in `CausalDiagnosis/docs/declared-episodes.md`. It reuses the QA
+and release implementations below, while keeping the earlier development CLI
+and output format available. The scripted port now has exact replay and an
+explicit image transport; official matcher parity and semantic evaluation
+remain separate requirements.
+
 The descriptive maintenance QA baseline lives in
 `CausalDiagnosis/debug/general_dataset/versions/v001/industryasseteqa/`.
 It is independent of the maintenance-loop debug versions and does not replace
@@ -52,19 +59,19 @@ Controls cover complete MCP QA episodes, refusal and correction, a blocked write
 without evidence, endpoint failure, source privacy, and renamed tools with an
 unrelated answer field. These are stand-in model controls, not model benchmarks.
 Frozen fields and signatures, registered agents and their fixtures are unchanged.
-Argument fills, surface bindings and advice modules are refused explicitly by this
-runner until their implementations are integrated. Automatic context-fit
-compaction, parallel scheduling, registered-kind parity, formal driver registration
-and the full general-agent acceptance gate remain outstanding. The memory helpers
-alone do not establish those features. This version's output remains
+Evidence, fixed and closing-summary fills are implemented. Surface bindings and
+advice modules remain unsupported. Context compaction runs only when a backend
+provides an actual context-fit callback. Parallel scheduling, recorded-kind parity
+and the full general-agent acceptance gate remain outstanding. This version's output remains
 `maintenance_qa_development` and is separate from formal experiment records.
 
 ## Local inputs
 
 Prepared inputs can be kept at
 `CausalDiagnosis/datasets/industryasseteqa/data/pdm/prepared/`.
-This is local storage under the existing generated-data policy. It has no asset
-file or package registration. Input data and extracted publication code stay out
+This is local storage under the existing generated-data policy. The prepared
+inputs have no recorded-level asset file; the declared-episode port registers
+separately. Input data and extracted publication code stay out
 of Git and normal source uploads; their hashes remain in the build and run
 records. Existing downloaded inputs need no new download for inspection.
 
@@ -105,14 +112,14 @@ hashes. `scores.csv` keeps structural acceptance and provenance separate from th
 restricted numeric-answer metric. Numeric matching is not a general semantic
 quality score, and acceptance is not correctness.
 
-The next integration work is the formal driver and dataset registration, after
-satisfying the general-agent gates and validating a served-model pilot. FaultArena
-requires its own declared tool surface, scripted-case semantics and replay
-controls. It is a separate port; completing this QA path does not implement it.
+The shared declared-episode driver now registers both ports. A served-model pilot,
+the remaining general-agent gates and integration with the recorded-run verifier
+and tables are still required. Completing this QA development path alone does
+not establish the scripted port's benchmark equivalence.
 
 FaultArena release preparation is available in
 `versions/v001/faultarena/README.md`. Its downloader pins the release and its audit
 checks partition integrity, case references, DAGs and images without publishing
-case contents. The public task and tool projection remains separate from private
-replay data. This is preparation for the missing scripted replay prerequisite,
-not a runnable FaultArena agent port.
+case contents. The registered scripted port lives under
+`CausalDiagnosis/datasets/faultarena/`, over the shared replay. Public task and
+tool projections remain separate from private scripts and evaluation references.

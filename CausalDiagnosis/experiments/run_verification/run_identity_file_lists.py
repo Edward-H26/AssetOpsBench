@@ -71,6 +71,8 @@ CODE_LISTS = {
                 "CausalDiagnosis/cluster_jobs/3_run/run_gepa_online.sh",
                 "CausalDiagnosis/cluster_jobs/0_setup/requirements-train.txt", "CausalDiagnosis/configs/training/"),
     "harness": ("CausalDiagnosis/experiments/episode_runners/run_episodes/",
+               "CausalDiagnosis/experiments/episode_runners/run_declared_episodes.py",
+               "CausalDiagnosis/agents/utils/chat_model.py",
                "CausalDiagnosis/experiments/episode_runners/audit_reports.py",
                "CausalDiagnosis/experiments/episode_runners/servers_of_a_run.py", "CausalDiagnosis/utils/json_files.py", "CausalDiagnosis/experiments/episode_runners/run_folder_layout.py", "CausalDiagnosis/experiments/episode_runners/episode_launchers.py", "CausalDiagnosis/experiments/episode_runners/run_configuration.py", "CausalDiagnosis/utils/csv_rows.py",
                "CausalDiagnosis/experiments/table_definitions/experiment_tables.py", "CausalDiagnosis/experiments/run_verification/run_identity_file_lists.py",

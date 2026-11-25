@@ -108,19 +108,21 @@ def test_a_made_up_asset_adds_its_files_by_rules_and_no_rule_names_an_asset():
 
 
 def test_each_agent_package_has_its_own_list_and_the_shared_files_of_the_agents_lie_in_harness():
-    """The list of the present agent holds its package alone and the package of the general agent has a list of its own, so a file
-    added under one package never joins the identity of the runs of the other; the shared files of the declaration and of the
-    answers lie in harness, the rules of a kind in episode."""
+    """Each agent owns its executable package files; documentation and tests keep their non-identity lists. Shared declaration
+    and answer code lies in harness, and kind rules lie in episode."""
     files = ledger.code_identity.tree_files()
     present = "CausalDiagnosis/agents/Causal_Diagnosis_Agent/"
     assert files["agent:causal"] and all(path.startswith(present) for path in files["agent:causal"])
     assert sorted(path for path in files["agent:causal_next"]) == sorted(
         path for name, listed in files.items() for path in listed if path.startswith("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/")
-        and name != "checks")
+        and name not in ("checks", "documents"))
     for path, listed in (("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/planted.py", ("agent:causal_next",)),
                          ("CausalDiagnosis/agents/Causal_Diagnosis_Agent/planted.py", ("agent:causal",)),
                          ("CausalDiagnosis/agents/utils/declaration.py", ("harness",)), ("CausalDiagnosis/agents/utils/answer.py", ("harness",)),
                          ("CausalDiagnosis/agents/utils/answer_forms.py", ("harness",)),
+                         ("CausalDiagnosis/agents/utils/chat_model.py", ("harness",)),
+                         ("CausalDiagnosis/experiments/episode_runners/run_declared_episodes.py", ("harness",)),
+                         ("CausalDiagnosis/agents/Causal_Diagnosis_Agent_next/plan/README.md", ("documents",)),
                          ("CausalDiagnosis/utils/public_rules/plan_rules.py", ("episode",))):
         assert run_identity_file_lists.lists_of(path) == listed, path
 

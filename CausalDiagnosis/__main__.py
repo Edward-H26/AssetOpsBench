@@ -39,6 +39,8 @@ COMMANDS = {
         "model-adapters": ("agents.utils.model_adapters", "rewrite the chat template of the served model before serving"),
     },
     "experiments": {
+        "run-declared-episodes": ("experiments.episode_runners.run_declared_episodes",
+                                  "run registered QA or scripted episodes through the shared declared agent"),
         "run-episodes": ("experiments.episode_runners.run_episodes",
                          "play episodes with an agent or a reference policy and verify each one"),
         "run-reference-policies": ("experiments.episode_runners.run_reference_policies",

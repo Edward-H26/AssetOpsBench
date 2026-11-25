@@ -6,6 +6,7 @@ ORDER = "put {needed} before this step, since {tool} needs its answer"
 END_LAST = "{tool} ends the episode, so it is the last step of a plan"
 CITES_OBSERVATION = "{tool} counts only when it cites an observation, and none is on the board or earlier in the plan"
 STANDS_STATE = "leave this step out, since {state} is already {value}"
+REPLY_TOKEN_CAP = "the reply was cut at the token cap and was not parsed; return a shorter complete JSON object"
 
 RULE_SENTENCES = (
     ("known_tool", "no step that names a tool outside the table"),

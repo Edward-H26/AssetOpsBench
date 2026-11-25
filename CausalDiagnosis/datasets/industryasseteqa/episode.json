@@ -1,0 +1,6 @@
+{
+  "id": "industryasseteqa_pdm",
+  "kind": "maintenance_qa",
+  "adapter": "CausalDiagnosis.datasets.industryasseteqa.episode_port:load",
+  "inputs": ["facts", "qa", "split"]
+}

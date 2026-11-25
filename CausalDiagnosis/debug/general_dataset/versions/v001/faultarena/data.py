@@ -38,6 +38,16 @@ class FaultArenaRelease:
         return copy.deepcopy({"case_id": case_id, "question": record["initial_query"],
                               "initial_states": record["case"]["initial_states"]})
 
+    def modalities(self, case_id):
+        record = self._cases[case_id]
+        return ("text", "image") if record.get("is_multimodal") or record.get("image_paths") else ("text",)
+
+    def image_paths(self, case_id):
+        record = self._cases[case_id]
+        paths = set(record.get("image_paths", ()))
+        paths.update(item.get("observation", {}).get("image_path") for item in record["case"]["hidden_environment"])
+        return sorted(paths - {None, ""})
+
     def tools(self):
         keys = ("name", "description", "parameters", "returns", "category", "cost", "cost_range",
                 "is_destructive", "power_required", "state_change", "multimodal")

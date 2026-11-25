@@ -43,15 +43,18 @@ The controller must apply the notes returned by `inspect_plan`, use only its
 executable prefix, and recheck standing and step legality before a live call.
 It supplies controller fills and judges standing expectations against retained
 observations or the responsible module. It records a parser fault in the plan
-record and never dispatches a refusal. The reused controller supports the native
-no-advice QA development path and explicitly rejects bindings and controller
-fills. Formal driver registration, standing-expectation judgment and complete
-recorded-kind episodes remain integration work.
+record and never dispatches a refusal. The controller now supports standing
+expectations, evidence and fixed fills, closing summaries and backend-driven
+context compaction. A cut prefix never resumes its unusable suffix after earlier
+answers arrive. Registered QA and scripted episodes use the shared driver of
+`CausalDiagnosis/docs/declared-episodes.md`. Bindings, warrant fills, advice modules
+and complete recorded-kind episodes remain integration work.
 
 Kind implementations must supply the public `Ledger` and `Walk` interfaces.
 The doubles in `tests/fakes.py` verify the check without replacing a real kind.
 Mapped tests that depend on those kinds or the controller remain integration
-work, including no-call standing expectations and live changes before dispatch.
+work. The native controller tests exercise no-call standing expectations and a
+facts-dependent cut whose suffix must not resume after the facts arrive.
 
 ## Checks and identity
 

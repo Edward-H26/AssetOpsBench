@@ -9,6 +9,7 @@ from CausalDiagnosis.agents.utils.answer_forms import observations as read_obser
 from CausalDiagnosis.agents.utils.core_texts import HELD_EPISODE, HELD_SURFACE, REPEATED, REPEATED_ITEM
 from ..plan.readers import copy_json
 from . import compaction
+from ..media import text_view
 
 
 def _identifiers(value):
@@ -187,6 +188,10 @@ class Board:
         return set(self._ids).union(*(module.known_ids() for module in self._modules))
 
     def _parts(self, modules):
+        for heading, value in self._raw_parts(modules):
+            yield heading, text_view(value)
+
+    def _raw_parts(self, modules):
         """Yield the same public parts in order for text and JSON readers."""
         yield "Task", self.question
         yield "Public facts", self._facts

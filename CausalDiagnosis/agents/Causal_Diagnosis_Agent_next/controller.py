@@ -19,6 +19,15 @@ from .plan.reply_parser import parse_usable_plan, parse_differential
 from .plan.reply_schema import plan_schema_of, differential_schema, response_format, digest
 from .prompt.assembler import planning_turn, orientation_turn
 from .working_memory.board import Board
+from .execution import expectation_failures, filled_arguments, held_answer
+from .plan.messages import STANDS_EXPECTATION, REPLY_TOKEN_CAP
+from .prompt.assembler import summary_turn
+from .prompt.assembler import earlier_turns_turn
+from .media import served_images
+
+
+class _RequestBudgetExhausted(Exception):
+    """A summary and a planning request share the caller's model-call budget."""
 
 
 class BindingView(Protocol):
@@ -51,11 +60,18 @@ class AgentRunner:
             raise NotImplementedError("surface bindings are not implemented by this runner")
 
     async def _request(self, prompt, schema):
+        if len(self.model_history) >= self.llm.max_calls:
+            raise _RequestBudgetExhausted("model request budget exhausted")
         kwargs = {"temperature": 0.0}
-        if self.options.structured_output:
+        if self.options.structured_output and schema is not None:
             if not getattr(self.llm, "takes_response_format", False):
                 raise ValueError("structured output requires a backend with response_format support")
             kwargs["response_format"] = response_format("agent_reply", schema)
+        images = served_images(self._board)
+        if images:
+            if not getattr(self.llm, "supports_images", False):
+                raise ValueError("the tool returned images but this backend declares no image transport")
+            kwargs["images"] = images
         if self._board is not None:
             if self._board.reply_schema is None:
                 self._board.reply_schema = {"plan": digest(self._schemas["plan"]),
@@ -63,7 +79,10 @@ class AgentRunner:
                                             "bound": 0, "carried": bool(getattr(self.llm, "takes_response_format", False))}
             if "response_format" in kwargs:
                 self._board.reply_schema["bound"] += 1
-        record = {"prompt": prompt, "settings": kwargs, "response": None, "error": None}
+        settings = {key: value for key, value in kwargs.items() if key != "images"}
+        if images:
+            settings["images"] = [{key: value for key, value in item.items() if key != "data"} for item in images]
+        record = {"prompt": prompt, "settings": settings, "response": None, "error": None}
         self.model_history.append(record)
         try:
             method = self.llm.generate_with_usage
@@ -71,10 +90,49 @@ class AgentRunner:
             if inspect.isawaitable(response):
                 response = await response
             record["response"] = response if isinstance(response, dict) else {"text": response.text}
+            self._last_finish_reason = record["response"].get("finish_reason")
+            if self._last_finish_reason == "length" and schema is None:
+                raise ValueError("the summary reply was cut at the token cap")
             return record["response"]["text"]
         except Exception as error:
             record["error"] = f"{type(error).__name__}: {error}"
             raise
+
+    async def _planning_prompt(self, board, table, modules, retry, not_run, stood):
+        """Compact only when the backend supplies an actual context-fit test."""
+        checker = getattr(self.llm, "fits_context", None)
+
+        def prompt(memory):
+            return planning_turn(memory, table, self.options, modules, retry, not_run, stood)
+
+        if checker is None:
+            return prompt(board)
+
+        def fits_text(text):
+            images = served_images(board)
+            result = checker(text, images=images) if images else checker(text)
+            if not isinstance(result, bool):
+                raise ValueError("fits_context must synchronously return a boolean")
+            return result
+
+        def fits(memory):
+            return fits_text(prompt(memory))
+
+        board.drop_unfit_recall(fits)
+        board.compact(fits=fits, after_call=len(board.calls))
+        if not fits(board) and self.options.summary_turn:
+            entries = board.replaceable()
+            if entries:
+                for left_out in range(len(entries) + 1):
+                    view = board.without(entries[:left_out])
+                    request = earlier_turns_turn(view, table, self.options, modules, left_out)
+                    if fits_text(request):
+                        text = await self._request(request, None)
+                        board.apply_summary(text, entries, left_out)
+                        break
+        if not fits(board):
+            raise ValueError("the protected board cannot fit the backend's declared context")
+        return prompt(board)
 
     async def run(self, question):
         """One episode on the task message question: the EpisodeResult."""
@@ -95,6 +153,10 @@ class AgentRunner:
                                  server=has_advice, end=end)
 
         async def checkpoint():
+            if board is not None and plans:
+                last = plans[-1]
+                board.plan = {"proposal": last.plan, "steps": [asdict(item) for item in last.steps],
+                              "cut": last.cut, "surprise": last.surprise}
             if self.on_update:
                 update = self.on_update(result())
                 if inspect.isawaitable(update):
@@ -105,8 +167,10 @@ class AgentRunner:
                 table = self.declaration.table(sessions.tools) if self.options.binding else self.declaration.listed(sessions.tools)
                 has_advice = bool(table.of_role("advice"))
                 modules = modules_for(table, self.options)
-                if any(row.fills for row in table.tools.values()):
-                    raise NotImplementedError("controller argument fills are not implemented by this runner")
+                unsupported = [(row.name, source) for row in table.tools.values() for source in row.fills.values()
+                               if source not in ("evidence", "closing_summary") and not source.startswith("fixed:")]
+                if unsupported:
+                    raise NotImplementedError(f"controller fill providers are unavailable: {unsupported}")
                 ledger = self.declaration.rules.ledger(None, {}, self.declaration.cards, question)
                 board = Board(table, ledger, question, self.options)
                 self._board = board
@@ -121,14 +185,27 @@ class AgentRunner:
                     orienting = [row.name for row in table.tools.values() if row.orients]
                     if orienting and not oriented and all(board.holds_answer(name, None) for name in orienting):
                         text = await self._request(orientation_turn(board, table, self.options, modules, retry), differential_schema())
+                        if self._last_finish_reason == "length":
+                            retry = REPLY_TOKEN_CAP
+                            board.add_note(retry, tie="differential")
+                            await checkpoint()
+                            continue
                         differential, refusal = parse_differential(text)
                         board.differential = differential
                         retry = refusal.reason if refusal else None
                         oriented = refusal is None
                         await checkpoint()
                         continue
-                    prompt = planning_turn(board, table, self.options, modules, retry, not_run, stood)
+                    prompt = await self._planning_prompt(board, table, modules, retry, not_run, stood)
                     text = await self._request(prompt, plan_schema_of(table, forms, self.options))
+                    if self._last_finish_reason == "length":
+                        record = PlanRecord(len(plans) + 1, "model", {}, [])
+                        record.parse_errors.append(REPLY_TOKEN_CAP)
+                        plans.append(record)
+                        retry = REPLY_TOKEN_CAP
+                        board.add_note(retry, turn=record.index)
+                        await checkpoint()
+                        continue
                     board.mark_absorbed(board.observation_count)
                     parsed = parse_usable_plan(text, table, forms, self.options.plan_length)
                     record = PlanRecord(len(plans) + 1, "model", parsed.plan.to_json() if parsed.plan else {}, [])
@@ -147,31 +224,62 @@ class AgentRunner:
                     if parsed.unusable:
                         record.cut = asdict(parsed.unusable)
                         not_run = record.cut
-                    pending = list(plan.steps)
+                    initial = inspect_plan(plan, board, ledger, table, modules)
+                    record.check_problems.extend(initial.problems)
+                    if any(index is None for index, _ in initial.problems):
+                        retry = initial.problems
+                        board.add_note(str(retry), turn=record.index)
+                        await checkpoint()
+                        continue
+                    stop = min((index for index, _ in initial.problems), default=len(plan.steps) + 1)
+                    if stop <= len(plan.steps):
+                        record.cut = {"step": stop, "reasons": [reason for index, reason in initial.problems if index == stop],
+                                      "kinds": [item.tool for item in plan.steps[stop - 1:]] +
+                                               (list(parsed.unusable.kinds) if parsed.unusable else [])}
+                        retry, not_run = initial.problems, record.cut
+                    pending = list(enumerate(plan.steps[:stop - 1], 1))
                     while pending:
-                        live = Plan(plan.follow, plan.why, pending, plan.candidates, plan.raw)
+                        live = Plan(plan.follow, plan.why, [item for _, item in pending], plan.candidates, plan.raw)
                         checked = inspect_plan(live, board, ledger, table, modules)
                         if checked.problems:
-                            record.check_problems.extend(checked.problems)
+                            scoped = [(None if index is None else pending[index - 1][0], reason) for index, reason in checked.problems]
+                            record.check_problems.extend(item for item in scoped if item not in record.check_problems)
                         available = checked.executable()
                         if not available:
-                            retry = checked.problems
+                            retry = scoped if checked.problems else []
+                            not_run = [item.to_json() for _, item in pending]
                             if retry:
                                 board.add_note(str(retry))
                             break
                         entry = available[0]
                         step = entry.step
+                        if checked.problems:
+                            cut = min((index for index, _ in checked.problems if index is not None), default=len(pending) + 1)
+                            record.cut = {"step": pending[cut - 1][0], "reasons": [reason for index, reason in checked.problems if index == cut],
+                                          "kinds": [item.tool for _, item in pending[cut - 1:]]} if cut <= len(pending) else record.cut
+                            not_run = record.cut
+                            pending = pending[:cut - 1]
                         # Expansion is live: consume the prepared call, retaining the remaining calls.
                         expanded_prefix = [item.step for item in checked.steps if item.index == 1]
                         if len(expanded_prefix) > 1:
-                            pending = expanded_prefix + pending[1:]
+                            pending = [(pending[0][0], item) for item in expanded_prefix] + pending[1:]
                         pending.pop(0)
                         row = table.tools.get(step.tool)
                         for note in entry.notes:
                             board.add_note(note)
                         if entry.stood:
                             stood.append((len(record.steps) + 1, step.tool, entry.stood.reason))
-                            record.steps.append(StepRecord(step.tool, step.args, step.expect, "standing", {"stands": entry.stood.clause}))
+                            failures = expectation_failures(step, held_answer(board, step, row), standing=True) if self.options.expectations else []
+                            note = STANDS_EXPECTATION.format(stands=entry.stood.reason, detail="; ".join(failures)) if failures else entry.stood.reason
+                            record.steps.append(StepRecord(step.tool, step.args, step.expect, "surprise" if failures else "standing",
+                                                           {"stands": entry.stood.clause}, note))
+                            if failures:
+                                retry = note
+                                record.surprise = {"tool": step.tool, "reasons": [note]}
+                                surprises.append(record.surprise)
+                                board.surprises.append(record.surprise)
+                                not_run = [item.to_json() for _, item in pending]
+                                break
                             continue
                         if step.tool == "recall":
                             board.recall(step.args.get("series"), *step.args["observations"])
@@ -180,10 +288,18 @@ class AgentRunner:
                         if mode is None and not row.facts and row.role != "knowledge":
                             mode = "test_first" if row.role == "observe" else step.tool
                         started = time.monotonic()
-                        call = ToolRecord(len(trajectory) + 1, row.server, step.tool, step.args, "")
+                        summary = None
+                        if "closing_summary" in row.fills.values():
+                            if len(self.model_history) >= self.llm.max_calls:
+                                pending.clear()
+                                reason = "model request budget leaves no closing summary"
+                                break
+                            summary = await self._request(summary_turn(board, table, self.options, modules), None)
+                        tool_args = filled_arguments(step, row, board, summary)
+                        call = ToolRecord(len(trajectory) + 1, row.server, step.tool, tool_args, "")
                         trajectory.append(call)
                         try:
-                            call.response, is_error = await sessions.call(row.server, step.tool, step.args)
+                            call.response, is_error = await sessions.call(row.server, step.tool, tool_args)
                             normalized = tool_answers.read(call.response, is_error, self.declaration.rules.refusal_marks)
                             call.guard = normalized.pop("guard", None)
                             if call.guard:
@@ -195,27 +311,17 @@ class AgentRunner:
                             call.duration_ms = (time.monotonic() - started) * 1000
                         board.record_call(step, call, normalized, None)
                         answer = board.calls[-1]["answer"]
-                        failures = []
-                        if "refused" in answer:
-                            failures.append(answer["refused"])
-                        for key, expected in step.expect.items():
-                            if key == "no_event" and any(item.get("kind", item.get("event")) in expected for item in answer.get("notifications", [])):
-                                failures.append("an excluded event occurred")
-                            elif key == "word" and not any(expected in item.get("words", []) for item in answer.get("observations", [])):
-                                failures.append("the expected word was absent")
-                            elif key == "outside":
-                                outside = {item.get("field") for item in answer.get("observations", []) if item.get("inside_band") is False}
-                                if set(expected) != outside:
-                                    failures.append("the outside fields differ from the expectation")
-                        status = "surprise" if failures and self.options.expectations else "failed" if failures else "done"
+                        failures = expectation_failures(step, answer) if self.options.expectations else ([answer["refused"]] if "refused" in answer else [])
+                        status = "surprise" if "refused" in answer or failures and self.options.expectations else "done"
                         record.steps.append(StepRecord(step.tool, step.args, step.expect, status, answer, "; ".join(failures)))
                         if failures:
                             retry = failures
-                            surprises.append({"tool": step.tool, "reasons": failures})
-                            board.surprises.append(surprises[-1])
+                            record.surprise = {"tool": step.tool, "reasons": failures}
+                            surprises.append(record.surprise)
+                            board.surprises.append(record.surprise)
                         await checkpoint()
                         if "refused" in answer or failures and self.options.expectations:
-                            not_run = [item.to_json() for item in pending]
+                            not_run = [item.to_json() for _, item in pending]
                             break
                         if row.ends and board.calls[-1]["answered"]:
                             end, reason = "finish", "the ending write was accepted"
@@ -223,6 +329,8 @@ class AgentRunner:
                     await checkpoint()
                     if end == "finish":
                         break
+        except _RequestBudgetExhausted as failure:
+            end, reason = "request_budget", str(failure)
         except asyncio.CancelledError:
             end, reason = "cancelled", "the caller cancelled the episode"
             await checkpoint()

@@ -65,6 +65,7 @@ def code_files():
     """Hash the driver and shared execution code used by a development run."""
     paths = [*Path(__file__).parent.glob("*.py"),
              ROOT / "CausalDiagnosis/agents/utils/mcp_sessions.py",
+             ROOT / "CausalDiagnosis/agents/utils/chat_model.py",
              ROOT / "CausalDiagnosis/agents/utils/declaration.py",
              ROOT / "CausalDiagnosis/agents/utils/answer_forms.py",
              ROOT / "CausalDiagnosis/agents/utils/tool_answers.py",

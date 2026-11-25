@@ -123,7 +123,7 @@ def inspect_plan(plan, board, ledger, table, modules):
                 row = table.tools[step.tool]
                 if row.commits:
                     context.commitment = {"tool": step.tool, "args": copy_json(step.args)}
-                if row.role == "observe" and context.cost.calls:
+                if (row.role == "observe" or row.answer in ("text", "records")) and context.cost.calls:
                     context.observed = True
             earlier.append(step)
     return result

@@ -1,0 +1,6 @@
+{
+  "id": "faultarena",
+  "kind": "scripted_cases",
+  "adapter": "CausalDiagnosis.datasets.faultarena.episode_port:load",
+  "inputs": ["release"]
+}
