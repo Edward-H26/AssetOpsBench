@@ -57,8 +57,7 @@ class _CheckWalk:
             held, _notes = prepare_step(Step(self.commitment["tool"], self.commitment["args"], {}, []),
                                         table, board.facts, self.candidates)
             self.commitment = {"tool": held.tool, "args": held.args}
-        self.observed = bool(board.observations) or bool(board.known_ids()) and any(
-            board.holds_answer(name, None) for name in table.of_role("observe"))
+        self.observed = bool(board.observations) or bool(getattr(board, "collapsed_rows", ()))
         self.preview = self.cost = None
 
     def open_targets(self):

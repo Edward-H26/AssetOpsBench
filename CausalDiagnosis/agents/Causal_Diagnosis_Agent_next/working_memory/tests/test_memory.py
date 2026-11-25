@@ -199,3 +199,104 @@ def test_module_identifiers_join_retained_evidence_without_changing_its_ownershi
     assert memory.known_ids() == {"obs/1/pressure", "advice/read"}
     memory.set_modules(())
     assert memory.known_ids() == {"obs/1/pressure"}
+
+
+def test_generated_observation_metadata_is_refused_before_it_changes_memory(capsys):
+    sample = board("port")
+    valid = {"id": "obs/reading", "n": 1, "t": 2, "text": "normal", "field": "pressure",
+             "value": 2, "words": ["normal"], "inside_band": True}
+    invalid = {
+        "id": [None, True, 1, [], {}, "", " "],
+        "n": [None, True, [], {}, "1", float("inf"), 10 ** 1000],
+        "t": [None, True, [], {}, "1", float("nan"), 10 ** 1000],
+        "text": [None, True, 1, [], {}],
+        "field": [None, True, 1, [], {}, ""],
+        "value": [None, True, [], {}, "1", float("inf"), 10 ** 1000],
+        "words": [None, "normal", [1], [""], [{}]],
+        "inside_band": [None, 1, "yes", [], {}],
+    }
+    mutations = [{key: value} for key, values in invalid.items() for value in values]
+    mutations.extend({first: left, second: right}
+                     for first, second in itertools.combinations(invalid, 2)
+                     for left, right in zip(invalid[first], invalid[second]))
+    for change in mutations:
+        memory = Board(sample.table, Ledger(), "Inspect the public answer.", Options())
+        rows = [{**valid, **change}]
+        original = copy.deepcopy(rows)
+        record(memory, "read_gauge", result="normal", observations=rows)
+        assert not memory.holds_answer("read_gauge", {}) and not memory.observations, change
+        assert memory.observation_count == 0 and not memory.known_ids(), change
+        assert memory.calls[-1]["answer"]["refused"].startswith("read_gauge:"), change
+        assert memory.notes[-1]["text"].startswith("read_gauge:"), change
+        memory.mark_absorbed(1)
+        memory.compact(fits=lambda current: not current.observations)
+        memory.mark_turn(1)
+        memory.render(())
+        assert rows == original
+    with capsys.disabled():
+        print(f"Generated observation metadata checked: {len(mutations)}")
+    record(sample, "read_gauge", result="normal", observations=[valid])
+    assert sample.holds_answer("read_gauge", {}) and sample.observations[0]["id"] == valid["id"]
+
+
+def test_missing_text_metadata_is_assigned_and_partial_numeric_rows_are_refused():
+    memory = board("port")
+    record(memory, "read_gauge", result="normal", observations=[{"text": "normal"}])
+    assert memory.observations == [{"text": "normal", "n": 1, "id": "obs/1", "words": ["normal"]}]
+    for rows in ([{}], [{"id": "obs/a", "n": 1, "field": "pressure"}],
+                 [{"n": 1, "field": "pressure", "value": 2}], {"text": "normal"}):
+        other = board("port")
+        record(other, "read_gauge", result="normal", observations=rows)
+        assert not other.holds_answer("read_gauge", {}) and not other.observations
+
+
+def test_normalized_wire_rows_are_checked_and_removing_the_check_admits_bad_metadata(monkeypatch):
+    wire = json.dumps({"result": "normal", "observations": [{"id": "obs/a", "n": [], "text": "normal"}]})
+    normalized = tool_answers.read(wire, False)
+    assert not normalized.get("guard") and "result" in normalized
+    memory = board("port")
+    item = Step("read_gauge", {}, {}, [])
+    memory.record_call(item, ("server", item.tool, {}), normalized, None)
+    assert not memory.observations and not memory.holds_answer(item.tool, {})
+    assert "n must be a finite number" in memory.notes[-1]["text"]
+    from .. import board as board_module
+    monkeypatch.setattr(board_module, "validate_observations", lambda rows: None)
+    control = board("port")
+    control.record_call(item, ("server", item.tool, {}), normalized, None)
+    assert control.holds_answer(item.tool, {}) and control.observations[0]["n"] == []
+
+
+@pytest.mark.parametrize("place", ["result", "status", "notifications", "observations", "key", "receipt"])
+def test_escaped_lone_surrogates_never_reach_the_board_or_record_encoder(place):
+    broken = "\ud800"
+    envelope = {"result": {}, "status": {}, "notifications": [], "observations": []}
+    if place == "result":
+        envelope["result"] = {"nested": [broken]}
+    elif place == "status":
+        envelope["status"] = {"detail": broken}
+    elif place == "notifications":
+        envelope["notifications"] = [{"event": broken}]
+    elif place == "observations":
+        envelope["observations"] = [{"id": "obs/a", "n": 1, "text": broken}]
+    elif place == "key":
+        envelope["result"] = {broken: "value"}
+    wire = json.dumps(envelope)
+    if place == "receipt":
+        wire = "plain answer\n" + json.dumps({"steps_left": 2, "notifications": [{"detail": broken}]})
+    normalized = tool_answers.read(wire, False)
+    assert "refused" in normalized and not normalized.get("guard")
+    json.dumps(normalized, ensure_ascii=False, allow_nan=False).encode("utf-8")
+    memory = board()
+    item = Step("get_asset_profile", {}, {}, [])
+    memory.record_call(item, ("server", item.tool, {}), normalized, None)
+    assert memory.facts is None and not memory.holds_answer(item.tool, {})
+    memory.render(()).encode("utf-8")
+
+
+def test_complete_unicode_pairs_are_kept_and_legacy_object_decoding_is_unchanged():
+    wire = r'{"result": {"text": "\ud83d\ude00"}}'
+    normalized = tool_answers.read(wire, False)
+    assert normalized["result"]["text"] == "\U0001f600"
+    json.dumps(normalized, ensure_ascii=False).encode("utf-8")
+    legacy = r'{"result": {"text": "\ud800"}}'
+    assert tool_answers.json_object(legacy)["result"]["text"] == "\ud800"

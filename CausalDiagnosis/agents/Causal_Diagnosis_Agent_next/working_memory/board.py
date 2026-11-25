@@ -5,7 +5,7 @@ import json
 import re
 from dataclasses import asdict, is_dataclass
 
-from CausalDiagnosis.agents.utils.answer_forms import observations as read_observations
+from CausalDiagnosis.agents.utils.answer_forms import observations as read_observations, validate_observations
 from CausalDiagnosis.agents.utils.core_texts import HELD_EPISODE, HELD_SURFACE, REPEATED, REPEATED_ITEM
 from ..plan.readers import copy_json
 from . import compaction
@@ -127,8 +127,11 @@ class Board:
                     rows, form_note = read_observations(row.answer, answer["result"], self._ledger.ranges())
             else:
                 rows = copy_json(observations)
+            if form_note is None:
+                form_note = validate_observations(rows)
             if form_note:
                 self.add_note(f"{step.tool}: {form_note}")
+                rows = []
             elif row.facts:
                 self._facts = copy_json(answer["result"])
                 self.retire_notes("facts")

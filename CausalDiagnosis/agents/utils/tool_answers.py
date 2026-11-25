@@ -108,7 +108,10 @@ def read(text, is_error, marks=()):
         elif is_error or not envelope and (body.startswith(EPISODE_OVER)
                 or any(mark in body for mark in marks if isinstance(mark, str) and mark)):
             payload = {"refused": body or "tool call returned an error"}
-        return copy.deepcopy({**payload, "status": status, "notifications": notifications, "observations": observations})
+        normalized = {**payload, "status": status, "notifications": notifications, "observations": observations}
+        # JSON escapes may decode to lone surrogates even when the wire text is UTF-8.
+        json.dumps(normalized, ensure_ascii=False, allow_nan=False).encode("utf-8")
+        return copy.deepcopy(normalized)
     except (ValueError, TypeError, RecursionError, OverflowError) as error:
         return {"refused": f"malformed tool answer ({type(error).__name__}): {error}",
                 "status": {}, "notifications": [], "observations": []}

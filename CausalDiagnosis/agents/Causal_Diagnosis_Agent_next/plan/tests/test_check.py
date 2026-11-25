@@ -233,3 +233,43 @@ def test_preconditions_and_ending_guards_come_from_the_kind_and_limits_are_plan_
     assert result.problems[0][0] is None and "before answer can run" in result.problems[0][1]
     ledger.durations[item.tool] = 0
     assert not inspect_plan(plan(item), board, ledger, table, ()).problems
+
+
+def test_a_collapsed_knowledge_observation_still_satisfies_the_evidence_prerequisite():
+    table, ledger, board = setup("single")
+    answer = table.tools["answer"]
+    read = replace(answer, name="read_text", role="knowledge", write=None, commits=False, ends=False,
+                   requires_observation=False, candidate=(), answer="text")
+    table = replace(table, tools={**table.tools, read.name: read,
+                                 answer.name: replace(answer, requires_observation=True)})
+    board.table = table
+    item = step(read.name, text="inspect")
+    board.record_call(item, ("server", read.name, item.args), {"result": "a public reading"}, None)
+    board.mark_absorbed(1)
+    board.compact(fits=lambda current: not current.observations)
+    assert not board.observations and len(board.collapsed_rows) == 1
+    result = inspect_plan(plan(step(answer.name, text="supported")), board, ledger, table, ())
+    assert not result.problems, result.problems
+    board.collapsed_rows.clear()
+    assert any("none is on the board" in reason for _, reason in
+               inspect_plan(plan(step(answer.name, text="unsupported")), board, ledger, table, ()).problems)
+
+
+def test_a_knowledge_identifier_and_an_empty_observe_answer_are_not_observation_evidence():
+    table, ledger, board = setup("single")
+    answer = table.tools["answer"]
+    observe = replace(answer, name="inspect_object", role="observe", write=None, commits=False, ends=False,
+                      requires_observation=False, candidate=(), answer="object")
+    knowledge = replace(observe, name="read_reference", role="knowledge")
+    table = replace(table, tools={answer.name: replace(answer, requires_observation=True),
+                                 observe.name: observe, knowledge.name: knowledge})
+    board.table = table
+    record(board, step(knowledge.name, text="reference"), {"id": "reference/a"})
+    record(board, step(observe.name, text="inspect"))
+    assert board.known_ids() == {"reference/a"} and board.holds_answer(observe.name, None)
+    assert any("none is on the board" in reason for _, reason in
+               inspect_plan(plan(step(answer.name, text="unsupported")), board, ledger, table, ()).problems)
+    item = step(observe.name, text="inspect again")
+    board.record_call(item, ("server", item.tool, item.args), {"result": {}},
+                      [{"id": "obs/reading", "n": 1, "text": "a served observation"}])
+    assert not inspect_plan(plan(step(answer.name, text="supported")), board, ledger, table, ()).problems

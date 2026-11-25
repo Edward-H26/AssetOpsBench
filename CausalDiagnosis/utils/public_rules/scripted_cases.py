@@ -4,7 +4,7 @@ import copy
 import json
 
 from .plan_rules import KindRules, Ledger, Walk, Needs, StepCost
-from CausalDiagnosis.environment.scripted_cases.replay import condition
+from .scripted_conditions import condition
 
 
 class ScriptedRules(KindRules):

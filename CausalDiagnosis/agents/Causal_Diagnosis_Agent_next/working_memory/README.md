@@ -13,11 +13,20 @@ The metering layer imports the shared receipt reader, so existing controller
 and framework imports resolve to that same function. Unexpected reader errors
 carry their class under `guard`; expected malformed input returns a named
 refusal without a guard.
+The normalized answer must also remain encodable after JSON escape decoding.
+Lone Unicode surrogates in nested results, status, notifications, observations
+or receipts are refused before entering memory; complete pairs are preserved.
+The legacy object and receipt helpers keep their decoding behavior.
 
 The three answer forms read objects, numeric records with public ranges, and
 text. The board attaches the episode's observation number and declared words
 to text rows. A form error becomes a tool-named note and is not retained as a
 successful answer.
+Normalized observation rows are checked before any fact, knowledge, commitment
+or observation is retained. Invalid identifiers, numeric metadata, text, word
+lists and range flags produce a tool-named refusal and note. Missing text-row
+identifiers and numbers are assigned by the board; numeric rows retain their
+served identifiers. Extra public metadata remains available.
 
 Compaction retains original observation rows and their identifiers. Recall is
 scoped to one following board. Summary-cited identifiers pin their entries;
@@ -25,6 +34,10 @@ retiring notes shifts the turn boundaries used to order summary entries.
 Compaction changes no paid-unit state or live kind ledger.
 
 ## Integration still required
+
+Follow-up scope and ownership boundaries are listed in
+`CausalDiagnosis/docs/plan-memory-handoff.md`. Prompt, ranking, cluster, viewer
+and training implementations remain with their respective owners.
 
 The controller supplies the kind ledger, marks planning turns and absorbed
 observations, assigns model candidates and the differential, and retires notes

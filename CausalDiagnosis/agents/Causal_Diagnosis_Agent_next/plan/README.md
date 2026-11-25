@@ -16,6 +16,9 @@ standing clauses, fill notes and reasons. Step reasons stop at the first
 unusable step; whole-plan reasons leave no executable prefix. The frozen
 `step_problems` and `check_plan` functions expose these reasons in their declared
 forms. The live board, ledger, facts and model plan stay unchanged.
+Collapsed observations still meet an observation prerequisite, including when
+the observation came from a knowledge tool rather than the observe role.
+Knowledge identifiers alone, without observation rows, do not meet it.
 
 ## Work sequence
 
@@ -25,9 +28,11 @@ forms. The live board, ledger, facts and model plan stay unchanged.
 3. Exercise defaults, candidate ranks, evidence fills, standing clauses and
    step-versus-plan refusals against the frozen declarations.
 4. Port answer normalization and working memory, then run both acceptance suites.
-5. Reuse the native controller and prompt for the descriptive QA development
-   adapter. Re-express the remaining mapped tests and run the episode gates as
-   bindings, fills, advice modules and kind implementations are integrated.
+5. Maintain local contract tests for the controller, prompt, modules and kind
+   interfaces as their owners integrate them. Use the QA and scripted ports as
+   generality controls. Keep follow-up implementation within tasks 4 and 5;
+   `CausalDiagnosis/docs/plan-memory-handoff.md` lists the ownership boundaries
+   and the remaining integration dependencies.
 
 ## Integration still required
 
@@ -36,8 +41,11 @@ The advice package's frozen `expectation_forms` entry point delegates to
 event forms without reading facts. Advice-enabled execution remains unsupported.
 
 The prompt must print the active clauses in `messages.RULE_SENTENCES` and explain
-typed-reader refusals. A cross-package test must compare every emitted reason
-with its prompt sentence. The prompt package is outside this package's ownership.
+typed-reader refusals. The read-only tests in `tests/test_prompt_contract.py`
+check every public rule sentence against the actual planning request, before
+and after facts, with a removed-sentence control. Detailed reader explanations
+remain part of the prompt owner's integration. The prompt package is outside
+this package's ownership.
 
 The controller must apply the notes returned by `inspect_plan`, use only its
 executable prefix, and recheck standing and step legality before a live call.
