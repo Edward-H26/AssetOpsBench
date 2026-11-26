@@ -69,4 +69,4 @@ def test_the_question_tells_the_turn_without_a_call_and_takes_the_procedure_of_t
     assert ("wait for the notifications of their closes" in step) == (later and "wait_for_notification" in listed)
     if not later:  # base, healthy_control and priced: an order closes inside its call, so no visit and no wait
         assert step == "create one work order per diagnosed fault on the child asset of its component, one after another, with no other call between them"
-    assert BRIEFING_VERSION == "aob-v1.19"
+    assert BRIEFING_VERSION == "aob-v1.20"

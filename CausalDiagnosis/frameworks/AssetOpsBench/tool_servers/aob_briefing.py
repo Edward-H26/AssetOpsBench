@@ -25,7 +25,7 @@ from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import (D
                                             repair_cards, repair_sentences, repair_step, scoring_sentence, time_sentence, time_values)
 from CausalDiagnosis.environment.Causal_Diagnosis_Environment.briefing import listed as _listed
 
-BRIEFING_VERSION = "aob-v1.19"
+BRIEFING_VERSION = "aob-v1.20"
 EVIDENCE_FORMS = ("obs/<timestamp>/<field> for a value of a telemetry row, with the timestamp and the field as the row shows them",
                   "wo/<wonum> for a work order", "fmea/<source>/<code> for a failure mode")
 ALARM_FORM = "alarm/<cycle>/<channel> for the alarm of a notification"
@@ -238,7 +238,9 @@ def _order_close(profile, config):
     lead = ", ".join(f"{c} {durations['lead_time'][c]}" for c in profile["components"])
     down = ", ".join(f"{c} {durations['repair_downtime'][c]}" for c in profile["components"])
     return (f"The technician arrives after the lead time and repairs while the {noun} stands still, then the order closes. Lead times: "
-            f"{lead}. Repair downtimes: {down}.")
+            f"{lead}. Repair downtimes: {down}. An accepted order is pending, not a failed repair. Its reply states the scheduled "
+            "completion cycle. Duplicate requests do not cancel the existing order. Completion does not establish recovery; "
+            "check post-repair measurements.")
 
 
 def _task_lines(profile, config):
@@ -252,7 +254,9 @@ def _task_lines(profile, config):
                      f"{budget}, {time_values(config)} without moving the clock. wait_for_notification(timeout) (read, "
                      "the cycles waited, "
                      f"free) lets the {noun} run until the next notification or for timeout cycles, the cycles left before the horizon when it "
-                     "is empty, and returns what ended the wait.")
+                     "is empty, and returns what ended the wait. This yields control to the environment without creating a new "
+                     "maintenance action. You may instead investigate other issues. A notification may be an alarm or a completed "
+                     "order; a timeout alone does not mean the repair failed.")
     if "lookup_fix" in listed:
         lines.append(f"  {_lookup_line(profile['prices'], config)}")
     if "summarize_changes_since" in listed:

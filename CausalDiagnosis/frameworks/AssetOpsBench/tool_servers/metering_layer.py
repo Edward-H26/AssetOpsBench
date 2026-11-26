@@ -6,8 +6,8 @@ that cycle covers, at the price of the cheapest group that covers the fields ser
 the cycles a read reaches beyond the clock where reads have a declared duration, and accepts or refuses a work
 order, which closes inside the order call on the rows without a clock. The producer then writes what
 the step recorded, and only then does AssetOpsBench's own tool run, in this process and over the episode's databases,
-so the database never holds a future row and the rows served are the rows charged. The agent reads AssetOpsBench's text
-byte for byte, followed from the priced row on by one JSON line with the price, the budget left and the steps left, and
+so the database never holds a future row and the rows served are the rows charged. The agent reads AssetOpsBench's text, with work-order creation replies refreshed after the lifecycle sync so their status
+and public schedule agree with the database. Other replies keep their text byte for byte, followed from the priced row on by one JSON line with the price, the budget left and the steps left, and
 in the clock rows the cycle and the notifications. Every call appends one entry to the state file's tool_calls.
 The task tools of the rig's action server run through the same lock, step, store writes, receipt and log: the asset
 profile, one diagnosis or one declaration, finish and, from the real time clock row on, the two time tools.
@@ -21,6 +21,8 @@ import json
 import os
 import time
 from contextlib import contextmanager
+
+from . import work_order_progress
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import partial
@@ -333,6 +335,7 @@ class Meter:
         if reply.is_error or _error_of(reply.text) is not None:
             raise MeterError(f"the engine created {order['id']} but wo refused it: {reply.text}")
         await self._producer.sync(session.engine)  # the order's status changes, once its document exists
+        reply = Reply(work_order_progress.accepted_reply(reply.text, order, session.engine.time))
         return self._close(session, "wo", "generate_work_order", arguments, before, envelope, reply, envelope["result"]["price"],
                            {"work_order": order})
 
@@ -433,6 +436,9 @@ class Meter:
         receipt = {"price": price, "budget_left": envelope.get("budget_left"), "steps_left": envelope["steps_left"]}
         if self.config.row.clock:
             receipt.update(cycle=envelope["time"], notifications=envelope["notifications"])
+            progress = work_order_progress.progress(envelope, wait_available="wait_for_notification" in self.tools_of(TASK_SERVER))
+            if progress is not None:
+                receipt["work_order_progress"] = progress
         line = json.dumps(receipt, separators=(",", ":"), ensure_ascii=False)
         if refusal is not None:
             reply = Reply(json.dumps({"error": refusal}, indent=2, ensure_ascii=False), True)

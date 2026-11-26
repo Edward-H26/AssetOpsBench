@@ -210,6 +210,9 @@ class AobSurface(Surface):
             notifications = [n for n in receipt.get("notifications") or [] if isinstance(n, dict)]
             data["notifications"] = notifications
             self.events += notifications
+            progress = receipt.get("work_order_progress")
+            if isinstance(progress, dict):
+                data["open_work_orders"] = progress["open_work_orders"]
         if reply is None:
             data["refused"] = not_json(tool, body)
         elif set(reply) == {"error"}:
@@ -292,8 +295,11 @@ class AobSurface(Surface):
 
     def _read_order(self, reply, board, data, component, prediction_id, evidence):
         """The order as the rig's envelope describes one: created now, open until its notification where a clock runs, and closed
-        inside its call where none runs. These servers list no open orders, so the board estimates the close
-        of an open order as the environment schedules its visit (board.visit_closes)."""
+        inside its call where none runs. Shared maintenance feedback carries the public schedule;
+        the older response shape still falls back to the board's estimate."""
+        public = (reply.get("maintenance") or {}).get("work_order")
+        if public is not None:
+            return {"work_order": {**public, "source": "agent"}}
         created = data.get("time", board.time)
         return {"work_order": {"id": reply.get("wonum"), "component": component, "created_t": created, "expected_close_t": None if self.clock else created,
                                "status": "open" if self.clock else "closed", "source": "agent", "closed_t": None if self.clock else created}}
