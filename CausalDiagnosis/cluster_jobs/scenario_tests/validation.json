@@ -1,0 +1,60 @@
+{
+  "commit": "791125e3c3b0899a835092a562d3e7363547d9a5",
+  "archive_sha256": "fbccb7d9458684c3b15c94b122a8ddcb6d8a850b3475065889d2555341bec16e",
+  "kind": "CPU validation of git archive; not a formal experiment run",
+  "job": 14125080,
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "passed": 1219,
+  "skipped": [
+    {
+      "name": "test_gymnasium_spaces_contain_the_texts",
+      "reason": "gymnasium is not installed (the package group rl installs it)"
+    },
+    {
+      "name": "test_gymnasium_check_env_passes[base]",
+      "reason": "gymnasium is not installed (the package group rl installs it)"
+    },
+    {
+      "name": "test_gymnasium_check_env_passes[priced]",
+      "reason": "gymnasium is not installed (the package group rl installs it)"
+    },
+    {
+      "name": "test_gymnasium_check_env_passes[deterioration]",
+      "reason": "gymnasium is not installed (the package group rl installs it)"
+    },
+    {
+      "name": "test_core_types_are_used_when_openenv_is_installed",
+      "reason": "openenv is not installed (the package group rl installs it)"
+    },
+    {
+      "name": "test_a_late_order_is_repaired_after_the_repair_of_its_visit_that_has_begun",
+      "reason": "the asset's valve repair is too short to be running two cycles later"
+    }
+  ],
+  "failed": 0,
+  "warnings": 2,
+  "pytest_seconds": 1130.02,
+  "wall_elapsed": "00:19:06",
+  "store": "real CouchDB 3.5.3; also memory backend tests",
+  "mode_contract_tests": 29,
+  "scope": [
+    "Causal_Diagnosis_Environment/tests",
+    "AssetOpsBench/tool_servers/tests",
+    "episode_runners/tests/test_run_episodes.py",
+    "episode_runners/tests/test_harness_rule.py"
+  ],
+  "real_llm_runs": 0,
+  "grids_generated": 8,
+  "planned_agent_rows": 24,
+  "limits": [
+    "Static post-repair observation snapshots remain unimplemented.",
+    "Scenario 5/7 ambiguity requires separate reference-label and E18 checks.",
+    "Plan-and-Execute review generation timeout is not fixed by this change."
+  ],
+  "files_sha256": {
+    "cluster.out": "41d914f0046a3efceec65249e249682411a1e77006b51595d8818a28cc97296e",
+    "identity.json": "8ad66e54a09cfc880123e632b7517ab33ef1655f3c3d2baf25981c019f86fa49",
+    "pytest.xml": "3d671dcfed79108837c292461014bd41faa1ca86ebd1b789e562b7139494078d"
+  }
+}
