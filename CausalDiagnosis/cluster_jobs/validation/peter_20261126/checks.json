@@ -1,0 +1,222 @@
+{
+  "kind": "development validation; not formal experiment results",
+  "environment_commit": "40e5d90f5084db9bed8ea506df3c2c4e49eabf1f",
+  "feedback_regression": {
+    "base_commit": "28490cc86d13e83d3fa3dd0e9da7b54235b8d144",
+    "branch": "hpml/environment-tool-parity",
+    "job": 14111050,
+    "state": "COMPLETED",
+    "exit_code": "0:0",
+    "passed": 532,
+    "warnings": 107,
+    "seconds": 195.19,
+    "source_files_sha256": {
+      "CausalDiagnosis/docs/environment.md": "3e462ae909f7c40c1f4763cf40372604bb24e9a15398f97541a4aa0ec095385c",
+      "CausalDiagnosis/frameworks/AssetOpsBench/agents/causal_diagnosis_agent_surface.py": "0e771ea1d2f241090be705d15e5ae8b8178e56783ca6fd48a02bd2d0fe152dd4",
+      "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/aob_briefing.py": "b1cba70a857d80ec3f09bd337147f2f36378389fdbde29e2103b8bc8dd0ebe7d",
+      "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/metering_layer.py": "9f53e7c0e473628112cb8165caf3fdb5dc0c686000ff8438bdd15e5157acaf95",
+      "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/tests/test_briefing_levels.py": "6a99cfab275ee2e6893f041189dbab3a0a217a534e5469d200542e89b1257b2c",
+      "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/tests/test_work_order_progress.py": "b6309c93f581e1721f6a6ea8a8c5600f5165fb481696f3d8f7164ba52c1088e8",
+      "CausalDiagnosis/frameworks/AssetOpsBench/tool_servers/work_order_progress.py": "d0f3c1c9779a078f859e2b00da35ff820463253d3d914b42b9d099465acade8e"
+    },
+    "remote_source_matches_local": true,
+    "initial_attempt": {
+      "job": 14111000,
+      "passed": 528,
+      "failed": 4,
+      "reason": "New test fixtures incorrectly overrode preset clock modes; corrected tests to preserve native preset clocks."
+    },
+    "scope": "Tool server suite and native driver workflow checks; no real LLM validation of this feedback patch yet.",
+    "commit": "40e5d90f5084db9bed8ea506df3c2c4e49eabf1f",
+    "pushed_commit_verified": true
+  },
+  "readiness_checks": {
+    "review_pack": {
+      "job": 14088650,
+      "passed": 10
+    },
+    "live_couchdb_vs_memory": {
+      "job": 14088708,
+      "passed": 2
+    },
+    "native_agent_interfaces_with_scripted_responses": {
+      "job": 14088832,
+      "passed": 8
+    }
+  },
+  "real_llm_baseline": {
+    "commit": "28490cc86d13e83d3fa3dd0e9da7b54235b8d144",
+    "preset": "base",
+    "start_state": [
+      3,
+      100,
+      0,
+      130
+    ],
+    "entry_offset": 2,
+    "model": "ibm-granite/granite-3.3-8b-instruct",
+    "hardware": "NVIDIA L40S, BF16, context 131072, SGLang 0.5.19",
+    "episodes": {
+      "with_diagnostics": {
+        "score": {
+          "pass": "False",
+          "graded_top1": "1.0",
+          "diagnosis_all_correct": "True",
+          "recovered": "True",
+          "unnecessary": "2",
+          "write_count_ok": "True",
+          "provenance_ok": "True",
+          "error": "",
+          "end_reason": "finish",
+          "llm_calls": "7",
+          "tool_calls": "12",
+          "causal_calls": "2",
+          "steps": "14",
+          "wall_s": "148.1",
+          "cost": "12",
+          "reward": "-0.30000000000000004"
+        },
+        "state_transitions": [
+          {
+            "action_index": 9,
+            "type": "submit_diagnosis",
+            "component": null,
+            "before": [
+              3,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              3,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          },
+          {
+            "action_index": 10,
+            "type": "create_work_order",
+            "component": "cooler",
+            "before": [
+              3,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          },
+          {
+            "action_index": 11,
+            "type": "create_work_order",
+            "component": "valve",
+            "before": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          },
+          {
+            "action_index": 12,
+            "type": "create_work_order",
+            "component": "accumulator",
+            "before": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          },
+          {
+            "action_index": 13,
+            "type": "finish",
+            "component": null,
+            "before": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              100,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          }
+        ]
+      },
+      "without_diagnostics": {
+        "score": {
+          "pass": "False",
+          "graded_top1": "0.0",
+          "diagnosis_all_correct": "False",
+          "recovered": "False",
+          "unnecessary": "0",
+          "write_count_ok": "False",
+          "provenance_ok": "True",
+          "error": "",
+          "end_reason": "max_steps",
+          "llm_calls": "59",
+          "tool_calls": "5",
+          "causal_calls": "0",
+          "steps": "60",
+          "wall_s": "733.6",
+          "cost": "5",
+          "reward": "-0.4"
+        },
+        "state_transitions": [
+          {
+            "action_index": 9,
+            "type": "submit_diagnosis",
+            "component": null,
+            "before": [
+              3,
+              100,
+              0,
+              130
+            ],
+            "after": [
+              3,
+              100,
+              0,
+              130
+            ],
+            "cycle": 0
+          }
+        ]
+      }
+    }
+  },
+  "limits": [
+    "The real LLM runs predate the feedback fix.",
+    "The base preset is static: these runs do not validate autonomous deterioration.",
+    "Selected-start development runs are excluded from formal result tables.",
+    "No completed real-LLM Plan-and-Execute or Agents-as-Tools run in this validation batch.",
+    "No judge scores or formal replay certification claimed.",
+    "These episodes do not establish a statistical MCP benefit."
+  ]
+}
