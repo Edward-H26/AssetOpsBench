@@ -335,7 +335,8 @@ class Meter:
         if reply.is_error or _error_of(reply.text) is not None:
             raise MeterError(f"the engine created {order['id']} but wo refused it: {reply.text}")
         await self._producer.sync(session.engine)  # the order's status changes, once its document exists
-        reply = Reply(work_order_progress.accepted_reply(reply.text, order, session.engine.time))
+        reply = Reply(work_order_progress.accepted_reply(
+            reply.text, order, session.engine.time, environment_mode=getattr(session.engine.config, "environment_mode", None)))
         return self._close(session, "wo", "generate_work_order", arguments, before, envelope, reply, envelope["result"]["price"],
                            {"work_order": order})
 

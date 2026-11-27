@@ -32,7 +32,7 @@ def progress(envelope, *, wait_available):
             "completed_in_this_reply": closed, "message": message + "."}
 
 
-def accepted_reply(text, order, cycle):
+def accepted_reply(text, order, cycle, *, environment_mode=None):
     """Keep the WO result shape while making its lifecycle explicit at creation."""
     body = json.loads(text)
     # The producer already synced the WO database to this engine state. The original
@@ -49,4 +49,8 @@ def accepted_reply(text, order, cycle):
                         if order.get("status") == "closed" else
                         f"It is pending, not failed; scheduled completion is cycle {order.get('expected_close_t')}. "
                         "Creation does not mean the repair has completed."))
+    if environment_mode == "static" and order.get("status") != "closed":
+        body["message"] = (f"Work order {order['id']} accepted for the same-cycle visit. "
+                           "The next non-order call settles the visit; no waiting time is required. "
+                           "Completion still requires verification of the repair outcome.")
     return json.dumps(body, indent=2, ensure_ascii=False)

@@ -60,6 +60,8 @@ def registration(a, config, config_name, facts_path):
     with a clock (rule 9), the start set, the development split, the stamp of the adapter or the block that a trained variant
     plays (rule 10), and an agent whose declaration keeps its runs out of the tables. main() asks before any table could be written."""
     reasons = tree_reasons()
+    if config.environment_mode is not None:
+        reasons.append("explicit static/dynamic modes are development conditions, not registered table presets")
     filler = [FILLER_REASON] if getattr(a, "filler", False) else []
     # rule 3 asks git about the commit, so it is asked only of a tree that passed rules 1, 2 and 4
     if not reasons and (untracked := ledger.code_identity.untracked_loaded(run_record.loaded_files())):

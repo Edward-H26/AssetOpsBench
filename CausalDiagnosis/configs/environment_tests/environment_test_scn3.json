@@ -1,0 +1,50 @@
+{
+  "name": "environment_test_scn3",
+  "description": "Explicit dynamic development scenario 3; adapted from the reconstructed debug config. Not an original teammate preset. Dependency changes: accumulator deteriorates at cycle 1; reconstructed debug configuration, not an original preset.",
+  "layers": [
+    "priced",
+    "real_time",
+    "advanced_real_time",
+    "repair_rules",
+    "deterioration"
+  ],
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": {
+    "combination": [
+      100,
+      80,
+      1,
+      130
+    ],
+    "entry_offset": 0
+  },
+  "question": null,
+  "allowed": [
+    [
+      100,
+      80,
+      1,
+      130
+    ]
+  ],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 4
+  },
+  "switches": {
+    "deterioration": {
+      "mode": "schedule",
+      "components": 1,
+      "first_drop": [
+        1,
+        1
+      ],
+      "interval": 10
+    },
+    "failure": "off"
+  },
+  "environment_mode": "dynamic"
+}

@@ -109,6 +109,7 @@ class EpisodeConfig:
     anchors: dict = None
     verifier_scope: str = "writes"
     diagnostics_server: bool = True
+    environment_mode: str = None
 
     def __post_init__(self):
         self.seconds_per_token = real_time.token_rate(self)
@@ -122,6 +123,8 @@ class EpisodeConfig:
         data = {f.name: getattr(self, f.name) for f in fields(self)}
         if self.seconds_per_token is None:
             del data["seconds_per_token"]
+        if self.environment_mode is None:
+            del data["environment_mode"]
         return _listed(data)
 
     @classmethod
@@ -206,6 +209,9 @@ class EpisodeConfig:
         if not processes:
             problems += self._check_kind()
         problems += self._check_modes()
+        if not problems:
+            from .runtime_mode import problems as runtime_mode_problems
+            problems += runtime_mode_problems(self)
         if problems:
             raise ValueError("invalid episode config: " + "; ".join(problems))
 

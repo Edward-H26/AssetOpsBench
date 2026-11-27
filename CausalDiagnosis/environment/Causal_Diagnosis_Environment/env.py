@@ -235,6 +235,7 @@ class HydraulicRigEnv:
         c = self.config
         servers = [contract.ACTION_SERVER] + ([contract.DIAGNOSTICS_SERVER] if c.diagnostics_server else [])
         return {
+            **({"environment_mode": c.environment_mode} if c.environment_mode is not None else {}),
             "asset_id": c.asset_id,
             "asset": self.profile.registry_entry(),
             "components": list(c.components),
@@ -642,6 +643,8 @@ class HydraulicRigEnv:
         """Let the rig run, one cycle at a time, until a notification is pending, the timeout is reached or the episode can
         run no further. A missing or empty timeout waits up to the horizon. In the instant clock mode the wait takes its one
         cycle like every other call."""
+        if self.config.environment_mode == "static":
+            return self._refuse(action, "static environment: time is frozen; no maintenance wait is required", think)
         timeout = action.get("timeout")
         if timeout is None or timeout == "":
             timeout = self.config.horizon - self.time

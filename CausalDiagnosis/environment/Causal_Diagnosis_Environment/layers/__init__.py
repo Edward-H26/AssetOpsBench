@@ -139,6 +139,9 @@ def compose(spec):
     for key, value in spec.items():
         if key not in PRESET_KEYS:
             data[key] = value
+    if data.get("environment_mode") is not None:
+        from ..runtime_mode import normalize
+        data = normalize(data, data["environment_mode"])
     found = unmet(data, profile) + unit_problems(data)
     if found:
         raise ValueError("invalid composition: " + "; ".join(found))

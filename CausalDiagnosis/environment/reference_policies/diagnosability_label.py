@@ -62,7 +62,8 @@ def rules_of(config):
     """The fields of the configuration as given that a rollout reads, with whether a clock runs on it, which decides whether a
     rollout plays the live recordings after the record and which static_config would hide by resetting the clock mode."""
     data = config.to_json()
-    return {**{key: data[key] for key in RULE_KEYS}, "clock": config.has_clock()}
+    return {**{key: data[key] for key in RULE_KEYS}, "clock": config.has_clock(),
+            **({"environment_mode": config.environment_mode} if config.environment_mode is not None else {})}
 
 
 def rules_key(rules):
@@ -89,7 +90,10 @@ def static_config(config):
     """The configuration a label is computed in: the rules of the given one with every hidden process off, the declared clock
     and no anchored or restricted start, so that a timed or deterioration preset is labelled by its static counterpart."""
     default = get_profile(config.asset_id).default_config().to_json()
-    return EpisodeConfig.from_json({**config.to_json(), **{key: default[key] for key in STATIC_KEYS}})
+    data = config.to_json()
+    # Reference labelling deliberately removes hidden dynamics; it is not the runtime mode of the episode.
+    data.pop("environment_mode", None)
+    return EpisodeConfig.from_json({**data, **{key: default[key] for key in STATIC_KEYS}})
 
 
 def history_group(config):

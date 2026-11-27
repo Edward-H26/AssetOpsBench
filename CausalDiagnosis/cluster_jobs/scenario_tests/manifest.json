@@ -1,0 +1,88 @@
+{
+  "formal_evaluation": false,
+  "purpose": "8 scenarios x 3 native agent configurations; retain failed attempts",
+  "modes": [
+    {
+      "agent": "causal",
+      "diagnostics": true
+    },
+    {
+      "agent": "causal",
+      "diagnostics": false
+    },
+    {
+      "agent": "plan_execute",
+      "diagnostics": true
+    }
+  ],
+  "scenarios": [
+    {
+      "scenario": 1,
+      "environment_mode": "static",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn1.json",
+      "seed": 0,
+      "scenario_id": 2007,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 2,
+      "environment_mode": "static",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn2.json",
+      "seed": 0,
+      "scenario_id": 2004,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 3,
+      "environment_mode": "dynamic",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn3.json",
+      "seed": 0,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 4,
+      "environment_mode": "dynamic",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn4.json",
+      "seed": 0,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 5,
+      "environment_mode": "dynamic",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn5.json",
+      "seed": 1,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 6,
+      "environment_mode": "dynamic",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn6.json",
+      "seed": 1,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 7,
+      "environment_mode": "static",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn7.json",
+      "seed": 0,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    },
+    {
+      "scenario": 8,
+      "environment_mode": "static",
+      "config": "CausalDiagnosis/configs/environment_tests/environment_test_scn8.json",
+      "seed": 0,
+      "scenario_id": null,
+      "provenance": "reconstructed debug scenario; retained initial state/event settings, explicit mode applied"
+    }
+  ],
+  "limitations": [
+    "Scenario 5 and 7 ambiguity claims require label and E18 validation; names do not establish inseparability.",
+    "Reconstructed configurations are not certified original teammate scenario presets."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "environment_test_scn8",
+  "description": "Explicit static development scenario 8; adapted from the reconstructed debug config. Not an original teammate preset. Healthy control; reconstructed debug configuration, not an original preset.",
+  "layers": [],
+  "fault_rule": {
+    "min_faulty": 0,
+    "max_faulty": 0
+  },
+  "guidance_level": 2,
+  "verifier_scope": "writes",
+  "diagnostics_server": true,
+  "anchors": null,
+  "start": null,
+  "question": null,
+  "environment_mode": "static"
+}

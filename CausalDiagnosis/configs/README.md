@@ -22,3 +22,7 @@ Every program finds a preset by its name through one lookup, `preset_path` in `u
 ## How to add to it
 
 A new preset goes into the folder of its kind with a name no other preset has. The presets are part of the identity of an episode run, so a preset added after runs of record gives the runs played afterwards another group, and the tables read one group at a time.
+
+## Explicit static/dynamic development tests
+
+`environment_tests/` contains eight separately named development scenarios. `--environment-mode static|dynamic` selects the strict runtime contract; see [the test specification](../cluster_jobs/scenario_tests/README.md). Unspecified mode preserves legacy behavior.

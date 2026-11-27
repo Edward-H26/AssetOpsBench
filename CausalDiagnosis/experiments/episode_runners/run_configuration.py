@@ -72,7 +72,7 @@ def _preset_file(spec, folder, kind):
     raise SystemExit(f"unknown {kind} {spec!r}: give a path to a JSON file or one of {names}")
 
 
-def load_config(spec, asset_id=None):
+def load_config(spec, asset_id=None, environment_mode=None):
     """(name, EpisodeConfig) of a preset name under configs/ or a JSON path. A preset is a composition: the big
     layers it turns on, the small switches it sets otherwise and the fields of the base it sets, which
     CausalDiagnosis.environment.Causal_Diagnosis_Environment.layers.compose builds over the asset's defaults and validates, so run.json records the whole. asset_id,
@@ -82,6 +82,8 @@ def load_config(spec, asset_id=None):
 
     path = _preset_file(spec, CONFIGS, "config preset")
     preset = json.loads(path.read_text(encoding="utf-8"))
+    if environment_mode is not None:
+        preset = {**preset, "environment_mode": environment_mode}
     if asset_id is not None:
         named = preset.get("asset_id")
         if named is not None and named != asset_id:

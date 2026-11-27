@@ -98,6 +98,8 @@ def build_parser():
                          "played as its replicates (pending_lines.py --fraction), so the driver takes no whole value")
     ap.add_argument("--master-seed", type=int, default=42, help="the generator seed of the first replicate of --starts sampled (42 everywhere)")
     ap.add_argument("--seed-pool", type=int, default=8, help="how many smallest seeds per combination the first replicate of --starts sampled draws from")
+    ap.add_argument("--environment-mode", choices=("static", "dynamic"), default=None,
+                    help="explicit development mode: frozen time and immediate repairs, or evolving time; omitted preserves the preset")
     ap.add_argument("--clock-mode", choices=CLOCK_MODES, default=None, help="override the preset's clock mode")
     ap.add_argument("--guidance", type=int, choices=(1, 2, 3), default=None, help="override the preset's guidance level")
     ap.add_argument("--no-diagnostics", action="store_true",
@@ -150,7 +152,13 @@ def build_parser():
 
 def configure(a):
     """The validated configuration of a run from the command line: the preset, the overrides, the price table."""
-    config_name, config = load_config(a.config, getattr(a, "asset", None))
+    mode_option = getattr(a, "environment_mode", None)
+    config_name, config = (load_config(a.config, getattr(a, "asset", None), environment_mode=mode_option)
+                           if mode_option is not None else load_config(a.config, getattr(a, "asset", None)))
+    mode = getattr(a, "environment_mode", None) or config.environment_mode
+    expected_clock = "declared" if mode == "static" else "generation_time"
+    if mode and a.clock_mode is not None and a.clock_mode != expected_clock:
+        raise SystemExit(f"--environment-mode {mode} requires --clock-mode {expected_clock}")
     overrides = {k: v for k, v in (("clock_mode", a.clock_mode), ("guidance_level", a.guidance), ("verifier_scope", a.verifier_scope)) if v is not None}
     if a.no_diagnostics:
         overrides["diagnostics_server"] = False
@@ -158,7 +166,12 @@ def configure(a):
         config = type(config).from_json(dataclasses.replace(config, **overrides).to_json())
     price_table = load_price_table(a.prices) if a.prices else None
     if price_table:
+        if mode:
+            config = dataclasses.replace(config, environment_mode=None)
         config = apply_price_table(config, price_table)
+    if mode:
+        from CausalDiagnosis.environment.Causal_Diagnosis_Environment.runtime_mode import apply
+        config = apply(config, mode)
     return config_name, config, price_table
 
 
